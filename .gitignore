@@ -1,0 +1,38 @@
+# 依赖
+node_modules/
+package-lock.json
+
+# 构建输出
+dist/
+release/
+
+# 开发工具
+.vscode/
+.idea/
+
+# 日志
+*.log
+npm-debug.log*
+
+# 操作系统
+.DS_Store
+Thumbs.db
+
+# 环境变量
+.env
+.env.local
+
+# Electron 用户数据
+userData/
+
+# 用户任务数据
+tasksData/
+
+# Kiro 配置
+.kiro/
+
+# 项目配置文件
+.npmrc
+.nvmdrc
+run.bat
+

@@ -1,0 +1,376 @@
+/**
+ * 任务添加/编辑模态框组件
+ * 
+ * 功能说明:
+ * - 用于添加新任务或编辑现有任务
+ * - 提供任务描述、模块、类型、发起人、备注等字段输入
+ * - 支持上传附件图片(拖拽、粘贴、选择文件)
+ * - 支持添加代码块,带语言选择和语法高亮
+ * - 模块名和任务类型支持自动补全
+ * - 编辑模式下可管理已有图片和新增图片
+ * - 使用 Ant Design Modal 和 Form 组件实现
+ * 
+ * 使用场景:
+ * - 在任务管理视图中添加新任务
+ * - 编辑待办任务的信息
+ */
+import React, { useEffect } from 'react'
+import { Modal, Input, Form, Row, Col, Upload, Button, Switch, AutoComplete, Space, Tag } from 'antd'
+import { UploadOutlined, DeleteOutlined, CodeOutlined } from '@ant-design/icons'
+import TaskImage from '../common/TaskImage'
+
+const { TextArea } = Input
+export default function TaskModal({
+  show,
+  isEdit,
+  task,
+  modules,
+  taskTypes = [],
+  showModuleDropdown,
+  showTypeDropdown,
+  dragActive,
+  onTaskChange,
+  onModuleDropdownToggle,
+  onTypeDropdownToggle,
+  onModuleSelect,
+  onTypeSelect,
+  onImageChange,
+  onRemoveImage,
+  onRemoveExistingImage,
+  onDrag,
+  onDrop,
+  onPaste,
+  onConfirm,
+  onCancel,
+  refs
+}) {
+  // 监听 Ctrl+S 快捷键
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.ctrlKey && e.key === 's') {
+        e.preventDefault()
+        if (show) {
+          onConfirm()
+        }
+      }
+    }
+
+    if (show) {
+      window.addEventListener('keydown', handleKeyDown)
+    }
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [show, onConfirm])
+
+  // Modal 打开时自动聚焦到任务描述输入框
+  useEffect(() => {
+    if (show && refs?.nameRef?.current) {
+      // 使用 setTimeout 确保 Modal 完全渲染后再聚焦
+      setTimeout(() => {
+        refs.nameRef.current.focus()
+      }, 100)
+    }
+  }, [show])
+  const languages = [
+    'javascript', 'typescript', 'python', 'java', 'c', 'cpp', 'csharp', 
+    'go', 'rust', 'php', 'ruby', 'sql', 'html', 'css', 'json', 
+    'markdown', 'bash', 'powershell'
+  ]
+
+  const moduleOptions = modules
+    .filter(mod => mod.name.toLowerCase().includes((task?.module || '').toLowerCase()))
+    .map(mod => ({ value: mod.name }))
+
+  return (
+    <Modal
+      open={show}
+      title={isEdit ? '编辑任务' : '添加新任务'}
+      onOk={onConfirm}
+      onCancel={onCancel}
+      okText={isEdit ? '确认更新' : '确认添加'}
+      cancelText="取消"
+      width={800}
+      centered
+    >
+      <div onPaste={onPaste}>
+        <Form layout="vertical">
+          {/* 任务描述 */}
+          <Form.Item label="任务描述" required>
+            <Input
+              ref={refs?.nameRef}
+              placeholder="请输入任务描述"
+              value={task?.name || ''}
+              onChange={(e) => onTaskChange({ ...task, name: e.target.value })}
+              onPressEnter={(e) => {
+                e.preventDefault()
+                refs?.moduleRef?.current?.focus()
+              }}
+            />
+          </Form.Item>
+
+          {/* 模块、类型、发起人 */}
+          <Row gutter={16}>
+            <Col span={8}>
+              <Form.Item label="任务所属模块" required>
+                <AutoComplete
+                  ref={refs?.moduleRef}
+                  placeholder="请输入或选择模块名称"
+                  value={task?.module || ''}
+                  onChange={(value) => onTaskChange({ ...task, module: value })}
+                  options={moduleOptions}
+                  onFocus={() => onModuleDropdownToggle(true)}
+                  onBlur={() => setTimeout(() => onModuleDropdownToggle(false), 200)}
+                  onSelect={(value) => onModuleSelect(value)}
+                  filterOption={false}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item label="任务类型" required>
+                <AutoComplete
+                  placeholder="请选择任务类型"
+                  value={task?.type || ''}
+                  onChange={(value) => onTaskChange({ ...task, type: value })}
+                  options={taskTypes.map(type => ({ 
+                    value: type.name,
+                    label: (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <Tag color={type.color}>{type.name}</Tag>
+                      </div>
+                    )
+                  }))}
+                  onFocus={() => onTypeDropdownToggle(true)}
+                  onBlur={() => setTimeout(() => onTypeDropdownToggle(false), 200)}
+                  onSelect={(value) => onTypeSelect(value)}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item label="发起人">
+                <Input
+                  ref={refs?.initiatorRef}
+                  placeholder="请输入发起人姓名"
+                  value={task?.initiator || ''}
+                  onChange={(e) => onTaskChange({ ...task, initiator: e.target.value })}
+                  onPressEnter={(e) => {
+                    e.preventDefault()
+                    refs?.remarkRef?.current?.focus()
+                  }}
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          {/* 备注 */}
+          <Form.Item label="备注">
+            <TextArea
+              ref={refs?.remarkRef}
+              placeholder="请输入备注信息"
+              value={task?.remark || ''}
+              onChange={(e) => onTaskChange({ ...task, remark: e.target.value })}
+              rows={2}
+              autoSize={{ minRows: 2, maxRows: 4 }}
+            />
+          </Form.Item>
+
+          {/* 附件图片 */}
+          <Form.Item label="附件图片">
+            {/* 已有图片预览 (仅编辑模式) */}
+            {isEdit && task?.existingImages && task.existingImages.length > 0 && (
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ fontSize: 13, color: '#8c8c8c', marginBottom: 8 }}>已有图片:</div>
+                <Space wrap>
+                  {task.existingImages.map((imgPath, idx) => (
+                    <div 
+                      key={idx} 
+                      style={{ 
+                        position: 'relative', 
+                        width: 100, 
+                        height: 100,
+                        border: '1px solid #d9d9d9',
+                        borderRadius: 4,
+                        overflow: 'hidden'
+                      }}
+                    >
+                      <TaskImage 
+                        src={imgPath} 
+                        alt={`已有附件${idx + 1}`}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                      <Button
+                        type="primary"
+                        danger
+                        size="small"
+                        icon={<DeleteOutlined />}
+                        onClick={() => onRemoveExistingImage(idx)}
+                        style={{ 
+                          position: 'absolute', 
+                          top: 4, 
+                          right: 4,
+                          minWidth: 24,
+                          height: 24,
+                          padding: 0
+                        }}
+                      />
+                    </div>
+                  ))}
+                </Space>
+              </div>
+            )}
+
+            {/* 上传区域 */}
+            <div 
+              style={{ 
+                border: dragActive ? '2px dashed #1890ff' : '2px dashed #d9d9d9',
+                borderRadius: 8,
+                padding: 24,
+                textAlign: 'center',
+                background: dragActive ? '#f0f5ff' : '#fafafa',
+                transition: 'all 0.3s'
+              }}
+              onDragEnter={onDrag}
+              onDragLeave={onDrag}
+              onDragOver={onDrag}
+              onDrop={onDrop}
+            >
+              <p style={{ marginBottom: 12, color: '#8c8c8c' }}>拖拽图片到此处或粘贴图片 (Ctrl+V)</p>
+              <input
+                type="file"
+                id={isEdit ? "file-input-edit" : "file-input"}
+                multiple
+                accept="image/*"
+                onChange={onImageChange}
+                style={{ display: 'none' }}
+              />
+              <label htmlFor={isEdit ? "file-input-edit" : "file-input"}>
+                <Button icon={<UploadOutlined />}>选择文件</Button>
+              </label>
+            </div>
+
+            {/* 新上传图片预览 */}
+            {task?.images && task.images.length > 0 && (
+              <div style={{ marginTop: 16 }}>
+                <div style={{ fontSize: 13, color: '#8c8c8c', marginBottom: 8 }}>
+                  {isEdit ? '新添加的图片:' : '待上传的图片:'}
+                </div>
+                <Space wrap>
+                  {task.images.map((file, idx) => (
+                    <div 
+                      key={idx} 
+                      style={{ 
+                        position: 'relative',
+                        width: 100,
+                        border: '1px solid #d9d9d9',
+                        borderRadius: 4,
+                        padding: 4
+                      }}
+                    >
+                      <img 
+                        src={URL.createObjectURL(file)} 
+                        alt={file.name}
+                        style={{ 
+                          width: '100%', 
+                          height: 100, 
+                          objectFit: 'cover',
+                          borderRadius: 4
+                        }}
+                      />
+                      <Button
+                        type="primary"
+                        danger
+                        size="small"
+                        icon={<DeleteOutlined />}
+                        onClick={() => onRemoveImage(idx)}
+                        style={{ 
+                          position: 'absolute', 
+                          top: 8, 
+                          right: 8,
+                          minWidth: 24,
+                          height: 24,
+                          padding: 0
+                        }}
+                      />
+                      <div style={{ 
+                        fontSize: 11, 
+                        color: '#8c8c8c', 
+                        marginTop: 4,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}>
+                        {file.name}
+                      </div>
+                    </div>
+                  ))}
+                </Space>
+              </div>
+            )}
+          </Form.Item>
+
+          {/* 代码块选项 */}
+          <Form.Item>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <Switch
+                checked={task?.codeBlock?.enabled || false}
+                onChange={(checked) => onTaskChange({ 
+                  ...task, 
+                  codeBlock: { 
+                    ...(task?.codeBlock || {}), 
+                    enabled: checked 
+                  } 
+                })}
+              />
+              <CodeOutlined />
+              <span>{task?.codeBlock?.enabled ? '关闭代码块' : '添加代码块'}</span>
+            </div>
+
+            {task?.codeBlock?.enabled && (
+              <div>
+                <Row gutter={16} style={{ marginBottom: 12 }}>
+                  <Col span={24}>
+                    <Form.Item label="" style={{ marginBottom: 0 }}>
+                      <AutoComplete
+                        placeholder="如: javascript, python..."
+                        value={task?.codeBlock?.language || 'javascript'}
+                        onChange={(value) => onTaskChange({
+                          ...task,
+                          codeBlock: {
+                            ...(task?.codeBlock || {}),
+                            language: value
+                          }
+                        })}
+                        options={languages.map(lang => ({ value: lang }))}
+                        style={{ width: 200 }}
+                      />
+                    </Form.Item>
+                  </Col>
+                </Row>
+                <TextArea
+                  placeholder="请输入代码..."
+                  value={task?.codeBlock?.code || ''}
+                  onChange={(e) => onTaskChange({
+                    ...task,
+                    codeBlock: {
+                      ...(task?.codeBlock || {}),
+                      code: e.target.value
+                    }
+                  })}
+                  rows={6}
+                  style={{
+                    fontFamily: 'Monaco, Consolas, "Courier New", monospace',
+                    fontSize: '13px',
+                    background: '#1e1e1e',
+                    color: '#d4d4d4',
+                    border: '2px solid #3a3a3a'
+                  }}
+                />
+              </div>
+            )}
+          </Form.Item>
+        </Form>
+      </div>
+    </Modal>
+  )
+}

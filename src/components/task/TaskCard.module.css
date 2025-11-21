@@ -1,0 +1,374 @@
+/* 任务卡片样式 */
+.taskCard {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-radius: 12px;
+  padding: 12px;
+  padding-top: 36px;
+  transition: all 0.3s ease;
+  border: 2px solid #e2e8f0;
+  position: relative;
+  overflow: hidden;
+  max-width: 100%;
+  width: 100%;
+}
+
+.taskCard:hover {
+  transform: translateX(5px);
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.taskCompleted {
+  opacity: 0.8;
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border-color: #bbf7d0;
+  padding-top: 12px;
+}
+
+/* 删除按钮 */
+.btnDeleteTask {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(239, 68, 68, 0.1);
+  color: #dc2626;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  opacity: 0;
+  z-index: 10;
+}
+
+.taskCard:hover .btnDeleteTask {
+  opacity: 1;
+}
+
+.btnDeleteTask:hover {
+  background: #dc2626;
+  color: white;
+  transform: scale(1.1) rotate(90deg);
+}
+
+/* 回滚按钮 */
+.btnRollbackTask {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(102, 126, 234, 0.1);
+  color: #667eea;
+  font-size: 20px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  opacity: 0;
+  z-index: 10;
+}
+
+.taskCard:hover .btnRollbackTask {
+  opacity: 1;
+}
+
+.btnRollbackTask:hover {
+  background: #667eea;
+  color: white;
+  transform: scale(1.15) rotate(-15deg);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+/* 任务内容包装器 */
+.taskContentWrapper {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.taskCompleteBtnWrapper {
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+
+/* 完成按钮 */
+.btnCompleteTask {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 2px solid #d1d5db;
+  background: #f9fafb;
+  color: #9ca3af;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.btnCompleteTask:hover {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border-color: #10b981;
+  color: white;
+  transform: scale(1.15);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.btnCompleteTask:active {
+  transform: scale(1.05);
+}
+
+/* 已完成标记 */
+.taskCompletedBadge {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  font-size: 18px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.25);
+}
+
+/* 主内容区域 */
+.taskMainContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  width: 100%;
+}
+
+.taskHeaderInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.taskName {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1e293b;
+  word-break: break-word;
+  line-height: 1.4;
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+}
+
+.taskCompleted .taskName {
+  text-decoration: line-through;
+  color: #64748b;
+}
+
+/* 任务类型标签 */
+.taskTypeBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.taskType代办 {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+}
+
+.taskType优化 {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+}
+
+.taskTypeBUG {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+}
+
+.taskCreatedTime {
+  font-size: 11px;
+  color: #94a3b8;
+  font-weight: 400;
+  margin: 0;
+  line-height: 1.3;
+}
+
+/* 任务元数据 */
+.taskMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.metaItem {
+  display: flex;
+  align-items: flex-start;
+  font-size: 12px;
+  color: #64748b;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.metaLabel {
+  font-weight: 500;
+  margin-right: 5px;
+  flex-shrink: 0;
+}
+
+.metaValue {
+  color: #475569;
+  flex: 1;
+}
+
+/* 任务图片 */
+.taskImages {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+
+.taskImageWrapper {
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.taskImageWrapper:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.taskImageWrapper::after {
+  content: '🔍';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 24px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+
+.taskImageWrapper:hover::after {
+  opacity: 0.9;
+}
+
+.taskImage {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 2px solid #e2e8f0;
+  transition: all 0.3s ease;
+}
+
+/* 代码块显示 */
+.taskCodeBlock {
+  margin-top: 8px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.taskCodeBlockHeader {
+  background: #1e1e1e;
+  padding: 6px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #3a3a3a;
+}
+
+.taskCodeBlockLanguage {
+  color: #9cdcfe;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: 'Monaco', 'Consolas', 'Courier New', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.taskCodeBlockContent {
+  max-height: 250px;
+  overflow-x: auto;
+  overflow-y: auto;
+  width: 100%;
+  max-width: 100%;
+  position: relative;
+  display: block;
+  box-sizing: border-box;
+}
+
+/* 编辑按钮 */
+.taskEditBtnWrapper {
+  margin-top: 6px;
+  padding-top: 8px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.btnEditTask {
+  width: 100%;
+  padding: 8px 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  background: white;
+  color: #64748b;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.3s ease;
+}
+
+.btnEditTask:hover {
+  background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+  border-color: #667eea;
+  color: #4c51bf;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+}
+
+.btnEditTask:active {
+  transform: translateY(0);
+}
+
+.editIcon {
+  font-size: 16px;
+}

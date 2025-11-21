@@ -1,0 +1,90 @@
+/* 窗口控制栏样式 */
+.windowControls {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 9999;
+  -webkit-app-region: drag;
+}
+
+.windowTitleBar {
+  height: 36px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.windowTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: white;
+  user-select: none;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.appIcon {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+
+.windowButtons {
+  display: flex;
+  gap: 8px;
+  -webkit-app-region: no-drag;
+}
+
+.windowBtn {
+  width: 36px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  border-radius: 4px;
+  padding: 0;
+}
+
+.windowBtn:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.windowBtn:active {
+  background: rgba(255, 255, 255, 0.25);
+  transform: scale(0.95);
+}
+
+.windowBtnMinimize:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.windowBtnMaximize:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.windowBtnClose:hover {
+  background: #e53e3e;
+}
+
+.windowBtnSettings {
+  margin-right: 8px;
+}
+
+.windowBtnSettings:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.windowBtn svg {
+  pointer-events: none;
+}

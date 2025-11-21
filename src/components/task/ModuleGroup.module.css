@@ -1,0 +1,137 @@
+/* 模块分组样式 */
+.moduleGroup {
+  margin-bottom: 20px;
+}
+
+.moduleGroup:last-child {
+  margin-bottom: 0;
+}
+
+.moduleGroupTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #4c51bf;
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+  border-radius: 8px;
+  border-left: 4px solid #667eea;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.moduleGroupTitle:hover {
+  background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+  border-left-width: 6px;
+  padding-left: 10px;
+}
+
+.moduleCollapseIcon {
+  font-size: 12px;
+  color: #667eea;
+  transition: transform 0.2s ease;
+  display: inline-block;
+  min-width: 12px;
+}
+
+.moduleTaskCount {
+  margin-left: 8px;
+  font-size: 13px;
+  color: #667eea;
+  background: rgba(102, 126, 234, 0.08);
+  padding: 0 10px;
+  border-radius: 12px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 22px;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.moduleTaskCount:hover {
+  background: rgba(102, 126, 234, 0.12);
+}
+
+/* 模块名编辑按钮 */
+.moduleNameEditBtn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  opacity: 0;
+  margin-left: 8px;
+}
+
+.moduleGroupTitle:hover .moduleNameEditBtn {
+  opacity: 1;
+}
+
+.moduleNameEditBtn:hover {
+  background: rgba(102, 126, 234, 0.1);
+  transform: scale(1.1);
+}
+
+/* 模块名编辑输入框容器 */
+.moduleNameEditWrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.moduleNameEditInput {
+  flex: 1;
+  padding: 6px 12px;
+  border: 2px solid #667eea;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #4c51bf;
+  background: white;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.moduleNameEditInput:focus {
+  border-color: #4c51bf;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.moduleNameSaveBtn,
+.moduleNameCancelBtn {
+  padding: 6px 10px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.moduleNameSaveBtn {
+  background: #10b981;
+  color: white;
+}
+
+.moduleNameSaveBtn:hover {
+  background: #059669;
+  transform: scale(1.05);
+}
+
+.moduleNameCancelBtn {
+  background: #ef4444;
+  color: white;
+}
+
+.moduleNameCancelBtn:hover {
+  background: #dc2626;
+  transform: scale(1.05);
+}

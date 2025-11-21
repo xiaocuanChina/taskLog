@@ -1,0 +1,222 @@
+/* 设置容器 */
+.settingsContainer {
+  display: flex;
+  min-height: 500px;
+  margin: 0;
+}
+
+/* 侧边栏 */
+.settingsSidebar {
+  width: 200px;
+  background: #ffffff;
+  border-right: 1px solid #f0f0f0;
+  padding: 16px 0;
+}
+
+/* 内容区域 */
+.settingsContent {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+  max-height: 600px;
+}
+
+/* 滚动条样式 */
+.settingsContent::-webkit-scrollbar {
+  width: 8px;
+}
+
+.settingsContent::-webkit-scrollbar-track {
+  background: #f5f5f5;
+  border-radius: 4px;
+}
+
+.settingsContent::-webkit-scrollbar-thumb {
+  background: #d9d9d9;
+  border-radius: 4px;
+  transition: background 0.3s ease;
+}
+
+.settingsContent::-webkit-scrollbar-thumb:hover {
+  background: #bfbfbf;
+}
+
+/* 模态框标题 */
+.modalTitle {
+  display: flex;
+  align-items: center;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/* 内容区块 */
+.contentSection {
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 区块头部 */
+.sectionHeader h3 {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #262626;
+}
+
+.sectionDesc {
+  margin: 0;
+  color: #8c8c8c;
+  font-size: 14px;
+}
+
+/* 任务类型网格布局 */
+.typeGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+/* 任务类型卡片 */
+.typeCard {
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  cursor: grab;
+}
+
+.typeCard:hover {
+  border-color: #1890ff;
+  box-shadow: 0 2px 8px rgba(24, 144, 255, 0.1);
+}
+
+.typeCard:active {
+  cursor: grabbing;
+}
+
+/* 拖拽中的卡片样式 */
+.typeCard.dragging {
+  opacity: 0.5;
+  border-color: #1890ff;
+  box-shadow: 0 4px 12px rgba(24, 144, 255, 0.2);
+}
+
+/* 卡片头部 - 拖拽手柄和删除按钮 */
+.typeCardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.dragHandle {
+  display: flex;
+  align-items: center;
+  user-select: none;
+}
+
+/* 卡片内容 */
+.typeCardContent {
+  display: flex;
+  flex-direction: column;
+}
+
+/* 类型预览 */
+.typePreview {
+  margin-top: 8px;
+  padding-top: 12px;
+  border-top: 1px solid #f0f0f0;
+  display: flex;
+  align-items: center;
+  color: #8c8c8c;
+  font-size: 13px;
+}
+
+/* 添加按钮 */
+.addButton {
+  height: 48px;
+  font-size: 15px;
+  border-style: dashed;
+  border-width: 2px;
+}
+
+.addButton:hover {
+  border-color: #1890ff;
+  color: #1890ff;
+}
+
+/* 关于内容 */
+.aboutContent {
+  padding: 16px;
+  background: #fafafa;
+  border-radius: 8px;
+}
+
+.aboutContent p {
+  margin: 12px 0;
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+.aboutContent strong {
+  color: #262626;
+  margin-right: 8px;
+}
+
+/* 隐私操作 */
+.privacyAction {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+}
+
+.privacyAction h4 {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #262626;
+}
+
+.actionDesc {
+  margin: 0;
+  color: #8c8c8c;
+  font-size: 14px;
+}
+
+/* 通用设置卡片 */
+.generalCard {
+  background: #fafafa;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.generalCard :global(.ant-card-body) {
+  padding: 16px 20px;
+}
+
+.generalCard :global(.ant-form-item) {
+  margin-bottom: 0;
+}
+
+/* 设置模态框样式 */
+.settingsModal :global(.ant-modal-body) {
+  padding: 0;
+}
+
+.settingsModal :global(.ant-modal-footer) {
+  border-top: 1px solid #f0f0f0;
+  padding: 16px 24px;
+}

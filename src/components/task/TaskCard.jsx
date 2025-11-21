@@ -1,0 +1,263 @@
+/**
+ * 任务卡片组件
+ * 
+ * 功能说明:
+ * - 用于展示单个任务的详细信息
+ * - 显示任务名称、类型、创建时间、备注等信息
+ * - 支持任务的完成、回滚、编辑和删除操作
+ * - 展示任务的附件图片(可点击预览)
+ * - 支持代码块展示,带语法高亮
+ * - 根据任务状态(待办/已完成)显示不同的操作按钮
+ * - 使用 Ant Design Card 组件实现
+ * 
+ * 使用场景:
+ * - 在模块分组中展示任务列表
+ * - 区分待办任务和已完成任务的展示
+ */
+import React, { useState } from 'react'
+import { Card, Button, Tag, Space, Tooltip, message } from 'antd'
+import { CheckOutlined, RollbackOutlined, DeleteOutlined, EditOutlined, ClockCircleOutlined, LoadingOutlined, FolderOutlined } from '@ant-design/icons'
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
+import TaskImage from '../common/TaskImage'
+
+export default function TaskCard({ task, isCompleted, taskTypeColors = {}, onComplete, onRollback, onEdit, onDelete, onImageClick, onEditModule }) {
+  const [isCompleting, setIsCompleting] = useState(false)
+  const [isRollingBack, setIsRollingBack] = useState(false)
+
+  // 处理完成任务
+  const handleComplete = async () => {
+    setIsCompleting(true)
+    try {
+      await onComplete(task.id)
+      message.success('任务已完成！')
+    } catch (error) {
+      message.error('操作失败，请重试')
+    } finally {
+      setTimeout(() => setIsCompleting(false), 300)
+    }
+  }
+
+  // 处理回滚任务
+  const handleRollback = async () => {
+    setIsRollingBack(true)
+    try {
+      await onRollback(task.id)
+    } catch (error) {
+      message.error('操作失败，请重试')
+    } finally {
+      setTimeout(() => setIsRollingBack(false), 300)
+    }
+  }
+
+  return (
+    <Card
+      size="small"
+      style={{ 
+        marginBottom: 12,
+        opacity: isCompleted ? 0.7 : 1,
+        borderLeft: isCompleted ? '4px solid #52c41a' : '4px solid #1890ff',
+        position: 'relative'
+      }}
+      title={
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+          {/* 左侧：占位 */}
+          <div style={{ width: 32 }} />
+          
+          {/* 中间：完成/回滚按钮 */}
+          <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+            {isCompleted ? (
+              <Button 
+                type="default"
+                size="middle"
+                icon={isRollingBack ? <LoadingOutlined /> : <RollbackOutlined />}
+                onClick={handleRollback}
+                loading={isRollingBack}
+                disabled={isRollingBack}
+                style={{ 
+                  minWidth: 100,
+                  fontWeight: 600,
+                  fontSize: 14,
+                  transform: isRollingBack ? 'scale(0.95)' : 'scale(1)',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                {isRollingBack ? '回滚中...' : '回滚'}
+              </Button>
+            ) : (
+              <Button 
+                type="primary"
+                size="middle"
+                icon={isCompleting ? <LoadingOutlined /> : <CheckOutlined style={{ fontSize: 16 }} />}
+                onClick={handleComplete}
+                loading={isCompleting}
+                disabled={isCompleting}
+                style={{ 
+                  background: isCompleting 
+                    ? 'linear-gradient(135deg, #73d13d 0%, #95de64 100%)' 
+                    : 'linear-gradient(135deg, #52c41a 0%, #73d13d 100%)',
+                  borderColor: '#52c41a',
+                  minWidth: 100,
+                  fontWeight: 600,
+                  fontSize: 14,
+                  boxShadow: isCompleting 
+                    ? '0 4px 12px rgba(82, 196, 26, 0.5)' 
+                    : '0 2px 8px rgba(82, 196, 26, 0.3)',
+                  height: 32,
+                  transform: isCompleting ? 'scale(0.95)' : 'scale(1)',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseDown={(e) => {
+                  e.currentTarget.style.transform = 'scale(0.92)'
+                }}
+                onMouseUp={(e) => {
+                  e.currentTarget.style.transform = 'scale(1)'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'scale(1)'
+                }}
+              >
+                {isCompleting ? '完成中...' : '完成'}
+              </Button>
+            )}
+          </div>
+          
+          {/* 右侧：编辑和删除按钮（仅待办任务显示） */}
+          {!isCompleted ? (
+            <Space size={4}>
+              <Tooltip title="编辑任务">
+                <Button 
+                  type="text" 
+                  size="small"
+                  icon={<EditOutlined />}
+                  onClick={() => onEdit(task)}
+                />
+              </Tooltip>
+              <Tooltip title="删除任务">
+                <Button 
+                  type="text" 
+                  size="small"
+                  danger
+                  icon={<DeleteOutlined />}
+                  onClick={() => onDelete(task)}
+                />
+              </Tooltip>
+            </Space>
+          ) : (
+            <div style={{ width: 64 }} />
+          )}
+        </div>
+      }
+    >
+      <div>
+        <div style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          {task.type && (
+            <Tag color={taskTypeColors[task.type] || '#1890ff'} style={{ margin: 0, fontSize: 13, padding: '2px 10px' }}>
+              {task.type}
+            </Tag>
+          )}
+          <h4 style={{ margin: 0, fontSize: 15, fontWeight: 600, flex: 1 }}>{task.name}</h4>
+          {!isCompleted && task.module && (
+            <Tooltip title="修改所属模块">
+              <Tag 
+                icon={<FolderOutlined />}
+                color="default"
+                style={{ 
+                  margin: 0, 
+                  fontSize: 12, 
+                  padding: '2px 8px',
+                  cursor: 'pointer',
+                  border: '1px solid #d9d9d9'
+                }}
+                onClick={() => onEditModule && onEditModule(task)}
+              >
+                {task.module}
+              </Tag>
+            </Tooltip>
+          )}
+        </div>
+
+        <div style={{ fontSize: 12, color: '#8c8c8c', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 4 }}>
+          <ClockCircleOutlined />
+          创建于 {new Date(task.createdAt).toLocaleString('zh-CN', { 
+            year: 'numeric', 
+            month: '2-digit', 
+            day: '2-digit', 
+            hour: '2-digit', 
+            minute: '2-digit' 
+          })}
+        </div>
+
+        {task.remark && (
+          <div style={{ 
+            padding: '8px 12px', 
+            background: '#f5f5f5', 
+            borderRadius: 4, 
+            fontSize: 13,
+            marginBottom: 8
+          }}>
+            <span style={{ fontWeight: 600 }}>📝 备注：</span>
+            {task.remark}
+          </div>
+        )}
+
+        {task.images && task.images.length > 0 && (
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
+            {task.images.map((img, idx) => (
+              <div 
+                key={idx}
+                onClick={() => onImageClick(img, task.images, idx)}
+                style={{ 
+                  cursor: 'pointer',
+                  width: 100,
+                  height: 100,
+                  borderRadius: 4,
+                  overflow: 'hidden',
+                  border: '1px solid #d9d9d9'
+                }}
+              >
+                <TaskImage 
+                  src={img} 
+                  alt={`附件${idx + 1}`}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* 代码块显示 */}
+        {task.codeBlock?.enabled && task.codeBlock?.code && (
+          <div style={{ marginBottom: 8 }}>
+            <div style={{ 
+              background: '#1e1e1e', 
+              color: '#fff', 
+              padding: '4px 12px', 
+              fontSize: 12,
+              borderTopLeftRadius: 4,
+              borderTopRightRadius: 4
+            }}>
+              {task.codeBlock.language || 'text'}
+            </div>
+            <div style={{ borderRadius: '0 0 4px 4px', overflow: 'hidden' }}>
+              <SyntaxHighlighter 
+                language={task.codeBlock.language || 'text'} 
+                style={vscDarkPlus}
+                customStyle={{
+                  margin: 0,
+                  borderRadius: 0,
+                  fontSize: '13px'
+                }}
+                wrapLongLines={false}
+              >
+                {task.codeBlock.code}
+              </SyntaxHighlighter>
+            </div>
+          </div>
+        )}
+
+
+      </div>
+    </Card>
+  )
+}
