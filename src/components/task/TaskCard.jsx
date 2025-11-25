@@ -16,7 +16,7 @@
  */
 import React, { useState } from 'react'
 import { Card, Button, Tag, Space, Tooltip, message } from 'antd'
-import { CheckOutlined, RollbackOutlined, DeleteOutlined, EditOutlined, ClockCircleOutlined, LoadingOutlined, FolderOutlined } from '@ant-design/icons'
+import { CheckOutlined, RollbackOutlined, DeleteOutlined, EditOutlined, ClockCircleOutlined, LoadingOutlined, FolderOutlined, CopyOutlined } from '@ant-design/icons'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import TaskImage from '../common/TaskImage'
@@ -24,13 +24,13 @@ import TaskImage from '../common/TaskImage'
 export default function TaskCard({ task, isCompleted, taskTypeColors = {}, onComplete, onRollback, onEdit, onDelete, onImageClick, onEditModule }) {
   const [isCompleting, setIsCompleting] = useState(false)
   const [isRollingBack, setIsRollingBack] = useState(false)
+  const [isCodeCopied, setIsCodeCopied] = useState(false)
 
   // 处理完成任务
   const handleComplete = async () => {
     setIsCompleting(true)
     try {
       await onComplete(task.id)
-      message.success('任务已完成！')
     } catch (error) {
       message.error('操作失败，请重试')
     } finally {
@@ -47,6 +47,19 @@ export default function TaskCard({ task, isCompleted, taskTypeColors = {}, onCom
       message.error('操作失败，请重试')
     } finally {
       setTimeout(() => setIsRollingBack(false), 300)
+    }
+  }
+
+  // 复制代码
+  const handleCopyCode = async () => {
+    if (!task.codeBlock?.code) return
+    try {
+      await navigator.clipboard.writeText(task.codeBlock.code)
+      setIsCodeCopied(true)
+      message.success('代码已复制')
+      setTimeout(() => setIsCodeCopied(false), 2000)
+    } catch (error) {
+      message.error('复制失败')
     }
   }
 
@@ -194,7 +207,9 @@ export default function TaskCard({ task, isCompleted, taskTypeColors = {}, onCom
             background: '#f5f5f5', 
             borderRadius: 4, 
             fontSize: 13,
-            marginBottom: 8
+            marginBottom: 8,
+            whiteSpace: 'pre-wrap',
+            wordBreak: 'break-word'
           }}>
             <span style={{ fontWeight: 600 }}>📝 备注：</span>
             {task.remark}
@@ -235,9 +250,29 @@ export default function TaskCard({ task, isCompleted, taskTypeColors = {}, onCom
               padding: '4px 12px', 
               fontSize: 12,
               borderTopLeftRadius: 4,
-              borderTopRightRadius: 4
+              borderTopRightRadius: 4,
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
             }}>
-              {task.codeBlock.language || 'text'}
+              <span>{task.codeBlock.language || 'text'}</span>
+              <Tooltip title={isCodeCopied ? "已复制" : "复制代码"}>
+                <Button
+                  type="text"
+                  size="small"
+                  icon={isCodeCopied ? <CheckOutlined style={{ color: '#52c41a' }} /> : <CopyOutlined style={{ color: '#fff' }} />}
+                  onClick={handleCopyCode}
+                  style={{ 
+                    color: '#fff', 
+                    height: '20px', 
+                    padding: '0 4px', 
+                    minWidth: '24px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                />
+              </Tooltip>
             </div>
             <div style={{ borderRadius: '0 0 4px 4px', overflow: 'hidden' }}>
               <SyntaxHighlighter 

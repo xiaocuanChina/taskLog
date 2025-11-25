@@ -4,19 +4,35 @@ import { getConfig } from '../utils/configManager'
 // 任务管理自定义 Hook
 export function useTaskManager(currentProject) {
   const [modules, setModules] = useState([])
+  const [recycleModules, setRecycleModules] = useState([])
   const [tasks, setTasks] = useState([])
   const [todayStats, setTodayStats] = useState({ count: 0, newCount: 0 })
   const [searchKeyword, setSearchKeyword] = useState('')
   const [collapsedModules, setCollapsedModules] = useState({})
   const [editingModuleName, setEditingModuleName] = useState(null)
   const [searchScope, setSearchScope] = useState('all') // 'module' | 'description' | 'all'
+  const [selectedModuleFilter, setSelectedModuleFilter] = useState(null) // 模块筛选
 
   // 加载模块列表
   const loadModules = async (projectId) => {
     if (!projectId) return
-    const list = await window.electron?.modules?.list(projectId)
+    const list = await window.electron?.modules?.list(projectId, true)
+    
+    const activeModules = []
+    const deletedModules = []
+    
+    if (list) {
+      list.forEach(m => {
+        if (m.deleted) {
+          deletedModules.push(m)
+        } else {
+          activeModules.push(m)
+        }
+      })
+    }
+
     // 按照 order 字段排序，如果没有 order 则按创建时间排序
-    const sortedList = (list || []).sort((a, b) => {
+    const sortedList = activeModules.sort((a, b) => {
       const aOrder = a.order !== undefined ? a.order : 999999
       const bOrder = b.order !== undefined ? b.order : 999999
       
@@ -28,6 +44,7 @@ export function useTaskManager(currentProject) {
       return new Date(a.createdAt) - new Date(b.createdAt)
     })
     setModules(sortedList)
+    setRecycleModules(deletedModules)
   }
 
   // 加载任务列表
@@ -70,26 +87,34 @@ export function useTaskManager(currentProject) {
     .filter(t => !t.completed)
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
   
-  const pendingTasks = searchKeyword.trim() 
-    ? allPendingTasks.filter(t => {
-        const keyword = searchKeyword.toLowerCase()
-        
-        // 根据配置的搜索范围进行过滤
-        switch (searchScope) {
-          case 'module':
-            // 仅搜索模块名称
-            return t.module && t.module.toLowerCase().includes(keyword)
-          case 'description':
-            // 仅搜索任务描述
-            return t.name.toLowerCase().includes(keyword)
-          case 'all':
-          default:
-            // 通用搜索（模块 + 描述）
-            return t.name.toLowerCase().includes(keyword) ||
-                   (t.module && t.module.toLowerCase().includes(keyword))
-        }
-      })
-    : allPendingTasks
+  const pendingTasks = allPendingTasks.filter(t => {
+    // 1. 模块筛选
+    if (selectedModuleFilter && t.module !== selectedModuleFilter) {
+      return false
+    }
+
+    // 2. 关键字筛选
+    if (searchKeyword.trim()) {
+      const keyword = searchKeyword.toLowerCase()
+      
+      // 根据配置的搜索范围进行过滤
+      switch (searchScope) {
+        case 'module':
+          // 仅搜索模块名称
+          return t.module && t.module.toLowerCase().includes(keyword)
+        case 'description':
+          // 仅搜索任务描述
+          return t.name.toLowerCase().includes(keyword)
+        case 'all':
+        default:
+          // 通用搜索（模块 + 描述）
+          return t.name.toLowerCase().includes(keyword) ||
+                 (t.module && t.module.toLowerCase().includes(keyword))
+      }
+    }
+
+    return true
+  })
   
   const completedTasks = tasks
     .filter(t => t.completed)
@@ -110,8 +135,23 @@ export function useTaskManager(currentProject) {
     // 按照模块的排序顺序构建数组
     const groupedArray = []
     
-    // 先添加已排序的模块
-    modules.forEach(module => {
+    // 合并 active modules 和 recycle modules，并保持它们的原始顺序
+    // 因为 recycle modules 也是有 order 的，所以我们可以将它们合并后统一排序
+    // 或者简单地，我们希望保持视觉上的稳定性，可以考虑将它们一起处理
+    
+    const allKnownModules = [...modules, ...recycleModules].sort((a, b) => {
+      const aOrder = a.order !== undefined ? a.order : 999999
+      const bOrder = b.order !== undefined ? b.order : 999999
+      
+      if (aOrder !== bOrder) {
+        return aOrder - bOrder
+      }
+      
+      return new Date(a.createdAt) - new Date(b.createdAt)
+    })
+
+    // 遍历所有已知模块（包括回收站中的）
+    allKnownModules.forEach(module => {
       if (tempGrouped[module.name] && tempGrouped[module.name].length > 0) {
         groupedArray.push({
           moduleName: module.name,
@@ -193,11 +233,14 @@ export function useTaskManager(currentProject) {
 
   return {
     modules,
+    recycleModules,
     tasks, // 导出所有任务数据
     todayStats,
     searchKeyword,
     setSearchKeyword,
     searchScope,
+    selectedModuleFilter,
+    setSelectedModuleFilter,
     collapsedModules,
     editingModuleName,
     setEditingModuleName,

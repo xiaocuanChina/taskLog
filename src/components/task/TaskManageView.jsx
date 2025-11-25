@@ -17,7 +17,7 @@
  * - 日常任务的增删改查操作
  */
 import React from 'react'
-import { Button, Input, Card, Row, Col, Empty, Space, Tooltip } from 'antd'
+import { Button, Input, Card, Row, Col, Empty, Space, Tooltip, Select } from 'antd'
 import { 
   PlusOutlined, 
   FileExcelOutlined, 
@@ -32,7 +32,6 @@ import {
   UpOutlined
 } from '@ant-design/icons'
 import WindowControls from '../common/WindowControls'
-import Toast from '../common/Toast'
 import ModuleGroup from './ModuleGroup'
 import TaskModal from './TaskModal'
 import ImagePreview from '../common/ImagePreview'
@@ -44,13 +43,13 @@ import EditModuleListModal from './EditModuleListModal'
 import styles from './TaskManageView.module.css'
 export default function TaskManageView({
   currentProject,
-  toast,
   todayStats,
   tasks = [],
   pendingTasks,
   completedTasks,
   searchKeyword,
   searchScope = 'all',
+  selectedModuleFilter,
   collapsedModules,
   editingModuleName,
   showAddTaskModal,
@@ -66,6 +65,7 @@ export default function TaskManageView({
   editingProjectMemo,
   editingTaskModule,
   modules,
+  recycleModules = [],
   taskTypes = [],
   taskTypeColors = {},
   showModuleDropdown,
@@ -81,6 +81,7 @@ export default function TaskManageView({
   onExportReport,
   onConfigChange,
   onSearchChange,
+  onModuleFilterChange,
   onToggleModuleCollapse,
   onStartEditModuleName,
   onEditModuleNameChange,
@@ -137,6 +138,7 @@ export default function TaskManageView({
   onOpenEditModuleList,
   onUpdateModuleInList,
   onDeleteModuleInList,
+  onRestoreModuleInList,
   onReorderModules,
   onCloseEditModuleList
 }) {
@@ -278,7 +280,6 @@ export default function TaskManageView({
 
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
-      <Toast show={toast.show} message={toast.message} type={toast.type} />
       
       <WindowControls title={`任务日志 - ${currentProject?.name}`} onConfigChange={onConfigChange} />
 
@@ -467,24 +468,34 @@ export default function TaskManageView({
                         }}
                       >
                         {allPendingExpanded ? <UpOutlined style={{ fontSize: 10 }} /> : <DownOutlined style={{ fontSize: 10 }} />}
-                        {allPendingExpanded ? '全部收起' : '全部展开'}
+                        {allPendingExpanded ? '收起' : '展开'}
                       </span>
                     )}
                   </div>
-                  <Input
-                    placeholder={getSearchPlaceholder()}
-                    value={searchKeyword}
-                    onChange={(e) => onSearchChange(e.target.value)}
-                    prefix={<SearchOutlined style={{ fontSize: 16, color: '#8c8c8c' }} />}
-                    suffix={searchKeyword && <CloseCircleOutlined onClick={() => onSearchChange('')} style={{ cursor: 'pointer', fontSize: 14, color: '#8c8c8c' }} />}
-                    style={{ 
-                      width: 280,
-                      borderRadius: 20,
-                      paddingLeft: 16,
-                      paddingRight: 16
-                    }}
-                    size="middle"
-                  />
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <Select
+                      style={{ width: 120 }}
+                      placeholder="筛选模块"
+                      allowClear
+                      value={selectedModuleFilter}
+                      onChange={onModuleFilterChange}
+                      options={modules.map(m => ({ label: m.name, value: m.name }))}
+                    />
+                    <Input
+                      placeholder={getSearchPlaceholder()}
+                      value={searchKeyword}
+                      onChange={(e) => onSearchChange(e.target.value)}
+                      prefix={<SearchOutlined style={{ fontSize: 16, color: '#8c8c8c' }} />}
+                      suffix={searchKeyword && <CloseCircleOutlined onClick={() => onSearchChange('')} style={{ cursor: 'pointer', fontSize: 14, color: '#8c8c8c' }} />}
+                      style={{ 
+                        width: 200,
+                        borderRadius: 20,
+                        paddingLeft: 16,
+                        paddingRight: 16
+                      }}
+                      size="middle"
+                    />
+                  </div>
                 </div>
               }
               style={{ background: 'rgba(255,255,255,0.95)', height: '100%', display: 'flex', flexDirection: 'column' }}
@@ -603,6 +614,7 @@ export default function TaskManageView({
         onPaste={onPaste}
         onConfirm={onConfirmAddTask}
         onCancel={onCloseAddTaskModal}
+        onPreviewImage={onImageClick}
         refs={taskRefs}
       />
 
@@ -629,6 +641,7 @@ export default function TaskManageView({
         onPaste={onEditPaste}
         onConfirm={onConfirmUpdateTask}
         onCancel={onCloseEditTaskModal}
+        onPreviewImage={onImageClick}
         refs={editTaskRefs}
       />
 
@@ -648,6 +661,7 @@ export default function TaskManageView({
         onClose={onCloseImagePreview}
         onPrev={onPrevImage}
         onNext={onNextImage}
+        onDelete={imagePreview.onDelete}
       />
 
       {/* 项目备忘便签查看 */}
@@ -682,9 +696,11 @@ export default function TaskManageView({
       <EditModuleListModal
         show={showEditModuleListModal}
         modules={modules}
+        recycleModules={recycleModules}
         tasks={tasks}
         onUpdateModule={onUpdateModuleInList}
         onDeleteModule={onDeleteModuleInList}
+        onRestoreModule={onRestoreModuleInList}
         onReorderModules={onReorderModules}
         onClose={onCloseEditModuleList}
       />

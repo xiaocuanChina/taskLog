@@ -14,8 +14,9 @@
  * - 统一管理项目的模块结构
  */
 import React, { useState, useEffect } from 'react'
-import { Modal, Input, Button, Space, Tag, Empty, Popconfirm } from 'antd'
-import { FolderOutlined, EditOutlined, DeleteOutlined, CheckOutlined, CloseOutlined, HolderOutlined } from '@ant-design/icons'
+import { Modal, Input, Button, Space, Tag, Empty, Popconfirm, Tooltip, Radio } from 'antd'
+import { FolderOutlined, EditOutlined, DeleteOutlined, CheckOutlined, CloseOutlined, HolderOutlined, UnorderedListOutlined } from '@ant-design/icons'
+import RecycleBin from './RecycleBin'
 import {
   DndContext,
   closestCenter,
@@ -36,7 +37,8 @@ import { CSS } from '@dnd-kit/utilities'
 // 可排序的模块项组件
 function SortableModuleItem({ 
   module, 
-  taskCount, 
+  taskCount,
+  pendingTaskCount,
   isEditing, 
   editingName,
   onStartEdit,
@@ -130,10 +132,10 @@ function SortableModuleItem({
               >
                 编辑
               </Button>
-              {taskCount === 0 ? (
+              {pendingTaskCount === 0 ? (
                 <Popconfirm
-                  title="确认删除"
-                  description={`确定要删除模块"${module.name}"吗？`}
+                  title="确认移入回收站"
+                  description={`确定要将模块"${module.name}"移入回收站吗？`}
                   onConfirm={() => onDelete(module.id)}
                   okText="确认"
                   cancelText="取消"
@@ -144,20 +146,21 @@ function SortableModuleItem({
                     danger
                     icon={<DeleteOutlined />}
                   >
-                    删除
+                    移入回收站
                   </Button>
                 </Popconfirm>
               ) : (
-                <Button
-                  type="text"
-                  size="small"
-                  danger
-                  icon={<DeleteOutlined />}
-                  disabled
-                  title="该模块下还有任务，无法删除"
-                >
-                  删除
-                </Button>
+                <Tooltip title="该模块下还有待办任务，无法移入回收站">
+                  <Button
+                    type="text"
+                    size="small"
+                    danger
+                    icon={<DeleteOutlined />}
+                    disabled
+                  >
+                    移入回收站
+                  </Button>
+                </Tooltip>
               )}
             </Space>
           </>
@@ -170,15 +173,18 @@ function SortableModuleItem({
 export default function EditModuleListModal({ 
   show, 
   modules = [], 
+  recycleModules = [],
   tasks = [],
   onUpdateModule,
   onDeleteModule,
+  onRestoreModule,
   onReorderModules,
   onClose 
 }) {
   const [editingModuleId, setEditingModuleId] = useState(null)
   const [editingName, setEditingName] = useState('')
   const [localModules, setLocalModules] = useState([])
+  const [view, setView] = useState('list') // 'list' | 'recycle'
 
   // 配置传感器
   const sensors = useSensors(
@@ -196,6 +202,11 @@ export default function EditModuleListModal({
   // 计算每个模块的任务数量
   const getModuleTaskCount = (moduleName) => {
     return tasks.filter(task => task.module === moduleName).length
+  }
+
+  // 计算每个模块的待办任务数量
+  const getModulePendingTaskCount = (moduleName) => {
+    return tasks.filter(task => task.module === moduleName && !task.completed).length
   }
 
   // 开始编辑模块
@@ -243,9 +254,31 @@ export default function EditModuleListModal({
   return (
     <Modal
       title={
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <FolderOutlined />
-          <span>编辑模块列表</span>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginRight: 32 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <FolderOutlined />
+            <span>{view === 'list' ? '编辑模块列表' : '模块回收站'}</span>
+          </div>
+          <Radio.Group 
+            value={view} 
+            onChange={e => setView(e.target.value)}
+            size="small"
+            buttonStyle="solid"
+          >
+            <Radio.Button value="list">
+              <Space size={4}>
+                 <UnorderedListOutlined />
+                 列表
+              </Space>
+            </Radio.Button>
+            <Radio.Button value="recycle">
+              <Space size={4}>
+                 <DeleteOutlined />
+                 回收站
+                 {recycleModules.length > 0 && <span style={{ fontSize: 12 }}>({recycleModules.length})</span>}
+              </Space>
+            </Radio.Button>
+          </Radio.Group>
         </div>
       }
       open={show}
@@ -258,39 +291,49 @@ export default function EditModuleListModal({
       width={600}
     >
       <div style={{ padding: '16px 0' }}>
-        {localModules.length === 0 ? (
-          <Empty description="暂无模块" />
-        ) : (
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
-          >
-            <SortableContext
-              items={localModules.map(m => m.id)}
-              strategy={verticalListSortingStrategy}
+        {view === 'list' ? (
+          localModules.length === 0 ? (
+            <Empty description="暂无模块" />
+          ) : (
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
             >
-              {localModules.map((module) => {
-                const taskCount = getModuleTaskCount(module.name)
-                const isEditing = editingModuleId === module.id
+              <SortableContext
+                items={localModules.map(m => m.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                {localModules.map((module) => {
+                  const taskCount = getModuleTaskCount(module.name)
+                  const pendingTaskCount = getModulePendingTaskCount(module.name)
+                  const isEditing = editingModuleId === module.id
 
-                return (
-                  <SortableModuleItem
-                    key={module.id}
-                    module={module}
-                    taskCount={taskCount}
-                    isEditing={isEditing}
-                    editingName={editingName}
-                    onStartEdit={() => handleStartEdit(module)}
-                    onCancelEdit={handleCancelEdit}
-                    onSaveEdit={handleSaveEdit}
-                    onEditNameChange={setEditingName}
-                    onDelete={handleDelete}
-                  />
-                )
-              })}
-            </SortableContext>
-          </DndContext>
+                  return (
+                    <SortableModuleItem
+                      key={module.id}
+                      module={module}
+                      taskCount={taskCount}
+                      pendingTaskCount={pendingTaskCount}
+                      isEditing={isEditing}
+                      editingName={editingName}
+                      onStartEdit={() => handleStartEdit(module)}
+                      onCancelEdit={handleCancelEdit}
+                      onSaveEdit={handleSaveEdit}
+                      onEditNameChange={setEditingName}
+                      onDelete={handleDelete}
+                    />
+                  )
+                })}
+              </SortableContext>
+            </DndContext>
+          )
+        ) : (
+          recycleModules.length > 0 ? (
+            <RecycleBin modules={recycleModules} onRestore={onRestoreModule} />
+          ) : (
+            <Empty description="回收站为空" />
+          )
         )}
       </div>
     </Modal>

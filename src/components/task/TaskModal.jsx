@@ -14,7 +14,7 @@
  * - 在任务管理视图中添加新任务
  * - 编辑待办任务的信息
  */
-import React, { useEffect } from 'react'
+import React, { useEffect, useRef } from 'react'
 import { Modal, Input, Form, Row, Col, Upload, Button, Switch, AutoComplete, Space, Tag } from 'antd'
 import { UploadOutlined, DeleteOutlined, CodeOutlined } from '@ant-design/icons'
 import TaskImage from '../common/TaskImage'
@@ -42,8 +42,15 @@ export default function TaskModal({
   onPaste,
   onConfirm,
   onCancel,
+  onPreviewImage,
   refs
 }) {
+  // 使用 ref 追踪最新的 props，解决闭包旧值问题
+  const latestProps = useRef({ task, onTaskChange })
+  useEffect(() => {
+    latestProps.current = { task, onTaskChange }
+  }, [task, onTaskChange])
+
   // 监听 Ctrl+S 快捷键
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -197,7 +204,22 @@ export default function TaskModal({
                       <TaskImage 
                         src={imgPath} 
                         alt={`已有附件${idx + 1}`}
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        onClick={() => {
+                           if (onPreviewImage) {
+                             // 已有图片直接传递路径
+                             onPreviewImage(imgPath, task.existingImages, idx, (deleteIndex) => {
+                               const { task: currentTask, onTaskChange: currentOnTaskChange } = latestProps.current
+                               // 先从任务数据中移除图片
+                               const newExistingImages = [...currentTask.existingImages]
+                               newExistingImages.splice(deleteIndex, 1)
+                               currentOnTaskChange({ ...currentTask, existingImages: newExistingImages })
+                               
+                               // 返回更新后的预览图片列表
+                               return newExistingImages
+                             })
+                           }
+                        }}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', cursor: 'pointer' }}
                       />
                       <Button
                         type="primary"
@@ -270,11 +292,29 @@ export default function TaskModal({
                       <img 
                         src={URL.createObjectURL(file)} 
                         alt={file.name}
-                        style={{ 
+                        onClick={() => {
+                          if (onPreviewImage) {
+                            // 为所有新图片生成 blob URL 用于预览
+                            const urls = task.images.map(f => URL.createObjectURL(f))
+                            // 传递删除回调
+                            onPreviewImage(urls[idx], urls, idx, (deleteIndex) => {
+                              const { task: currentTask, onTaskChange: currentOnTaskChange } = latestProps.current
+                              // 先从任务数据中移除图片
+                              const newImages = [...currentTask.images]
+                              newImages.splice(deleteIndex, 1)
+                              currentOnTaskChange({ ...currentTask, images: newImages })
+                              
+                              // 返回更新后的预览图片列表，用于 ImagePreview 更新显示
+                              return newImages.map(f => URL.createObjectURL(f))
+                            })
+                          }
+                        }}
+                        style={{  
                           width: '100%', 
                           height: 100, 
                           objectFit: 'cover',
-                          borderRadius: 4
+                          borderRadius: 4,
+                          cursor: 'pointer'
                         }}
                       />
                       <Button
@@ -333,7 +373,7 @@ export default function TaskModal({
                     <Form.Item label="" style={{ marginBottom: 0 }}>
                       <AutoComplete
                         placeholder="如: javascript, python..."
-                        value={task?.codeBlock?.language || 'javascript'}
+                        value={task?.codeBlock?.language ?? 'javascript'}
                         onChange={(value) => onTaskChange({
                           ...task,
                           codeBlock: {
