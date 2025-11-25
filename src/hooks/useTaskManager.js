@@ -82,7 +82,15 @@ export function useTaskManager(currentProject) {
   useEffect(() => {
     loadSearchScope()
     refreshData()
-  }, [currentProject])
+
+    // 切换项目时重置所有筛选和搜索状态
+    setSearchKeyword('')
+    setSelectedModuleFilter(null)
+    setCompletedSearchKeyword('')
+    setCompletedModuleFilter(null)
+    setEditingModuleName(null)
+    setCollapsedModules({})
+  }, [currentProject?.id])
 
   // 未完成和已完成任务
   const allPendingTasks = tasks
