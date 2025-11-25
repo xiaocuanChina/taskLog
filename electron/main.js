@@ -1,6 +1,7 @@
 const { app, BrowserWindow, ipcMain, Menu, dialog } = require('electron')
 const path = require('path')
 const fs = require('fs')
+const AdmZip = require('adm-zip')
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -101,12 +102,9 @@ function buildMenu() {
 }
 
 app.whenReady().then(() => {
-  // 获取程序所在目录（开发环境是项目根目录，打包后是可执行文件所在目录）
-  const appDir = app.isPackaged 
-    ? path.dirname(app.getPath('exe'))  // 打包后：可执行文件所在目录
-    : app.getAppPath()  // 开发环境：项目根目录
-  
-  const dataDir = path.join(appDir, 'tasksData')
+  // 使用系统用户数据目录存储数据
+  const userDataPath = app.getPath('userData')
+  const dataDir = path.join(userDataPath, 'tasksData')
   const imagesDir = path.join(dataDir, 'images')
   const tasksFile = path.join(dataDir, 'tasks.json')
   const projectsFile = path.join(dataDir, 'projects.json')
@@ -225,8 +223,9 @@ app.whenReady().then(() => {
         if (task.images && Array.isArray(task.images)) {
           task.images.forEach(imgPath => {
             try {
-              if (fs.existsSync(imgPath)) {
-                fs.unlinkSync(imgPath)
+              const fullPath = path.isAbsolute(imgPath) ? imgPath : path.join(imagesDir, imgPath)
+              if (fs.existsSync(fullPath)) {
+                fs.unlinkSync(fullPath)
               }
             } catch (err) {
               console.error('删除图片失败:', err)
@@ -267,9 +266,9 @@ app.whenReady().then(() => {
   })
   
   // 模块管理
-  ipcMain.handle('modules:list', (e, projectId) => {
+  ipcMain.handle('modules:list', (e, projectId, includeDeleted = false) => {
     const list = readModules()
-    return list.filter(m => m.projectId === projectId)
+    return list.filter(m => m.projectId === projectId && (includeDeleted || !m.deleted))
   })
   
   ipcMain.handle('modules:add', (e, payload) => {
@@ -277,12 +276,20 @@ app.whenReady().then(() => {
     // 检查该项目下是否已存在同名模块
     const exists = list.find(m => m.projectId === payload.projectId && m.name === payload.name)
     if (exists) {
+      // 如果已存在但被删除了，则恢复它（逻辑删除的恢复）
+      if (exists.deleted) {
+        exists.deleted = false
+        exists.updatedAt = new Date().toISOString()
+        writeModules(list)
+        return exists
+      }
       return exists
     }
     const module = {
       id: uid(),
       name: payload?.name || '',
       projectId: payload?.projectId || '',
+      deleted: false, // 默认未删除
       createdAt: new Date().toISOString()
     }
     list.push(module)
@@ -329,15 +336,29 @@ app.whenReady().then(() => {
     if (idx >= 0) {
       const module = list[idx]
       
-      // 检查是否有任务使用该模块
+      // 检查是否有未完成的任务使用该模块
       const tasks = readTasks()
-      const hasTask = tasks.some(task => task.projectId === module.projectId && task.module === module.name)
-      if (hasTask) {
-        return { success: false, error: '该模块下还有任务，无法删除' }
+      const hasPendingTask = tasks.some(task => task.projectId === module.projectId && task.module === module.name && !task.completed)
+      
+      if (hasPendingTask) {
+        return { success: false, error: '该模块下还有未完成的任务，无法删除' }
       }
       
-      // 从列表中移除模块
-      list.splice(idx, 1)
+      // 逻辑删除：标记为 deleted
+      list[idx].deleted = true
+      list[idx].updatedAt = new Date().toISOString()
+      writeModules(list)
+      return { success: true }
+    }
+    return { success: false, error: '模块不存在' }
+  })
+
+  ipcMain.handle('modules:restore', (e, id) => {
+    const list = readModules()
+    const idx = list.findIndex(m => m.id === id)
+    if (idx >= 0) {
+      list[idx].deleted = false
+      list[idx].updatedAt = new Date().toISOString()
       writeModules(list)
       return { success: true }
     }
@@ -393,7 +414,7 @@ app.whenReady().then(() => {
       else if (img?.buffer instanceof Uint8Array) buf = Buffer.from(img.buffer)
       else if (img?.buffer && img.buffer.byteLength) buf = Buffer.from(new Uint8Array(img.buffer))
       if (buf) fs.writeFileSync(fpath, buf)
-      saved.push(fpath)
+      saved.push(fname)
     }
     const task = {
       id,
@@ -434,7 +455,7 @@ app.whenReady().then(() => {
         else if (img?.buffer instanceof Uint8Array) buf = Buffer.from(img.buffer)
         else if (img?.buffer && img.buffer.byteLength) buf = Buffer.from(new Uint8Array(img.buffer))
         if (buf) fs.writeFileSync(fpath, buf)
-        saved.push(fpath)
+        saved.push(fname)
       }
       
       // 删除被移除的旧图片文件
@@ -442,8 +463,9 @@ app.whenReady().then(() => {
       oldImages.forEach(oldPath => {
         if (!existingImages.includes(oldPath)) {
           try {
-            if (fs.existsSync(oldPath)) {
-              fs.unlinkSync(oldPath)
+            const fullPath = path.isAbsolute(oldPath) ? oldPath : path.join(imagesDir, oldPath)
+            if (fs.existsSync(fullPath)) {
+              fs.unlinkSync(fullPath)
             }
           } catch (err) {
             console.error('删除图片失败:', err)
@@ -513,8 +535,9 @@ app.whenReady().then(() => {
       if (task.images && Array.isArray(task.images)) {
         task.images.forEach(imgPath => {
           try {
-            if (fs.existsSync(imgPath)) {
-              fs.unlinkSync(imgPath)
+            const fullPath = path.isAbsolute(imgPath) ? imgPath : path.join(imagesDir, imgPath)
+            if (fs.existsSync(fullPath)) {
+              fs.unlinkSync(fullPath)
             }
           } catch (err) {
             console.error('删除图片失败:', err)
@@ -713,16 +736,25 @@ app.whenReady().then(() => {
         tasks: readTasks()
       }
       
+      const zip = new AdmZip()
+      // 添加数据文件
+      zip.addFile('data.json', Buffer.from(JSON.stringify(exportData, null, 2), 'utf8'))
+      
+      // 添加图片文件夹
+      if (fs.existsSync(imagesDir)) {
+        zip.addLocalFolder(imagesDir, 'images')
+      }
+      
       const { filePath } = await dialog.showSaveDialog({
         title: '导出数据',
-        defaultPath: `TaskLog_备份_${new Date().toISOString().split('T')[0]}.json`,
+        defaultPath: `TaskLog_备份_${new Date().toISOString().split('T')[0]}.zip`,
         filters: [
-          { name: 'JSON文件', extensions: ['json'] }
+          { name: '压缩文件', extensions: ['zip'] }
         ]
       })
       
       if (filePath) {
-        fs.writeFileSync(filePath, JSON.stringify(exportData, null, 2), 'utf-8')
+        zip.writeZip(filePath)
         return { success: true, path: filePath }
       }
       
@@ -739,13 +771,35 @@ app.whenReady().then(() => {
       const { filePaths } = await dialog.showOpenDialog({
         title: '导入数据',
         filters: [
+          { name: '压缩文件', extensions: ['zip'] },
           { name: 'JSON文件', extensions: ['json'] }
         ],
         properties: ['openFile']
       })
       
       if (filePaths && filePaths.length > 0) {
-        const importData = JSON.parse(fs.readFileSync(filePaths[0], 'utf-8'))
+        const filePath = filePaths[0]
+        const ext = path.extname(filePath).toLowerCase()
+        let importData
+        
+        if (ext === '.zip') {
+          const zip = new AdmZip(filePath)
+          const zipEntries = zip.getEntries()
+          
+          // 读取 data.json
+          const dataEntry = zipEntries.find(entry => entry.entryName === 'data.json')
+          if (!dataEntry) {
+            return { success: false, error: '无效的备份文件：找不到 data.json' }
+          }
+          importData = JSON.parse(dataEntry.getData().toString('utf8'))
+          
+          // 恢复图片
+          // 解压 images 文件夹到 tasksData 目录
+          zip.extractAllTo(dataDir, true)
+        } else {
+          // 兼容旧版 JSON 导入
+          importData = JSON.parse(fs.readFileSync(filePath, 'utf-8'))
+        }
         
         // 验证数据格式
         if (!importData.version || !importData.config || !importData.projects || !importData.modules || !importData.tasks) {

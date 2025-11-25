@@ -11,10 +11,11 @@ contextBridge.exposeInMainWorld('electron', {
     reorder: (projectIds) => ipcRenderer.invoke('projects:reorder', projectIds)
   },
   modules: {
-    list: (projectId) => ipcRenderer.invoke('modules:list', projectId),
+    list: (projectId, includeDeleted) => ipcRenderer.invoke('modules:list', projectId, includeDeleted),
     add: (module) => ipcRenderer.invoke('modules:add', module),
     update: (module) => ipcRenderer.invoke('modules:update', module),
     delete: (id) => ipcRenderer.invoke('modules:delete', id),
+    restore: (id) => ipcRenderer.invoke('modules:restore', id),
     reorder: (payload) => ipcRenderer.invoke('modules:reorder', payload)
   },
   tasks: {

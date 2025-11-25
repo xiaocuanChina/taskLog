@@ -5,6 +5,7 @@ import WindowControls from './components/common/WindowControls'
 import { useTaskModal } from './hooks/useTaskModal'
 import { useTaskManager } from './hooks/useTaskManager'
 import { getConfig } from './utils/configManager'
+import { useToast } from './context/ToastContext'
 
 export default function App() {
   // 视图状态
@@ -30,7 +31,7 @@ export default function App() {
   const [editingProjectMemo, setEditingProjectMemo] = useState(null)
   
   // Toast 提示
-  const [toast, setToast] = useState({ show: false, message: '', type: 'success' })
+  const showToast = useToast()
   
   // 图片预览
   const [imagePreview, setImagePreview] = useState({ show: false, src: '', currentIndex: 0, images: [] })
@@ -88,21 +89,6 @@ export default function App() {
     loadConfig()
     loadProjects()
   }, [])
-
-  // Toast 自动隐藏
-  useEffect(() => {
-    if (toast.show) {
-      const timer = setTimeout(() => {
-        setToast({ ...toast, show: false })
-      }, 3000)
-      return () => clearTimeout(timer)
-    }
-  }, [toast.show])
-
-  // 显示提示
-  const showToast = (message, type = 'success') => {
-    setToast({ show: true, message, type })
-  }
 
   // ========== 项目相关处理函数 ==========
   
@@ -435,6 +421,18 @@ export default function App() {
     }
   }
 
+  // 恢复模块
+  const handleRestoreModuleInList = async (moduleId) => {
+    const result = await window.electron?.modules?.restore(moduleId)
+
+    if (result?.success) {
+      showToast('模块已恢复', 'success')
+      await taskManagerHook.refreshData()
+    } else {
+      showToast(result?.error || '模块恢复失败', 'error')
+    }
+  }
+
   // 重新排序模块
   const handleReorderModules = async (reorderedModules) => {
     const moduleIds = reorderedModules.map(m => m.id)
@@ -539,18 +537,50 @@ export default function App() {
   // ========== 图片预览相关 ==========
   
   // 打开图片预览
-  const handleOpenImagePreview = (imageSrc, allImages, currentIndex) => {
+  const handleOpenImagePreview = (imageSrc, allImages, currentIndex, onDelete) => {
     setImagePreview({
       show: true,
       src: imageSrc,
       currentIndex: currentIndex,
-      images: allImages
+      images: allImages,
+      onDelete: onDelete ? (deleteIndex) => {
+        // 调用删除回调，并获取更新后的图片列表
+        const updatedImages = onDelete(deleteIndex)
+        
+        // 使用函数式更新来确保获取最新的 imagePreview 状态
+        setImagePreview(prev => {
+          const newImages = updatedImages || []
+          if (newImages.length === 0) {
+            return { ...prev, show: false, src: '', currentIndex: 0, images: [] }
+          }
+          
+          // 计算新的索引
+          // 如果当前索引大于删除的索引，说明删除的是前面的图片，当前索引需要减一
+          // 如果当前索引等于删除的索引，说明删除的是当前图片，索引不变（即显示下一张），除非是最后一张
+          let newIndex = prev.currentIndex
+          
+          if (newIndex > deleteIndex) {
+            newIndex = newIndex - 1
+          } else if (newIndex === deleteIndex) {
+            if (newIndex >= newImages.length) {
+               newIndex = newImages.length - 1
+            }
+          }
+          
+          return {
+            ...prev,
+            images: newImages,
+            src: newImages[newIndex],
+            currentIndex: newIndex
+          }
+        })
+      } : undefined
     })
   }
 
   // 关闭图片预览
   const handleCloseImagePreview = () => {
-    setImagePreview({ show: false, src: '', currentIndex: 0, images: [] })
+    setImagePreview({ show: false, src: '', currentIndex: 0, images: [], onDelete: null })
   }
 
   // 切换到上一张图片
@@ -584,7 +614,6 @@ export default function App() {
         <WindowControls title="TaskLog - 项目选择" onConfigChange={handleConfigChange} />
         <ProjectSelectView
           projects={projects}
-          toast={toast}
         showAddProjectModal={showAddProjectModal}
         showEditProjectModal={showEditProjectModal}
         showDeleteProjectConfirm={showDeleteProjectConfirm}
@@ -621,12 +650,12 @@ export default function App() {
       taskTypeColors={taskTypeColors}
       onConfigChange={handleConfigChange}
       currentProject={currentProject}
-      toast={toast}
       todayStats={taskManagerHook.todayStats}
       tasks={taskManagerHook.tasks}
       pendingTasks={taskManagerHook.pendingTasks}
       completedTasks={taskManagerHook.completedTasks}
       searchKeyword={taskManagerHook.searchKeyword}
+      selectedModuleFilter={taskManagerHook.selectedModuleFilter}
       searchScope={taskManagerHook.searchScope}
       collapsedModules={taskManagerHook.collapsedModules}
       editingModuleName={taskManagerHook.editingModuleName}
@@ -643,6 +672,7 @@ export default function App() {
       editingProjectMemo={editingProjectMemo}
       editingTaskModule={editingTaskModule}
       modules={taskManagerHook.modules}
+      recycleModules={taskManagerHook.recycleModules}
       showModuleDropdown={taskModalHook.showModuleDropdown}
       showEditModuleDropdown={taskModalHook.showEditModuleDropdown}
       showTypeDropdown={taskModalHook.showTypeDropdown}
@@ -655,6 +685,7 @@ export default function App() {
       onAddTask={handleAddTask}
       onExportReport={handleExportReport}
       onSearchChange={taskManagerHook.setSearchKeyword}
+      onModuleFilterChange={taskManagerHook.setSelectedModuleFilter}
       onToggleModuleCollapse={taskManagerHook.toggleModuleCollapse}
       onStartEditModuleName={taskManagerHook.startEditModuleName}
       onEditModuleNameChange={(newName) => taskManagerHook.setEditingModuleName({ ...taskManagerHook.editingModuleName, newName })}
@@ -744,6 +775,7 @@ export default function App() {
       onOpenEditModuleList={handleOpenEditModuleList}
       onUpdateModuleInList={handleUpdateModuleInList}
       onDeleteModuleInList={handleDeleteModuleInList}
+      onRestoreModuleInList={handleRestoreModuleInList}
       onReorderModules={handleReorderModules}
       onCloseEditModuleList={handleCloseEditModuleList}
     />

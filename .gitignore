@@ -35,4 +35,6 @@ tasksData/
 .npmrc
 .nvmdrc
 run.bat
+build.bat
+tasksData.lnk
 
