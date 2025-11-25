@@ -18,12 +18,19 @@ export default function TaskImage({ src, alt, className, style, ...props }) {
   const [imageSrc, setImageSrc] = useState('')
 
   useEffect(() => {
-    if (src && src.startsWith('file://')) {
+    if (!src) return
+
+    if (src.startsWith('blob:')) {
+      setImageSrc(src)
+      return
+    }
+
+    if (src.startsWith('file://')) {
       const cleanPath = src.replace('file://', '')
       window.electron?.image?.getPath(cleanPath).then(absPath => {
         setImageSrc(`file:///${absPath.replace(/\\/g, '/')}`)
       })
-    } else if (src) {
+    } else {
       window.electron?.image?.getPath(src).then(absPath => {
         setImageSrc(`file:///${absPath.replace(/\\/g, '/')}`)
       })

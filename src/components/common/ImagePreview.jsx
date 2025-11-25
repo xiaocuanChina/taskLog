@@ -15,9 +15,9 @@
  */
 import { useEffect, useState } from 'react'
 import { Modal, Button } from 'antd'
-import { LeftOutlined, RightOutlined, ZoomInOutlined, ZoomOutOutlined } from '@ant-design/icons'
+import { LeftOutlined, RightOutlined, ZoomInOutlined, ZoomOutOutlined, DeleteOutlined } from '@ant-design/icons'
 import TaskImage from './TaskImage'
-export default function ImagePreview({ imagePreview, onClose, onPrev, onNext }) {
+export default function ImagePreview({ imagePreview, onClose, onPrev, onNext, onDelete }) {
   const [scale, setScale] = useState(1)
   const [position, setPosition] = useState({ x: 0, y: 0 })
   const [isDragging, setIsDragging] = useState(false)
@@ -125,6 +125,7 @@ export default function ImagePreview({ imagePreview, onClose, onPrev, onNext }) 
       footer={null}
       width="90vw"
       centered
+      zIndex={1100}
       style={{ top: 20 }}
       styles={{
         body: { 
@@ -207,6 +208,53 @@ export default function ImagePreview({ imagePreview, onClose, onPrev, onNext }) 
           disabled={scale >= 3}
         />
       </div>
+
+      {/* 删除按钮 */}
+      {onDelete && (
+        <div style={{
+          position: 'absolute',
+          bottom: 20,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 1
+        }}>
+          <Button
+            type="primary"
+            danger
+            shape="circle"
+            size="large"
+            icon={<DeleteOutlined />}
+            onClick={() => {
+              Modal.confirm({
+                title: '确认删除',
+                content: '确定要删除这张图片吗？',
+                okText: '删除',
+                okType: 'danger',
+                cancelText: '取消',
+                onOk: () => {
+                  onDelete(imagePreview.currentIndex)
+                  
+                  // 如果只有一张图片，删除后直接关闭
+                  if (imagePreview.images.length <= 1) {
+                    onClose()
+                  } else {
+                    // 如果有多张图片，删除当前图片后，如果当前是最后一张，则显示前一张，否则显示下一张
+                    if (imagePreview.currentIndex === imagePreview.images.length - 1) {
+                      onPrev()
+                    } else {
+                      // 当前位置的图片被删除了，后面的图片会前移，所以索引不用变，但需要强制更新视图
+                      // 这里我们通过 onNext 切换一下（或者父组件需要传递更新后的 images）
+                      // 注意：ImagePreview 组件依赖父组件传递的 imagePreview.images
+                      // 当父组件更新了 images 后，组件会重新渲染
+                      // 这里我们只需要确保 currentIndex 指向正确的位置
+                    }
+                  }
+                }
+              })
+            }}
+          />
+        </div>
+      )}
 
       <div 
         className="image-preview-container"

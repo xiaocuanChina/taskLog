@@ -16,6 +16,7 @@ import React, { useState } from 'react'
 import { SettingOutlined } from '@ant-design/icons'
 import SettingsModal from '../settings/SettingsModal'
 import styles from './WindowControls.module.css'
+import appIcon from '../../assets/icon.png'
 
 export default function WindowControls({ title, onConfigChange }) {
   const [settingsVisible, setSettingsVisible] = useState(false)
@@ -31,7 +32,7 @@ export default function WindowControls({ title, onConfigChange }) {
     <div className={styles.windowControls}>
       <div className={styles.windowTitleBar}>
         <div className={styles.windowTitle}>
-          <img src="/build/icon.png" alt="应用图标" className={styles.appIcon} />
+          <img src={appIcon} alt="应用图标" className={styles.appIcon} />
           <span>{title}</span>
         </div>
         <div className={styles.windowButtons}>
