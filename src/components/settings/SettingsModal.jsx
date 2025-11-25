@@ -8,9 +8,10 @@
  * - 提供重置为默认配置的功能
  */
 import React, { useState, useEffect } from 'react'
-import { Modal, Form, Button, message, Popconfirm, Menu } from 'antd'
+import { Modal, Form, Button, Popconfirm, Menu } from 'antd'
 import { AppstoreOutlined, InfoCircleOutlined, SettingOutlined, SafetyOutlined, ControlOutlined } from '@ant-design/icons'
 import { getConfig, saveConfig, resetConfig } from '../../utils/configManager'
+import { useToast } from '../../context/ToastContext'
 import GeneralSettings from './GeneralSettings'
 import TaskTypesSettings from './TaskTypesSettings'
 import PrivacySettings from './PrivacySettings'
@@ -18,6 +19,7 @@ import AboutSettings from './AboutSettings'
 import styles from './SettingsModal.module.css'
 
 export default function SettingsModal({ visible, onClose }) {
+  const showToast = useToast()
   const [form] = Form.useForm()
   const [saveLoading, setSaveLoading] = useState(false)
   const [exportLoading, setExportLoading] = useState(false)
@@ -115,11 +117,11 @@ export default function SettingsModal({ visible, onClose }) {
         // 验证任务类型名称不能为空且不能重复
         const names = values.taskTypes.map(t => t.name.trim())
         if (names.some(name => !name)) {
-          message.error('任务类型名称不能为空')
+          showToast('任务类型名称不能为空', 'error')
           return
         }
         if (new Set(names).size !== names.length) {
-          message.error('任务类型名称不能重复')
+          showToast('任务类型名称不能重复', 'error')
           return
         }
 
@@ -137,10 +139,10 @@ export default function SettingsModal({ visible, onClose }) {
       })
       
       if (success) {
-        message.success('保存成功')
+        showToast('保存成功', 'success')
         onClose(true) // 传递 true 表示需要刷新
       } else {
-        message.error('保存失败')
+        showToast('保存失败', 'error')
       }
     } catch (error) {
       console.error('保存配置失败:', error)
@@ -154,10 +156,10 @@ export default function SettingsModal({ visible, onClose }) {
     setResetLoading(true)
     const success = await resetConfig()
     if (success) {
-      message.success('已重置为默认配置')
+      showToast('已重置为默认配置', 'success')
       await loadConfig()
     } else {
-      message.error('重置失败')
+      showToast('重置失败', 'error')
     }
     setResetLoading(false)
   }
@@ -168,13 +170,13 @@ export default function SettingsModal({ visible, onClose }) {
       setExportLoading(true)
       const result = await window.electron?.data?.export()
       if (result?.success) {
-        message.success('数据导出成功')
+        showToast('数据导出成功', 'success')
       } else {
-        message.error(result?.error || '导出失败')
+        showToast(result?.error || '导出失败', 'error')
       }
     } catch (error) {
       console.error('导出数据失败:', error)
-      message.error('导出失败')
+      showToast('导出失败', 'error')
     } finally {
       setExportLoading(false)
     }
@@ -186,17 +188,17 @@ export default function SettingsModal({ visible, onClose }) {
       setImportLoading(true)
       const result = await window.electron?.data?.import()
       if (result?.success) {
-        message.success('数据导入成功，请重启应用以生效')
+        showToast('数据导入成功，请重启应用以生效', 'success')
         // 延迟关闭弹窗，让用户看到提示
         setTimeout(() => {
           onClose(true)
         }, 1500)
       } else {
-        message.error(result?.error || '导入失败')
+        showToast(result?.error || '导入失败', 'error')
       }
     } catch (error) {
       console.error('导入数据失败:', error)
-      message.error('导入失败')
+      showToast('导入失败', 'error')
     } finally {
       setImportLoading(false)
     }
