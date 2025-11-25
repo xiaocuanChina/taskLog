@@ -12,6 +12,8 @@ export function useTaskManager(currentProject) {
   const [editingModuleName, setEditingModuleName] = useState(null)
   const [searchScope, setSearchScope] = useState('all') // 'module' | 'description' | 'all'
   const [selectedModuleFilter, setSelectedModuleFilter] = useState(null) // 模块筛选
+  const [completedSearchKeyword, setCompletedSearchKeyword] = useState('')
+  const [completedModuleFilter, setCompletedModuleFilter] = useState(null)
 
   // 加载模块列表
   const loadModules = async (projectId) => {
@@ -118,6 +120,34 @@ export function useTaskManager(currentProject) {
   
   const completedTasks = tasks
     .filter(t => t.completed)
+    .filter(t => {
+      // 1. 模块筛选
+      if (completedModuleFilter && t.module !== completedModuleFilter) {
+        return false
+      }
+
+      // 2. 关键字筛选
+      if (completedSearchKeyword.trim()) {
+        const keyword = completedSearchKeyword.toLowerCase()
+        
+        // 根据配置的搜索范围进行过滤
+        switch (searchScope) {
+          case 'module':
+            // 仅搜索模块名称
+            return t.module && t.module.toLowerCase().includes(keyword)
+          case 'description':
+            // 仅搜索任务描述
+            return t.name.toLowerCase().includes(keyword)
+          case 'all':
+          default:
+            // 通用搜索（模块 + 描述）
+            return t.name.toLowerCase().includes(keyword) ||
+                   (t.module && t.module.toLowerCase().includes(keyword))
+        }
+      }
+
+      return true
+    })
     .sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt))
 
   // 按模块分组（保持模块的排序顺序）
@@ -246,6 +276,10 @@ export function useTaskManager(currentProject) {
     setEditingModuleName,
     pendingTasks,
     completedTasks,
+    completedSearchKeyword,
+    setCompletedSearchKeyword,
+    completedModuleFilter,
+    setCompletedModuleFilter,
     groupTasksByModule,
     toggleModuleCollapse,
     startEditModuleName,

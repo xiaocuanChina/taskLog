@@ -656,6 +656,8 @@ export default function App() {
       completedTasks={taskManagerHook.completedTasks}
       searchKeyword={taskManagerHook.searchKeyword}
       selectedModuleFilter={taskManagerHook.selectedModuleFilter}
+      completedSearchKeyword={taskManagerHook.completedSearchKeyword}
+      completedModuleFilter={taskManagerHook.completedModuleFilter}
       searchScope={taskManagerHook.searchScope}
       collapsedModules={taskManagerHook.collapsedModules}
       editingModuleName={taskManagerHook.editingModuleName}
@@ -686,6 +688,8 @@ export default function App() {
       onExportReport={handleExportReport}
       onSearchChange={taskManagerHook.setSearchKeyword}
       onModuleFilterChange={taskManagerHook.setSelectedModuleFilter}
+      onCompletedSearchChange={taskManagerHook.setCompletedSearchKeyword}
+      onCompletedModuleFilterChange={taskManagerHook.setCompletedModuleFilter}
       onToggleModuleCollapse={taskManagerHook.toggleModuleCollapse}
       onStartEditModuleName={taskManagerHook.startEditModuleName}
       onEditModuleNameChange={(newName) => taskManagerHook.setEditingModuleName({ ...taskManagerHook.editingModuleName, newName })}

@@ -50,6 +50,8 @@ export default function TaskManageView({
   searchKeyword,
   searchScope = 'all',
   selectedModuleFilter,
+  completedSearchKeyword,
+  completedModuleFilter,
   collapsedModules,
   editingModuleName,
   showAddTaskModal,
@@ -82,6 +84,8 @@ export default function TaskManageView({
   onConfigChange,
   onSearchChange,
   onModuleFilterChange,
+  onCompletedSearchChange,
+  onCompletedModuleFilterChange,
   onToggleModuleCollapse,
   onStartEditModuleName,
   onEditModuleNameChange,
@@ -275,6 +279,21 @@ export default function TaskManageView({
     
     pendingTasksByModule.forEach(group => {
       onToggleModuleCollapse(group.moduleName, 'pending', targetState)
+    })
+  }
+
+  // 检查已完成任务是否全部展开
+  const allCompletedExpanded = completedTasksByModule.every(group => {
+    const moduleKey = `${group.moduleName}-completed`
+    return !collapsedModules[moduleKey]
+  })
+
+  // 一键展开/收起已完成任务
+  const handleToggleAllCompleted = () => {
+    const targetState = allCompletedExpanded
+    
+    completedTasksByModule.forEach(group => {
+      onToggleModuleCollapse(group.moduleName, 'completed', targetState)
     })
   }
 
@@ -546,7 +565,65 @@ export default function TaskManageView({
           {/* 已完成任务 */}
           <Col span={12} style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
             <Card 
-              title={<span>✅ 已完成 ({completedTasks.length})</span>}
+              title={
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span>✅ 已完成 ({completedTasks.length})</span>
+                    {completedTasksByModule.length > 0 && (
+                      <span
+                        onClick={handleToggleAllCompleted}
+                        style={{ 
+                          cursor: 'pointer',
+                          color: '#8c8c8c',
+                          fontSize: 12,
+                          padding: '2px 8px',
+                          borderRadius: 4,
+                          transition: 'all 0.2s',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 4,
+                          userSelect: 'none'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.color = '#1890ff'
+                          e.currentTarget.style.background = 'rgba(24, 144, 255, 0.08)'
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.color = '#8c8c8c'
+                          e.currentTarget.style.background = 'transparent'
+                        }}
+                      >
+                        {allCompletedExpanded ? <UpOutlined style={{ fontSize: 10 }} /> : <DownOutlined style={{ fontSize: 10 }} />}
+                        {allCompletedExpanded ? '收起' : '展开'}
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <Select
+                      style={{ width: 120 }}
+                      placeholder="筛选模块"
+                      allowClear
+                      value={completedModuleFilter}
+                      onChange={onCompletedModuleFilterChange}
+                      options={modules.map(m => ({ label: m.name, value: m.name }))}
+                    />
+                    <Input
+                      placeholder={getSearchPlaceholder()}
+                      value={completedSearchKeyword}
+                      onChange={(e) => onCompletedSearchChange(e.target.value)}
+                      prefix={<SearchOutlined style={{ fontSize: 16, color: '#8c8c8c' }} />}
+                      suffix={completedSearchKeyword && <CloseCircleOutlined onClick={() => onCompletedSearchChange('')} style={{ cursor: 'pointer', fontSize: 14, color: '#8c8c8c' }} />}
+                      style={{ 
+                        width: 200,
+                        borderRadius: 20,
+                        paddingLeft: 16,
+                        paddingRight: 16
+                      }}
+                      size="middle"
+                    />
+                  </div>
+                </div>
+              }
               style={{ background: 'rgba(255,255,255,0.95)', height: '100%', display: 'flex', flexDirection: 'column' }}
               styles={{ body: { flex: 1, overflowY: 'auto', padding: '16px' } }}
               classNames={{ body: styles.taskCardBody }}
@@ -554,8 +631,8 @@ export default function TaskManageView({
               {completedTasks.length === 0 ? (
                 <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
                   <Empty
-                    image={Empty.PRESENTED_IMAGE_SIMPLE}
-                    description="还没有完成的任务"
+                    image={completedSearchKeyword ? <SearchOutlined style={{ fontSize: 60, color: '#d9d9d9' }} /> : Empty.PRESENTED_IMAGE_SIMPLE}
+                    description={completedSearchKeyword ? `未找到包含"${completedSearchKeyword}"的任务` : '还没有完成的任务'}
                   />
                 </div>
               ) : (
