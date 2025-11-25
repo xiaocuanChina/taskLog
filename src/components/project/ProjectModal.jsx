@@ -15,6 +15,14 @@
 import React from 'react'
 import { Modal, Input, Form } from 'antd'
 export default function ProjectModal({ show, isEdit, projectName, onNameChange, onConfirm, onCancel }) {
+  // 处理键盘事件，支持 Ctrl+S 保存
+  const handleKeyDown = (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+      e.preventDefault()
+      onConfirm()
+    }
+  }
+
   return (
     <Modal
       open={show}
@@ -32,6 +40,7 @@ export default function ProjectModal({ show, isEdit, projectName, onNameChange, 
             value={projectName}
             onChange={(e) => onNameChange(e.target.value)}
             onPressEnter={onConfirm}
+            onKeyDown={handleKeyDown}
             autoFocus
           />
         </Form.Item>

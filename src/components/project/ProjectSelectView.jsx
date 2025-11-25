@@ -20,14 +20,12 @@ import { PlusOutlined, FolderOpenOutlined } from '@ant-design/icons'
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
 import { SortableContext, rectSortingStrategy, arrayMove } from '@dnd-kit/sortable'
 import WindowControls from '../common/WindowControls'
-import Toast from '../common/Toast'
 import ProjectCard from './ProjectCard'
 import ProjectModal from './ProjectModal'
 import ProjectMemoModal from './ProjectMemoModal'
 import ConfirmModal from '../common/ConfirmModal'
 export default function ProjectSelectView({
   projects,
-  toast,
   showAddProjectModal,
   showEditProjectModal,
   showDeleteProjectConfirm,
@@ -76,7 +74,6 @@ export default function ProjectSelectView({
   }
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
-      <Toast show={toast.show} message={toast.message} type={toast.type} />
       
       <WindowControls title="任务日志" />
 

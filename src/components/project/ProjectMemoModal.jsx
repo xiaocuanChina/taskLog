@@ -17,6 +17,14 @@ import { Modal, Input, Form } from 'antd'
 
 const { TextArea } = Input
 export default function ProjectMemoModal({ show, memo, projectName, onMemoChange, onConfirm, onCancel }) {
+  // 处理键盘事件，支持 Ctrl+S 保存
+  const handleKeyDown = (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+      e.preventDefault()
+      onConfirm()
+    }
+  }
+
   return (
     <Modal
       open={show}
@@ -34,6 +42,7 @@ export default function ProjectMemoModal({ show, memo, projectName, onMemoChange
             placeholder="请输入项目备忘信息..."
             value={memo}
             onChange={(e) => onMemoChange(e.target.value)}
+            onKeyDown={handleKeyDown}
             rows={6}
             autoFocus
           />
