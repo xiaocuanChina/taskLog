@@ -20,12 +20,17 @@ export default function Toast({ show, message: msg, type }) {
 
   useEffect(() => {
     if (show && msg) {
+      const config = {
+        content: msg,
+        style: { marginTop: '50px' }
+      }
+
       if (type === 'success') {
-        messageApi.success(msg)
+        messageApi.success(config)
       } else if (type === 'error') {
-        messageApi.error(msg)
+        messageApi.error(config)
       } else {
-        messageApi.info(msg)
+        messageApi.info(config)
       }
     }
   }, [show, msg, type, messageApi])

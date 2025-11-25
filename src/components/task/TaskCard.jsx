@@ -60,7 +60,7 @@ export default function TaskCard({ task, isCompleted, taskTypeColors = {}, onCom
         position: 'relative'
       }}
       title={
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', padding: '4px' }}>
           {/* 左侧：占位 */}
           <div style={{ width: 32 }} />
           
