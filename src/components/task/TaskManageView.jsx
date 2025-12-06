@@ -17,7 +17,7 @@
  * - 日常任务的增删改查操作
  */
 import React from 'react'
-import {Button, Input, Card, Row, Col, Empty, Tooltip, Select} from 'antd'
+import { Button, Input, Card, Row, Col, Empty, Tooltip, Select, Dropdown } from 'antd'
 import {
     PlusOutlined,
     FileExcelOutlined,
@@ -40,114 +40,119 @@ import ProjectMemoView from '../project/ProjectMemoView'
 import ProjectMemoModal from '../project/ProjectMemoModal'
 import EditTaskModuleModal from './EditTaskModuleModal'
 import EditModuleListModal from './EditModuleListModal'
+import ExportPendingTasksModal from './ExportPendingTasksModal'
 import styles from './TaskManageView.module.css'
 
 export default function TaskManageView({
-                                           currentProject,
-                                           todayStats,
-                                           tasks = [],
-                                           pendingTasks,
-                                           completedTasks,
-                                           searchKeyword,
-                                           searchScope = 'all',
-                                           selectedModuleFilter,
-                                           completedSearchKeyword,
-                                           completedModuleFilter,
-                                           collapsedModules,
-                                           editingModuleName,
-                                           showAddTaskModal,
-                                           showEditTaskModal,
-                                           showDeleteConfirm,
-                                           showProjectMemoView,
-                                           showProjectMemoModal,
-                                           showEditTaskModuleModal,
-                                           showEditModuleListModal,
-                                           newTask,
-                                           editingTask,
-                                           taskToDelete,
-                                           editingProjectMemo,
-                                           editingTaskModule,
-                                           modules,
-                                           recycleModules = [],
-                                           taskTypes = [],
-                                           taskTypeColors = {},
-                                           showModuleDropdown,
-                                           showEditModuleDropdown,
-                                           showTypeDropdown,
-                                           showEditTypeDropdown,
-                                           dragActive,
-                                           imagePreview,
-                                           taskRefs,
-                                           editTaskRefs,
-                                           onBack,
-                                           onExportReport,
-                                           onConfigChange,
-                                           onSearchChange,
-                                           onModuleFilterChange,
-                                           onCompletedSearchChange,
-                                           onCompletedModuleFilterChange,
-                                           onToggleModuleCollapse,
-                                           onStartEditModuleName,
-                                           onEditModuleNameChange,
-                                           onSaveModuleName,
-                                           onCancelEditModuleName,
-                                           onTaskComplete,
-                                           onTaskRollback,
-                                           onTaskEdit,
-                                           onTaskDelete,
-                                           onImageClick,
-                                           onOpenAddTaskModal,
-                                           onCloseAddTaskModal,
-                                           onNewTaskChange,
-                                           onModuleDropdownToggle,
-                                           onTypeDropdownToggle,
-                                           onModuleSelect,
-                                           onTypeSelect,
-                                           onImageChange,
-                                           onRemoveImage,
-                                           onDrag,
-                                           onDrop,
-                                           onPaste,
-                                           onConfirmAddTask,
-                                           onEditTaskChange,
-                                           onEditModuleDropdownToggle,
-                                           onEditTypeDropdownToggle,
-                                           onEditModuleSelect,
-                                           onEditTypeSelect,
-                                           onEditImageChange,
-                                           onRemoveEditImage,
-                                           onRemoveExistingImage,
-                                           onEditDrag,
-                                           onEditDrop,
-                                           onEditPaste,
-                                           onConfirmUpdateTask,
-                                           onCloseEditTaskModal,
-                                           onConfirmDelete,
-                                           onCancelDelete,
-                                           onOpenProjectMemoView,
-                                           onOpenProjectMemoEdit,
-                                           onCloseProjectMemoView,
-                                           onProjectMemoChange,
-                                           onUpdateProjectMemo,
-                                           onCloseProjectMemoModal,
-                                           onOpenAddProjectMemo,
-                                           onCloseImagePreview,
-                                           onPrevImage,
-                                           onNextImage,
-                                           groupTasksByModule,
-                                           onQuickAddTask,
-                                           onOpenEditTaskModule,
-                                           onConfirmEditTaskModule,
-                                           onCloseEditTaskModule,
-                                           onOpenEditModuleList,
-                                           onUpdateModuleInList,
-                                           onDeleteModuleInList,
-                                           onPermanentDeleteModuleInList,
-                                           onRestoreModuleInList,
-                                           onAddModuleInList,
-                                           onReorderModules,
-                                           onCloseEditModuleList
-                                       }) {
+    currentProject,
+    todayStats,
+    tasks = [],
+    pendingTasks,
+    completedTasks,
+    searchKeyword,
+    searchScope = 'all',
+    selectedModuleFilter,
+    completedSearchKeyword,
+    completedModuleFilter,
+    collapsedModules,
+    editingModuleName,
+    showAddTaskModal,
+    showEditTaskModal,
+    showDeleteConfirm,
+    showProjectMemoView,
+    showProjectMemoModal,
+    showEditTaskModuleModal,
+    showEditModuleListModal,
+    newTask,
+    editingTask,
+    taskToDelete,
+    editingProjectMemo,
+    editingTaskModule,
+    modules,
+    recycleModules = [],
+    taskTypes = [],
+    taskTypeColors = {},
+    showModuleDropdown,
+    showEditModuleDropdown,
+    showTypeDropdown,
+    showEditTypeDropdown,
+    dragActive,
+    imagePreview,
+    taskRefs,
+    editTaskRefs,
+    onBack,
+    onExportReport,
+    onExportPendingTasks,
+    showExportPendingModal,
+    onOpenExportPendingModal,
+    onCloseExportPendingModal,
+    onConfigChange,
+    onSearchChange,
+    onModuleFilterChange,
+    onCompletedSearchChange,
+    onCompletedModuleFilterChange,
+    onToggleModuleCollapse,
+    onStartEditModuleName,
+    onEditModuleNameChange,
+    onSaveModuleName,
+    onCancelEditModuleName,
+    onTaskComplete,
+    onTaskRollback,
+    onTaskEdit,
+    onTaskDelete,
+    onImageClick,
+    onOpenAddTaskModal,
+    onCloseAddTaskModal,
+    onNewTaskChange,
+    onModuleDropdownToggle,
+    onTypeDropdownToggle,
+    onModuleSelect,
+    onTypeSelect,
+    onImageChange,
+    onRemoveImage,
+    onDrag,
+    onDrop,
+    onPaste,
+    onConfirmAddTask,
+    onEditTaskChange,
+    onEditModuleDropdownToggle,
+    onEditTypeDropdownToggle,
+    onEditModuleSelect,
+    onEditTypeSelect,
+    onEditImageChange,
+    onRemoveEditImage,
+    onRemoveExistingImage,
+    onEditDrag,
+    onEditDrop,
+    onEditPaste,
+    onConfirmUpdateTask,
+    onCloseEditTaskModal,
+    onConfirmDelete,
+    onCancelDelete,
+    onOpenProjectMemoView,
+    onOpenProjectMemoEdit,
+    onCloseProjectMemoView,
+    onProjectMemoChange,
+    onUpdateProjectMemo,
+    onCloseProjectMemoModal,
+    onOpenAddProjectMemo,
+    onCloseImagePreview,
+    onPrevImage,
+    onNextImage,
+    groupTasksByModule,
+    onQuickAddTask,
+    onOpenEditTaskModule,
+    onConfirmEditTaskModule,
+    onCloseEditTaskModule,
+    onOpenEditModuleList,
+    onUpdateModuleInList,
+    onDeleteModuleInList,
+    onPermanentDeleteModuleInList,
+    onRestoreModuleInList,
+    onAddModuleInList,
+    onReorderModules,
+    onCloseEditModuleList
+}) {
     const pendingTasksByModule = groupTasksByModule(pendingTasks)
     const completedTasksByModule = groupTasksByModule(completedTasks)
 
@@ -173,7 +178,7 @@ export default function TaskManageView({
     // 生成任务列表的 Tooltip 内容
     const generateTaskTooltip = (taskList) => {
         if (!taskList || taskList.length === 0) {
-            return <div style={{padding: '4px 0'}}>暂无任务</div>
+            return <div style={{ padding: '4px 0' }}>暂无任务</div>
         }
 
         // 按模块分组
@@ -189,7 +194,7 @@ export default function TaskManageView({
                 scrollbarWidth: 'thin',
                 scrollbarColor: 'rgba(255,255,255,0.3) transparent'
             }}
-                 className="custom-tooltip-scrollbar"
+                className="custom-tooltip-scrollbar"
             >
                 <style>{`
           .custom-tooltip-scrollbar::-webkit-scrollbar {
@@ -209,8 +214,8 @@ export default function TaskManageView({
           }
         `}</style>
                 {tasksByModule.map(group => (
-                    <div key={group.moduleName} style={{marginBottom: 12}}>
-                        <div style={{fontWeight: 600, marginBottom: 6, color: '#fff'}}>
+                    <div key={group.moduleName} style={{ marginBottom: 12 }}>
+                        <div style={{ fontWeight: 600, marginBottom: 6, color: '#fff' }}>
                             {group.moduleName}
                         </div>
                         {group.tasks.map((task) => (
@@ -231,10 +236,10 @@ export default function TaskManageView({
                                         flexShrink: 0,
                                         fontWeight: 500
                                     }}>
-                    {task.type}
-                  </span>
+                                        {task.type}
+                                    </span>
                                 )}
-                                <span style={{color: 'rgba(255,255,255,0.85)'}}>{task.name}</span>
+                                <span style={{ color: 'rgba(255,255,255,0.85)' }}>{task.name}</span>
                             </div>
                         ))}
                     </div>
@@ -321,7 +326,7 @@ export default function TaskManageView({
             background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
         }}>
 
-            <WindowControls title={`任务日志 - ${currentProject?.name}`} onConfigChange={onConfigChange}/>
+            <WindowControls title={`任务日志 - ${currentProject?.name}`} onConfigChange={onConfigChange} />
 
             {/* 头部区域 */}
             <header style={{
@@ -331,15 +336,15 @@ export default function TaskManageView({
                 paddingTop: '52px',
                 borderBottom: '1px solid rgba(255, 255, 255, 0.2)'
             }}>
-                <div style={{display: 'flex', alignItems: 'center', gap: 16}}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                     <Button
-                        icon={<LeftOutlined/>}
+                        icon={<LeftOutlined />}
                         onClick={onBack}
-                        style={{background: 'rgba(255,255,255,0.2)', border: 'none', color: '#fff'}}
+                        style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: '#fff' }}
                     >
                         返回
                     </Button>
-                    <h1 style={{fontSize: 24, fontWeight: 700, color: '#fff', margin: 0, flex: 1}}>
+                    <h1 style={{ fontSize: 24, fontWeight: 700, color: '#fff', margin: 0, flex: 1 }}>
                         📋 {currentProject?.name}
                     </h1>
                     {currentProject?.memo ? (
@@ -356,7 +361,7 @@ export default function TaskManageView({
                                 maxWidth: 300
                             }}
                         >
-                            <FileTextOutlined style={{color: '#fff'}}/>
+                            <FileTextOutlined style={{ color: '#fff' }} />
                             <span style={{
                                 color: '#fff',
                                 fontSize: 13,
@@ -364,14 +369,14 @@ export default function TaskManageView({
                                 textOverflow: 'ellipsis',
                                 whiteSpace: 'nowrap'
                             }}>
-                {currentProject.memo}
-              </span>
+                                {currentProject.memo}
+                            </span>
                         </div>
                     ) : (
                         <Button
-                            icon={<EditOutlined/>}
+                            icon={<EditOutlined />}
                             onClick={onOpenAddProjectMemo}
-                            style={{background: 'rgba(255,255,255,0.2)', border: 'none', color: '#fff'}}
+                            style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: '#fff' }}
                         >
                             添加备忘
                         </Button>
@@ -388,51 +393,68 @@ export default function TaskManageView({
                 flexDirection: 'column'
             }}>
                 {/* 操作栏和统计 */}
-                <div style={{marginBottom: 24, display: 'flex', alignItems: 'center', gap: 16}}>
-                    <Tooltip 
+                <div style={{ marginBottom: 24, display: 'flex', alignItems: 'center', gap: 16 }}>
+                    <Tooltip
                         title="Ctrl + N"
                         styles={{ body: { padding: '4px 8px', fontSize: '12px' } }}
                     >
                         <Button
                             type="primary"
                             size="large"
-                            icon={<PlusOutlined/>}
+                            icon={<PlusOutlined />}
                             onClick={onOpenAddTaskModal}
                         >
                             添加新任务
                         </Button>
                     </Tooltip>
-                    <Button
-                        type="primary"
-                        size="large"
-                        icon={<FileExcelOutlined/>}
-                        onClick={onExportReport}
-                        style={{background: '#52c41a', borderColor: '#52c41a'}}
+                    <Dropdown
+                        menu={{
+                            items: [
+                                {
+                                    key: 'today',
+                                    label: '导出今日日报',
+                                    onClick: onExportReport
+                                },
+                                {
+                                    key: 'pending',
+                                    label: '导出未完成任务',
+                                    onClick: onOpenExportPendingModal
+                                }
+                            ]
+                        }}
+                        trigger={['click']}
                     >
-                        导出今日日报
-                    </Button>
+                        <Button
+                            type="primary"
+                            size="large"
+                            icon={<FileExcelOutlined />}
+                            style={{ background: '#52c41a', borderColor: '#52c41a' }}
+                        >
+                            导出 <DownOutlined />
+                        </Button>
+                    </Dropdown>
                     <Button
                         type="default"
                         size="large"
-                        icon={<EditOutlined/>}
+                        icon={<EditOutlined />}
                         onClick={onOpenEditModuleList}
-                        style={{background: 'rgba(255,255,255,0.95)', borderColor: '#d9d9d9'}}
+                        style={{ background: 'rgba(255,255,255,0.95)', borderColor: '#d9d9d9' }}
                     >
                         编辑模块
                     </Button>
 
-                    <div style={{flex: 1, display: 'flex', gap: 16, justifyContent: 'flex-end'}}>
+                    <div style={{ flex: 1, display: 'flex', gap: 16, justifyContent: 'flex-end' }}>
                         <Tooltip
                             title={generateTaskTooltip(getTodayNewTasks())}
                             placement="bottom"
-                            styles={{root: {maxWidth: 400}}}
+                            styles={{ root: { maxWidth: 400 } }}
                         >
                             <Card size="small"
-                                  style={{background: 'rgba(255,255,255,0.95)', minWidth: 120, cursor: 'pointer'}}>
-                                <div style={{display: 'flex', alignItems: 'center', gap: 8}}>
-                                    <PlusOutlined style={{fontSize: 18, color: '#1890ff'}}/>
+                                style={{ background: 'rgba(255,255,255,0.95)', minWidth: 120, cursor: 'pointer' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <PlusOutlined style={{ fontSize: 18, color: '#1890ff' }} />
                                     <div>
-                                        <div style={{color: '#8c8c8c', fontSize: 12}}>今日新增</div>
+                                        <div style={{ color: '#8c8c8c', fontSize: 12 }}>今日新增</div>
                                         <div style={{
                                             fontSize: 18,
                                             fontWeight: 700,
@@ -445,14 +467,14 @@ export default function TaskManageView({
                         <Tooltip
                             title={generateTaskTooltip(getTodayCompletedTasks())}
                             placement="bottom"
-                            styles={{root: {maxWidth: 400}}}
+                            styles={{ root: { maxWidth: 400 } }}
                         >
                             <Card size="small"
-                                  style={{background: 'rgba(255,255,255,0.95)', minWidth: 120, cursor: 'pointer'}}>
-                                <div style={{display: 'flex', alignItems: 'center', gap: 8}}>
-                                    <CheckCircleOutlined style={{fontSize: 18, color: '#52c41a'}}/>
+                                style={{ background: 'rgba(255,255,255,0.95)', minWidth: 120, cursor: 'pointer' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <CheckCircleOutlined style={{ fontSize: 18, color: '#52c41a' }} />
                                     <div>
-                                        <div style={{color: '#8c8c8c', fontSize: 12}}>今日完成</div>
+                                        <div style={{ color: '#8c8c8c', fontSize: 12 }}>今日完成</div>
                                         <div style={{
                                             fontSize: 18,
                                             fontWeight: 700,
@@ -465,14 +487,14 @@ export default function TaskManageView({
                         <Tooltip
                             title={generateTaskTooltip(pendingTasks)}
                             placement="bottom"
-                            styles={{root: {maxWidth: 400}}}
+                            styles={{ root: { maxWidth: 400 } }}
                         >
                             <Card size="small"
-                                  style={{background: 'rgba(255,255,255,0.95)', minWidth: 120, cursor: 'pointer'}}>
-                                <div style={{display: 'flex', alignItems: 'center', gap: 8}}>
-                                    <FileTextOutlined style={{fontSize: 18, color: '#faad14'}}/>
+                                style={{ background: 'rgba(255,255,255,0.95)', minWidth: 120, cursor: 'pointer' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <FileTextOutlined style={{ fontSize: 18, color: '#faad14' }} />
                                     <div>
-                                        <div style={{color: '#8c8c8c', fontSize: 12}}>待办任务</div>
+                                        <div style={{ color: '#8c8c8c', fontSize: 12 }}>待办任务</div>
                                         <div style={{
                                             fontSize: 18,
                                             fontWeight: 700,
@@ -485,14 +507,14 @@ export default function TaskManageView({
                         <Tooltip
                             title={generateTaskTooltip([...pendingTasks, ...completedTasks])}
                             placement="bottom"
-                            styles={{root: {maxWidth: 400}}}
+                            styles={{ root: { maxWidth: 400 } }}
                         >
                             <Card size="small"
-                                  style={{background: 'rgba(255,255,255,0.95)', minWidth: 120, cursor: 'pointer'}}>
-                                <div style={{display: 'flex', alignItems: 'center', gap: 8}}>
-                                    <TrophyOutlined style={{fontSize: 18, color: '#722ed1'}}/>
+                                style={{ background: 'rgba(255,255,255,0.95)', minWidth: 120, cursor: 'pointer' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <TrophyOutlined style={{ fontSize: 18, color: '#722ed1' }} />
                                     <div>
-                                        <div style={{color: '#8c8c8c', fontSize: 12}}>总任务数</div>
+                                        <div style={{ color: '#8c8c8c', fontSize: 12 }}>总任务数</div>
                                         <div style={{
                                             fontSize: 18,
                                             fontWeight: 700,
@@ -506,13 +528,13 @@ export default function TaskManageView({
                 </div>
 
                 {/* 任务列表 */}
-                <Row gutter={24} style={{flex: 1, overflow: 'hidden'}}>
+                <Row gutter={24} style={{ flex: 1, overflow: 'hidden' }}>
                     {/* 待办任务 */}
-                    <Col span={12} style={{height: '100%', display: 'flex', flexDirection: 'column'}}>
+                    <Col span={12} style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                         <Card
                             title={
-                                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-                                    <div style={{display: 'flex', alignItems: 'center', gap: 8}}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                         <span>📌 待办任务 ({pendingTasks.length})</span>
                                         {pendingTasksByModule.length > 0 && (
                                             <span
@@ -538,32 +560,32 @@ export default function TaskManageView({
                                                     e.currentTarget.style.background = 'transparent'
                                                 }}
                                             >
-                        {allPendingExpanded ? <UpOutlined style={{fontSize: 10}}/> :
-                            <DownOutlined style={{fontSize: 10}}/>}
+                                                {allPendingExpanded ? <UpOutlined style={{ fontSize: 10 }} /> :
+                                                    <DownOutlined style={{ fontSize: 10 }} />}
                                                 {allPendingExpanded ? '收起' : '展开'}
-                      </span>
+                                            </span>
                                         )}
                                     </div>
-                                    <div style={{display: 'flex', gap: 8}}>
+                                    <div style={{ display: 'flex', gap: 8 }}>
                                         <Select
-                                            style={{width: 120}}
+                                            style={{ width: 120 }}
                                             placeholder="筛选模块"
                                             allowClear
                                             value={selectedModuleFilter}
                                             onChange={onModuleFilterChange}
-                                            options={modules.map(m => ({label: m.name, value: m.name}))}
+                                            options={modules.map(m => ({ label: m.name, value: m.name }))}
                                         />
                                         <Input
                                             placeholder={getSearchPlaceholder()}
                                             value={searchKeyword}
                                             onChange={(e) => onSearchChange(e.target.value)}
-                                            prefix={<SearchOutlined style={{fontSize: 16, color: '#8c8c8c'}}/>}
+                                            prefix={<SearchOutlined style={{ fontSize: 16, color: '#8c8c8c' }} />}
                                             suffix={searchKeyword &&
                                                 <CloseCircleOutlined onClick={() => onSearchChange('')} style={{
                                                     cursor: 'pointer',
                                                     fontSize: 14,
                                                     color: '#8c8c8c'
-                                                }}/>}
+                                                }} />}
                                             style={{
                                                 width: 200,
                                                 borderRadius: 20,
@@ -581,8 +603,8 @@ export default function TaskManageView({
                                 display: 'flex',
                                 flexDirection: 'column'
                             }}
-                            styles={{body: {flex: 1, overflowY: 'auto', padding: '16px'}}}
-                            classNames={{body: styles.taskCardBody}}
+                            styles={{ body: { flex: 1, overflowY: 'auto', padding: '16px' } }}
+                            classNames={{ body: styles.taskCardBody }}
                         >
                             {pendingTasks.length === 0 ? (
                                 <div style={{
@@ -593,7 +615,7 @@ export default function TaskManageView({
                                 }}>
                                     <Empty
                                         image={searchKeyword ? <SearchOutlined
-                                            style={{fontSize: 60, color: '#d9d9d9'}}/> : Empty.PRESENTED_IMAGE_SIMPLE}
+                                            style={{ fontSize: 60, color: '#d9d9d9' }} /> : Empty.PRESENTED_IMAGE_SIMPLE}
                                         description={searchKeyword ? `未找到包含"${searchKeyword}"的任务` : '暂无待办任务'}
                                     />
                                 </div>
@@ -632,11 +654,11 @@ export default function TaskManageView({
                     </Col>
 
                     {/* 已完成任务 */}
-                    <Col span={12} style={{height: '100%', display: 'flex', flexDirection: 'column'}}>
+                    <Col span={12} style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                         <Card
                             title={
-                                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-                                    <div style={{display: 'flex', alignItems: 'center', gap: 8}}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                         <span>✅ 已完成 ({completedTasks.length})</span>
                                         {completedTasksByModule.length > 0 && (
                                             <span
@@ -662,33 +684,33 @@ export default function TaskManageView({
                                                     e.currentTarget.style.background = 'transparent'
                                                 }}
                                             >
-                        {allCompletedExpanded ? <UpOutlined style={{fontSize: 10}}/> :
-                            <DownOutlined style={{fontSize: 10}}/>}
+                                                {allCompletedExpanded ? <UpOutlined style={{ fontSize: 10 }} /> :
+                                                    <DownOutlined style={{ fontSize: 10 }} />}
                                                 {allCompletedExpanded ? '收起' : '展开'}
-                      </span>
+                                            </span>
                                         )}
                                     </div>
-                                    <div style={{display: 'flex', gap: 8}}>
+                                    <div style={{ display: 'flex', gap: 8 }}>
                                         <Select
-                                            style={{width: 120}}
+                                            style={{ width: 120 }}
                                             placeholder="筛选模块"
                                             allowClear
                                             value={completedModuleFilter}
                                             onChange={onCompletedModuleFilterChange}
-                                            options={modules.map(m => ({label: m.name, value: m.name}))}
+                                            options={modules.map(m => ({ label: m.name, value: m.name }))}
                                         />
                                         <Input
                                             placeholder={getSearchPlaceholder()}
                                             value={completedSearchKeyword}
                                             onChange={(e) => onCompletedSearchChange(e.target.value)}
-                                            prefix={<SearchOutlined style={{fontSize: 16, color: '#8c8c8c'}}/>}
+                                            prefix={<SearchOutlined style={{ fontSize: 16, color: '#8c8c8c' }} />}
                                             suffix={completedSearchKeyword &&
                                                 <CloseCircleOutlined onClick={() => onCompletedSearchChange('')}
-                                                                     style={{
-                                                                         cursor: 'pointer',
-                                                                         fontSize: 14,
-                                                                         color: '#8c8c8c'
-                                                                     }}/>}
+                                                    style={{
+                                                        cursor: 'pointer',
+                                                        fontSize: 14,
+                                                        color: '#8c8c8c'
+                                                    }} />}
                                             style={{
                                                 width: 200,
                                                 borderRadius: 20,
@@ -706,8 +728,8 @@ export default function TaskManageView({
                                 display: 'flex',
                                 flexDirection: 'column'
                             }}
-                            styles={{body: {flex: 1, overflowY: 'auto', padding: '16px'}}}
-                            classNames={{body: styles.taskCardBody}}
+                            styles={{ body: { flex: 1, overflowY: 'auto', padding: '16px' } }}
+                            classNames={{ body: styles.taskCardBody }}
                         >
                             {completedTasks.length === 0 ? (
                                 <div style={{
@@ -718,7 +740,7 @@ export default function TaskManageView({
                                 }}>
                                     <Empty
                                         image={completedSearchKeyword ? <SearchOutlined
-                                            style={{fontSize: 60, color: '#d9d9d9'}}/> : Empty.PRESENTED_IMAGE_SIMPLE}
+                                            style={{ fontSize: 60, color: '#d9d9d9' }} /> : Empty.PRESENTED_IMAGE_SIMPLE}
                                         description={completedSearchKeyword ? `未找到包含"${completedSearchKeyword}"的任务` : '还没有完成的任务'}
                                     />
                                 </div>
@@ -874,6 +896,15 @@ export default function TaskManageView({
                 onAddModule={onAddModuleInList}
                 onReorderModules={onReorderModules}
                 onClose={onCloseEditModuleList}
+            />
+
+            {/* 导出未完成任务模态框 */}
+            <ExportPendingTasksModal
+                show={showExportPendingModal}
+                modules={modules}
+                pendingTasks={pendingTasks}
+                onConfirm={onExportPendingTasks}
+                onCancel={onCloseExportPendingModal}
             />
         </div>
     )

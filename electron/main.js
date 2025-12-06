@@ -109,7 +109,7 @@ app.whenReady().then(() => {
   const tasksFile = path.join(dataDir, 'tasks.json')
   const projectsFile = path.join(dataDir, 'projects.json')
   const modulesFile = path.join(dataDir, 'modules.json')
-  
+
   function ensureStore() {
     fs.mkdirSync(dataDir, { recursive: true })
     fs.mkdirSync(imagesDir, { recursive: true })
@@ -117,7 +117,7 @@ app.whenReady().then(() => {
     if (!fs.existsSync(projectsFile)) fs.writeFileSync(projectsFile, '[]', 'utf-8')
     if (!fs.existsSync(modulesFile)) fs.writeFileSync(modulesFile, '[]', 'utf-8')
   }
-  
+
   function readTasks() {
     try {
       ensureStore()
@@ -127,12 +127,12 @@ app.whenReady().then(() => {
       return []
     }
   }
-  
+
   function writeTasks(list) {
     ensureStore()
     fs.writeFileSync(tasksFile, JSON.stringify(list), 'utf-8')
   }
-  
+
   function readProjects() {
     try {
       ensureStore()
@@ -142,12 +142,12 @@ app.whenReady().then(() => {
       return []
     }
   }
-  
+
   function writeProjects(list) {
     ensureStore()
     fs.writeFileSync(projectsFile, JSON.stringify(list), 'utf-8')
   }
-  
+
   function readModules() {
     try {
       ensureStore()
@@ -157,7 +157,7 @@ app.whenReady().then(() => {
       return []
     }
   }
-  
+
   function writeModules(list) {
     ensureStore()
     fs.writeFileSync(modulesFile, JSON.stringify(list), 'utf-8')
@@ -171,12 +171,12 @@ app.whenReady().then(() => {
     return da.getFullYear() === db.getFullYear() && da.getMonth() === db.getMonth() && da.getDate() === db.getDate()
   }
   ipcMain.handle('ping', () => 'pong')
-  
+
   // 项目管理
   ipcMain.handle('projects:list', () => {
     return readProjects()
   })
-  
+
   ipcMain.handle('projects:add', (e, payload) => {
     const list = readProjects()
     const project = {
@@ -189,7 +189,7 @@ app.whenReady().then(() => {
     writeProjects(list)
     return project
   })
-  
+
   ipcMain.handle('projects:update', (e, payload) => {
     const list = readProjects()
     const idx = list.findIndex(p => p.id === payload.id)
@@ -204,7 +204,7 @@ app.whenReady().then(() => {
     }
     return { success: false, error: '项目不存在' }
   })
-  
+
   ipcMain.handle('projects:delete', (e, id) => {
     const list = readProjects()
     const idx = list.findIndex(p => p.id === id)
@@ -213,11 +213,11 @@ app.whenReady().then(() => {
       const tasks = readTasks()
       const projectTasks = tasks.filter(t => t.projectId === id)
       const pendingTasks = projectTasks.filter(t => !t.completed)
-      
+
       if (pendingTasks.length > 0) {
         return { success: false, error: `该项目下还有 ${pendingTasks.length} 个未完成的任务，无法删除` }
       }
-      
+
       // 删除项目下的所有任务及其图片
       projectTasks.forEach(task => {
         if (task.images && Array.isArray(task.images)) {
@@ -236,12 +236,12 @@ app.whenReady().then(() => {
       // 删除任务数据
       const remainingTasks = tasks.filter(t => t.projectId !== id)
       writeTasks(remainingTasks)
-      
+
       // 删除项目下的所有模块
       const modules = readModules()
       const remainingModules = modules.filter(m => m.projectId !== id)
       writeModules(remainingModules)
-      
+
       // 删除项目
       list.splice(idx, 1)
       writeProjects(list)
@@ -249,7 +249,7 @@ app.whenReady().then(() => {
     }
     return { success: false, error: '项目不存在' }
   })
-  
+
   ipcMain.handle('projects:reorder', (e, projectIds) => {
     const list = readProjects()
     // 根据传入的ID顺序重新排列项目
@@ -264,13 +264,13 @@ app.whenReady().then(() => {
     writeProjects(reorderedList)
     return { success: true }
   })
-  
+
   // 模块管理
   ipcMain.handle('modules:list', (e, projectId, includeDeleted = false) => {
     const list = readModules()
     return list.filter(m => m.projectId === projectId && (includeDeleted || !m.deleted))
   })
-  
+
   ipcMain.handle('modules:add', (e, payload) => {
     const list = readModules()
     // 检查该项目下是否已存在同名模块
@@ -296,7 +296,7 @@ app.whenReady().then(() => {
     writeModules(list)
     return module
   })
-  
+
   ipcMain.handle('modules:update', (e, payload) => {
     const list = readModules()
     const idx = list.findIndex(m => m.id === payload.id)
@@ -306,12 +306,12 @@ app.whenReady().then(() => {
       if (exists) {
         return { success: false, error: '该项目下已存在同名模块' }
       }
-      
+
       const oldName = list[idx].name
       list[idx].name = payload?.name || list[idx].name
       list[idx].updatedAt = new Date().toISOString()
       writeModules(list)
-      
+
       // 同时更新所有使用该模块的任务
       const tasks = readTasks()
       let updated = false
@@ -324,26 +324,26 @@ app.whenReady().then(() => {
       if (updated) {
         writeTasks(tasks)
       }
-      
+
       return { success: true, module: list[idx] }
     }
     return { success: false, error: '模块不存在' }
   })
-  
+
   ipcMain.handle('modules:delete', (e, id) => {
     const list = readModules()
     const idx = list.findIndex(m => m.id === id)
     if (idx >= 0) {
       const module = list[idx]
-      
+
       // 检查是否有未完成的任务使用该模块
       const tasks = readTasks()
       const hasPendingTask = tasks.some(task => task.projectId === module.projectId && task.module === module.name && !task.completed)
-      
+
       if (hasPendingTask) {
         return { success: false, error: '该模块下还有未完成的任务，无法删除' }
       }
-      
+
       // 逻辑删除：标记为 deleted
       list[idx].deleted = true
       list[idx].updatedAt = new Date().toISOString()
@@ -371,15 +371,15 @@ app.whenReady().then(() => {
     const idx = list.findIndex(m => m.id === id)
     if (idx >= 0) {
       const module = list[idx]
-      
+
       // 检查是否有任务使用该模块（任务总数必须为0才能永久删除）
       const tasks = readTasks()
       const hasTask = tasks.some(task => task.projectId === module.projectId && task.module === module.name)
-      
+
       if (hasTask) {
         return { success: false, error: '该模块下还有任务，无法永久删除' }
       }
-      
+
       // 永久删除：从列表中移除
       list.splice(idx, 1)
       writeModules(list)
@@ -387,15 +387,15 @@ app.whenReady().then(() => {
     }
     return { success: false, error: '模块不存在' }
   })
-  
+
   ipcMain.handle('modules:reorder', (e, payload) => {
     const list = readModules()
     const { projectId, moduleIds } = payload
-    
+
     // 获取该项目的所有模块
     const projectModules = list.filter(m => m.projectId === projectId)
     const otherModules = list.filter(m => m.projectId !== projectId)
-    
+
     // 根据传入的ID顺序重新排列模块，并为所有模块设置 order
     const reorderedModules = []
     moduleIds.forEach((id, index) => {
@@ -406,13 +406,13 @@ app.whenReady().then(() => {
         reorderedModules.push(module)
       }
     })
-    
+
     // 合并其他项目的模块
     const newList = [...otherModules, ...reorderedModules]
     writeModules(newList)
     return { success: true }
   })
-  
+
   // 任务管理
   ipcMain.handle('tasks:list', (e, projectId) => {
     const list = readTasks()
@@ -421,7 +421,7 @@ app.whenReady().then(() => {
     }
     return list
   })
-  
+
   ipcMain.handle('tasks:add', (e, payload) => {
     const list = readTasks()
     const id = uid()
@@ -457,14 +457,14 @@ app.whenReady().then(() => {
     writeTasks(list)
     return task
   })
-  
+
   ipcMain.handle('tasks:update', (e, payload) => {
     const list = readTasks()
     const idx = list.findIndex(x => x.id === payload.id)
     if (idx >= 0) {
       // 保留已有图片
       const existingImages = Array.isArray(payload?.existingImages) ? payload.existingImages : []
-      
+
       // 处理新上传的图片
       const newImages = Array.isArray(payload?.images) ? payload.images : []
       const saved = []
@@ -480,7 +480,7 @@ app.whenReady().then(() => {
         if (buf) fs.writeFileSync(fpath, buf)
         saved.push(fname)
       }
-      
+
       // 删除被移除的旧图片文件
       const oldImages = list[idx].images || []
       oldImages.forEach(oldPath => {
@@ -495,7 +495,7 @@ app.whenReady().then(() => {
           }
         }
       })
-      
+
       // 更新任务信息
       list[idx].module = payload?.module || list[idx].module
       list[idx].name = payload?.name || list[idx].name
@@ -505,13 +505,13 @@ app.whenReady().then(() => {
       list[idx].images = [...existingImages, ...saved]
       list[idx].codeBlock = payload?.codeBlock || list[idx].codeBlock || { enabled: false, language: 'javascript', code: '' }
       list[idx].updatedAt = new Date().toISOString()
-      
+
       writeTasks(list)
       return list[idx]
     }
     return null
   })
-  
+
   ipcMain.handle('tasks:markDone', (e, id) => {
     const list = readTasks()
     const idx = list.findIndex(x => x.id === id)
@@ -523,7 +523,7 @@ app.whenReady().then(() => {
     }
     return null
   })
-  
+
   // 回滚任务状态（将已完成改为待办）
   ipcMain.handle('tasks:rollback', (e, id) => {
     const list = readTasks()
@@ -536,7 +536,7 @@ app.whenReady().then(() => {
     }
     return null
   })
-  
+
   ipcMain.handle('tasks:updateModule', (e, payload) => {
     const list = readTasks()
     const idx = list.findIndex(x => x.id === payload.id)
@@ -548,7 +548,7 @@ app.whenReady().then(() => {
     }
     return { success: false, error: '任务不存在' }
   })
-  
+
   ipcMain.handle('tasks:delete', (e, id) => {
     const list = readTasks()
     const idx = list.findIndex(x => x.id === id)
@@ -585,29 +585,29 @@ app.whenReady().then(() => {
     }
     return { count: todayDone.length, newCount: todayNew.length }
   })
-  
+
   // 导出今日日报
   ipcMain.handle('tasks:exportTodayReport', async (e, projectId) => {
     const list = readTasks()
     const now = new Date()
     let todayTasks = list.filter(x => x.completed && x.completedAt && sameDay(x.completedAt, now))
-    
+
     if (projectId) {
       todayTasks = todayTasks.filter(x => x.projectId === projectId)
     }
-    
+
     // 获取项目名称
     const projects = readProjects()
     const project = projects.find(p => p.id === projectId)
     const projectName = project ? project.name : '所有项目'
-    
+
     // 构建Markdown内容
     let mdContent = `# 今日日报\n\n`
     mdContent += `**项目**: ${projectName}\n\n`
-    mdContent += `**日期**: ${now.getFullYear()}年${(now.getMonth()+1).toString().padStart(2,'0')}月${now.getDate().toString().padStart(2,'0')}日\n\n`
+    mdContent += `**日期**: ${now.getFullYear()}年${(now.getMonth() + 1).toString().padStart(2, '0')}月${now.getDate().toString().padStart(2, '0')}日\n\n`
     mdContent += `**完成任务数**: ${todayTasks.length}\n\n`
     mdContent += `---\n\n`
-    
+
     if (todayTasks.length === 0) {
       mdContent += `今日暂无完成的任务。\n`
     } else {
@@ -620,24 +620,24 @@ app.whenReady().then(() => {
         }
         tasksByModule[moduleName].push(task)
       })
-      
+
       // 输出每个模块的任务
       Object.keys(tasksByModule).forEach(moduleName => {
         mdContent += `## ${moduleName}\n\n`
-        
+
         tasksByModule[moduleName].forEach((task, index) => {
           mdContent += `### ${index + 1}. ${task.name}\n\n`
-          
+
           if (task.initiator) {
             mdContent += `- **发起人**: ${task.initiator}\n`
           }
-          
+
           if (task.remark) {
             mdContent += `- **备注**: ${task.remark}\n`
           }
-          
+
           mdContent += `- **完成时间**: ${new Date(task.completedAt).toLocaleString('zh-CN')}\n`
-          
+
           // 如果有代码块
           if (task.codeBlock && task.codeBlock.enabled && task.codeBlock.code) {
             mdContent += `\n**代码**:\n\n`
@@ -645,31 +645,241 @@ app.whenReady().then(() => {
             mdContent += `${task.codeBlock.code}\n`
             mdContent += `\`\`\`\n`
           }
-          
+
           mdContent += `\n`
         })
-        
+
         mdContent += `\n`
       })
     }
-    
+
     // 弹出保存对话框
     const { filePath } = await dialog.showSaveDialog({
       title: '保存今日日报',
-      defaultPath: `今日日报_${now.getFullYear()}${(now.getMonth()+1).toString().padStart(2,'0')}${now.getDate().toString().padStart(2,'0')}.md`,
+      defaultPath: `今日日报_${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}.md`,
       filters: [
         { name: 'Markdown文件', extensions: ['md'] }
       ]
     })
-    
+
     if (filePath) {
       fs.writeFileSync(filePath, mdContent, 'utf-8')
       return { success: true, path: filePath }
     }
-    
+
     return { success: false }
   })
-  
+
+  // 导出未完成任务
+  ipcMain.handle('tasks:exportPendingTasks', async (e, payload) => {
+    const { projectId, modules: selectedModules, format = 'excel' } = payload
+    const list = readTasks()
+
+    // 筛选未完成的任务
+    let pendingTasks = list.filter(x => !x.completed && x.projectId === projectId)
+
+    // 如果选择了特定模块，则按模块筛选
+    if (selectedModules && selectedModules.length > 0) {
+      pendingTasks = pendingTasks.filter(x => selectedModules.includes(x.module))
+    }
+
+    // 获取项目名称
+    const projects = readProjects()
+    const project = projects.find(p => p.id === projectId)
+    const projectName = project ? project.name : '所有项目'
+
+    const now = new Date()
+    const dateStr = `${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}`
+
+    if (format === 'excel') {
+      // 导出为Excel格式（使用exceljs支持单元格样式）
+      const ExcelJS = require('exceljs')
+
+      // 按模块分组
+      const tasksByModule = {}
+      pendingTasks.forEach(task => {
+        const moduleName = task.module || '未分类'
+        if (!tasksByModule[moduleName]) {
+          tasksByModule[moduleName] = []
+        }
+        tasksByModule[moduleName].push(task)
+      })
+
+      // 创建工作簿和工作表
+      const workbook = new ExcelJS.Workbook()
+      const worksheet = workbook.addWorksheet('未完成任务')
+
+      // 设置列宽
+      worksheet.columns = [
+        { key: 'module', width: 15 },      // 模块
+        { key: 'name', width: 40 },        // 任务描述
+        { key: 'type', width: 10 },        // 类型
+        { key: 'initiator', width: 12 },   // 发起人
+        { key: 'remark', width: 30 },      // 备注
+        { key: 'createdAt', width: 20 }    // 创建时间
+      ]
+
+      // 添加标题信息
+      worksheet.addRow(['未完成任务清单'])
+      worksheet.addRow([`项目: ${projectName}`])
+      worksheet.addRow([`导出时间: ${now.toLocaleString('zh-CN')}`])
+      worksheet.addRow([`未完成任务数: ${pendingTasks.length}`])
+      worksheet.addRow([]) // 空行
+
+      // 添加表头
+      const headerRow = worksheet.addRow(['模块', '任务描述', '类型', '发起人', '备注', '创建时间'])
+      // 设置表头样式
+      headerRow.eachCell(cell => {
+        cell.font = { bold: true }
+        cell.alignment = { horizontal: 'center', vertical: 'middle' }
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFE0E0E0' }
+        }
+      })
+
+      // 记录合并范围信息
+      const mergeRanges = []
+      const dataStartRow = 7 // 数据从第7行开始
+      let currentRowNum = dataStartRow
+
+      // 添加任务数据
+      Object.keys(tasksByModule).forEach(moduleName => {
+        const tasks = tasksByModule[moduleName]
+        const startRowNum = currentRowNum
+
+        tasks.forEach((task, idx) => {
+          const row = worksheet.addRow([
+            idx === 0 ? moduleName : '', // 只在第一行显示模块名
+            task.name,
+            task.type || '',
+            task.initiator || '',
+            task.remark || '',
+            new Date(task.createdAt).toLocaleString('zh-CN')
+          ])
+
+          // 设置任务描述列（第2列）自动换行
+          row.getCell(2).alignment = { wrapText: true, vertical: 'middle' }
+          // 设置备注列（第5列）自动换行
+          row.getCell(5).alignment = { wrapText: true, vertical: 'middle' }
+          // 设置模块列（第1列）水平垂直居中
+          row.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' }
+          // 设置其他列垂直居中
+          row.getCell(3).alignment = { horizontal: 'center', vertical: 'middle' }
+          row.getCell(4).alignment = { horizontal: 'center', vertical: 'middle' }
+          row.getCell(6).alignment = { horizontal: 'center', vertical: 'middle' }
+
+          currentRowNum++
+        })
+
+        // 如果该模块有多个任务，记录需要合并的范围
+        if (tasks.length > 1) {
+          mergeRanges.push({
+            startRow: startRowNum,
+            endRow: currentRowNum - 1
+          })
+        }
+      })
+
+      // 执行模块列合并
+      mergeRanges.forEach(range => {
+        worksheet.mergeCells(range.startRow, 1, range.endRow, 1)
+        // 合并后的单元格设置居中
+        const mergedCell = worksheet.getCell(range.startRow, 1)
+        mergedCell.alignment = { horizontal: 'center', vertical: 'middle' }
+      })
+
+      // 弹出保存对话框
+      const { filePath } = await dialog.showSaveDialog({
+        title: '保存未完成任务清单',
+        defaultPath: `未完成任务_${projectName}_${dateStr}.xlsx`,
+        filters: [
+          { name: 'Excel文件', extensions: ['xlsx'] }
+        ]
+      })
+
+      if (filePath) {
+        await workbook.xlsx.writeFile(filePath)
+        return { success: true, path: filePath }
+      }
+
+      return { success: false }
+    } else {
+      // 导出为Markdown格式
+      let mdContent = `# 未完成任务清单\n\n`
+      mdContent += `**项目**: ${projectName}\n\n`
+      mdContent += `**导出时间**: ${now.getFullYear()}年${(now.getMonth() + 1).toString().padStart(2, '0')}月${now.getDate().toString().padStart(2, '0')}日 ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}\n\n`
+      mdContent += `**未完成任务数**: ${pendingTasks.length}\n\n`
+      mdContent += `---\n\n`
+
+      if (pendingTasks.length === 0) {
+        mdContent += `暂无未完成的任务。\n`
+      } else {
+        // 按模块分组
+        const tasksByModule = {}
+        pendingTasks.forEach(task => {
+          const moduleName = task.module || '未分类'
+          if (!tasksByModule[moduleName]) {
+            tasksByModule[moduleName] = []
+          }
+          tasksByModule[moduleName].push(task)
+        })
+
+        // 输出每个模块的任务
+        Object.keys(tasksByModule).forEach(moduleName => {
+          mdContent += `## ${moduleName}\n\n`
+
+          tasksByModule[moduleName].forEach((task, index) => {
+            mdContent += `### ${index + 1}. ${task.name}\n\n`
+
+            if (task.type) {
+              mdContent += `- **类型**: ${task.type}\n`
+            }
+
+            if (task.initiator) {
+              mdContent += `- **发起人**: ${task.initiator}\n`
+            }
+
+            if (task.remark) {
+              mdContent += `- **备注**: ${task.remark}\n`
+            }
+
+            mdContent += `- **创建时间**: ${new Date(task.createdAt).toLocaleString('zh-CN')}\n`
+
+            // 如果有代码块
+            if (task.codeBlock && task.codeBlock.enabled && task.codeBlock.code) {
+              mdContent += `\n**代码**:\n\n`
+              mdContent += `\`\`\`${task.codeBlock.language || 'text'}\n`
+              mdContent += `${task.codeBlock.code}\n`
+              mdContent += `\`\`\`\n`
+            }
+
+            mdContent += `\n`
+          })
+
+          mdContent += `\n`
+        })
+      }
+
+      // 弹出保存对话框
+      const { filePath } = await dialog.showSaveDialog({
+        title: '保存未完成任务清单',
+        defaultPath: `未完成任务_${projectName}_${dateStr}.md`,
+        filters: [
+          { name: 'Markdown文件', extensions: ['md'] }
+        ]
+      })
+
+      if (filePath) {
+        fs.writeFileSync(filePath, mdContent, 'utf-8')
+        return { success: true, path: filePath }
+      }
+
+      return { success: false }
+    }
+  })
+
   // 获取图片的本地路径（用于在渲染进程中显示）
   ipcMain.handle('image:getPath', (e, imagePath) => {
     // 返回绝对路径
@@ -682,7 +892,7 @@ app.whenReady().then(() => {
   // 配置管理
   const configFile = path.join(dataDir, 'config.json')
   const legacyConfigFile = path.join(dataDir, '.config')
-  
+
   // 默认配置
   const defaultConfig = {
     taskTypes: [
@@ -692,7 +902,7 @@ app.whenReady().then(() => {
       { name: '其他', color: '#463e2e' }
     ]
   }
-  
+
   // 迁移旧配置到新格式
   function migrateConfig() {
     if (fs.existsSync(legacyConfigFile) && !fs.existsSync(configFile)) {
@@ -706,12 +916,12 @@ app.whenReady().then(() => {
       }
     }
   }
-  
+
   ipcMain.handle('config:get', () => {
     try {
       ensureStore()
       migrateConfig()
-      
+
       // 优先读取环境变量配置
       if (process.env.TASK_TYPES_CONFIG) {
         try {
@@ -720,12 +930,12 @@ app.whenReady().then(() => {
           console.error('解析环境变量配置失败:', error)
         }
       }
-      
+
       // 读取配置文件
       if (fs.existsSync(configFile)) {
         return fs.readFileSync(configFile, 'utf-8')
       }
-      
+
       // 返回默认配置
       return JSON.stringify(defaultConfig)
     } catch (error) {
@@ -733,7 +943,7 @@ app.whenReady().then(() => {
       return JSON.stringify(defaultConfig)
     }
   })
-  
+
   ipcMain.handle('config:save', (e, configContent) => {
     try {
       ensureStore()
@@ -758,16 +968,16 @@ app.whenReady().then(() => {
         modules: readModules(),
         tasks: readTasks()
       }
-      
+
       const zip = new AdmZip()
       // 添加数据文件
       zip.addFile('data.json', Buffer.from(JSON.stringify(exportData, null, 2), 'utf8'))
-      
+
       // 添加图片文件夹
       if (fs.existsSync(imagesDir)) {
         zip.addLocalFolder(imagesDir, 'images')
       }
-      
+
       const { filePath } = await dialog.showSaveDialog({
         title: '导出数据',
         defaultPath: `TaskLog_备份_${new Date().toISOString().split('T')[0]}.zip`,
@@ -775,19 +985,19 @@ app.whenReady().then(() => {
           { name: '压缩文件', extensions: ['zip'] }
         ]
       })
-      
+
       if (filePath) {
         zip.writeZip(filePath)
         return { success: true, path: filePath }
       }
-      
+
       return { success: false }
     } catch (error) {
       console.error('导出数据失败:', error)
       return { success: false, error: error.message }
     }
   })
-  
+
   // 数据导入
   ipcMain.handle('data:import', async () => {
     try {
@@ -799,23 +1009,23 @@ app.whenReady().then(() => {
         ],
         properties: ['openFile']
       })
-      
+
       if (filePaths && filePaths.length > 0) {
         const filePath = filePaths[0]
         const ext = path.extname(filePath).toLowerCase()
         let importData
-        
+
         if (ext === '.zip') {
           const zip = new AdmZip(filePath)
           const zipEntries = zip.getEntries()
-          
+
           // 读取 data.json
           const dataEntry = zipEntries.find(entry => entry.entryName === 'data.json')
           if (!dataEntry) {
             return { success: false, error: '无效的备份文件：找不到 data.json' }
           }
           importData = JSON.parse(dataEntry.getData().toString('utf8'))
-          
+
           // 恢复图片
           // 解压 images 文件夹到 tasksData 目录
           zip.extractAllTo(dataDir, true)
@@ -823,27 +1033,27 @@ app.whenReady().then(() => {
           // 兼容旧版 JSON 导入
           importData = JSON.parse(fs.readFileSync(filePath, 'utf-8'))
         }
-        
+
         // 验证数据格式
         if (!importData.version || !importData.config || !importData.projects || !importData.modules || !importData.tasks) {
           return { success: false, error: '数据格式不正确' }
         }
-        
+
         // 保存配置
         fs.writeFileSync(configFile, JSON.stringify(importData.config), 'utf-8')
-        
+
         // 保存项目
         writeProjects(importData.projects)
-        
+
         // 保存模块
         writeModules(importData.modules)
-        
+
         // 保存任务
         writeTasks(importData.tasks)
-        
+
         return { success: true }
       }
-      
+
       return { success: false }
     } catch (error) {
       console.error('导入数据失败:', error)
@@ -870,7 +1080,7 @@ app.whenReady().then(() => {
     const win = BrowserWindow.fromWebContents(event.sender)
     if (win) win.close()
   })
-  
+
   buildMenu() // 恢复菜单栏，可以通过"查看 -> 开发者工具"打开控制台
   // Menu.setApplicationMenu(null) // 设置为 null 移除默认菜单
   createWindow()

@@ -11,40 +11,43 @@ export default function App() {
   // 视图状态
   const [currentView, setCurrentView] = useState('project-select')
   const [currentProject, setCurrentProject] = useState(null)
-  
+
   // 配置状态
   const [taskTypes, setTaskTypes] = useState([])
   const [taskTypeColors, setTaskTypeColors] = useState({})
-  
+
   // 项目相关状态
   const [projects, setProjects] = useState([])
   const [showAddProjectModal, setShowAddProjectModal] = useState(false)
   const [showDeleteProjectConfirm, setShowDeleteProjectConfirm] = useState(false)
   const [newProjectName, setNewProjectName] = useState('')
   const [projectToDelete, setProjectToDelete] = useState(null)
-  
+
   // 项目备忘相关状态
   const [showProjectMemoModal, setShowProjectMemoModal] = useState(false)
   const [showProjectMemoView, setShowProjectMemoView] = useState(false)
   const [editingProjectMemo, setEditingProjectMemo] = useState(null)
-  
+
   // Toast 提示
   const showToast = useToast()
-  
+
   // 图片预览
   const [imagePreview, setImagePreview] = useState({ show: false, src: '', currentIndex: 0, images: [] })
-  
+
   // 删除任务确认
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [taskToDelete, setTaskToDelete] = useState(null)
-  
+
   // 编辑任务模块
   const [showEditTaskModuleModal, setShowEditTaskModuleModal] = useState(false)
   const [editingTaskModule, setEditingTaskModule] = useState(null)
-  
+
   // 编辑模块列表
   const [showEditModuleListModal, setShowEditModuleListModal] = useState(false)
-  
+
+  // 导出未完成任务
+  const [showExportPendingModal, setShowExportPendingModal] = useState(false)
+
   // 使用自定义 Hooks
   const taskModalHook = useTaskModal(taskTypes)
   const taskManagerHook = useTaskManager(currentProject)
@@ -53,7 +56,7 @@ export default function App() {
   const loadConfig = async () => {
     const config = await getConfig()
     setTaskTypes([...config.taskTypes])
-    
+
     // 构建任务类型颜色映射
     const colorMap = {}
     config.taskTypes.forEach(type => {
@@ -65,7 +68,7 @@ export default function App() {
       }
       colorMap[type.name] = color
     })
-    setTaskTypeColors({...colorMap})
+    setTaskTypeColors({ ...colorMap })
   }
 
   // 加载项目列表
@@ -89,7 +92,7 @@ export default function App() {
   }, [])
 
   // ========== 项目相关处理函数 ==========
-  
+
   // 创建项目
   const handleCreateProject = async () => {
     if (!newProjectName.trim()) {
@@ -149,7 +152,7 @@ export default function App() {
     if (!projectToDelete) return
 
     const result = await window.electron?.projects?.delete(projectToDelete.id)
-    
+
     if (result?.success) {
       setShowDeleteProjectConfirm(false)
       setProjectToDelete(null)
@@ -177,10 +180,10 @@ export default function App() {
 
   // 打开项目备忘查看
   const handleOpenProjectMemoView = () => {
-    setEditingProjectMemo({ 
-      id: currentProject.id, 
+    setEditingProjectMemo({
+      id: currentProject.id,
       name: currentProject.name,
-      memo: currentProject.memo || '' 
+      memo: currentProject.memo || ''
     })
     setShowProjectMemoView(true)
   }
@@ -193,10 +196,10 @@ export default function App() {
 
   // 打开添加项目备忘
   const handleOpenAddProjectMemo = () => {
-    setEditingProjectMemo({ 
-      id: currentProject.id, 
+    setEditingProjectMemo({
+      id: currentProject.id,
       name: currentProject.name,
-      memo: '' 
+      memo: ''
     })
     setShowProjectMemoModal(true)
   }
@@ -528,6 +531,22 @@ export default function App() {
     }
   }
 
+  // 导出未完成任务
+  const handleExportPendingTasks = async (selectedModules, format = 'excel') => {
+    setShowExportPendingModal(false)
+    const result = await window.electron?.tasks?.exportPendingTasks({
+      projectId: currentProject.id,
+      modules: selectedModules,
+      format: format
+    })
+    if (result?.success) {
+      const formatLabel = format === 'excel' ? 'Excel' : 'Markdown'
+      showToast(`📊 未完成任务(${formatLabel})已保存到: ${result.path}`)
+    } else {
+      showToast(result?.error || '导出失败', 'error')
+    }
+  }
+
   // 打开删除确认框
   const handleOpenDeleteConfirm = (task) => {
     setTaskToDelete(task)
@@ -537,7 +556,7 @@ export default function App() {
   // 确认删除任务
   const handleConfirmDelete = async () => {
     if (!taskToDelete) return
-    
+
     await window.electron?.tasks?.delete(taskToDelete.id)
     setShowDeleteConfirm(false)
     setTaskToDelete(null)
@@ -552,7 +571,7 @@ export default function App() {
   }
 
   // ========== 图片预览相关 ==========
-  
+
   // 打开图片预览
   const handleOpenImagePreview = (imageSrc, allImages, currentIndex, onDelete) => {
     setImagePreview({
@@ -563,27 +582,27 @@ export default function App() {
       onDelete: onDelete ? (deleteIndex) => {
         // 调用删除回调，并获取更新后的图片列表
         const updatedImages = onDelete(deleteIndex)
-        
+
         // 使用函数式更新来确保获取最新的 imagePreview 状态
         setImagePreview(prev => {
           const newImages = updatedImages || []
           if (newImages.length === 0) {
             return { ...prev, show: false, src: '', currentIndex: 0, images: [] }
           }
-          
+
           // 计算新的索引
           // 如果当前索引大于删除的索引，说明删除的是前面的图片，当前索引需要减一
           // 如果当前索引等于删除的索引，说明删除的是当前图片，索引不变（即显示下一张），除非是最后一张
           let newIndex = prev.currentIndex
-          
+
           if (newIndex > deleteIndex) {
             newIndex = newIndex - 1
           } else if (newIndex === deleteIndex) {
             if (newIndex >= newImages.length) {
-               newIndex = newImages.length - 1
+              newIndex = newImages.length - 1
             }
           }
-          
+
           return {
             ...prev,
             images: newImages,
@@ -698,6 +717,10 @@ export default function App() {
       onBack={handleBackToProjects}
       onAddTask={handleAddTask}
       onExportReport={handleExportReport}
+      onExportPendingTasks={handleExportPendingTasks}
+      showExportPendingModal={showExportPendingModal}
+      onOpenExportPendingModal={() => setShowExportPendingModal(true)}
+      onCloseExportPendingModal={() => setShowExportPendingModal(false)}
       onSearchChange={taskManagerHook.setSearchKeyword}
       onModuleFilterChange={taskManagerHook.setSelectedModuleFilter}
       onCompletedSearchChange={taskManagerHook.setCompletedSearchKeyword}

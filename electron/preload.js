@@ -28,7 +28,8 @@ contextBridge.exposeInMainWorld('electron', {
     rollback: (id) => ipcRenderer.invoke('tasks:rollback', id),
     delete: (id) => ipcRenderer.invoke('tasks:delete', id),
     todayStats: (projectId) => ipcRenderer.invoke('tasks:todayStats', projectId),
-    exportTodayReport: (projectId) => ipcRenderer.invoke('tasks:exportTodayReport', projectId)
+    exportTodayReport: (projectId) => ipcRenderer.invoke('tasks:exportTodayReport', projectId),
+    exportPendingTasks: (payload) => ipcRenderer.invoke('tasks:exportPendingTasks', payload)
   },
   // 图片相关
   image: {
