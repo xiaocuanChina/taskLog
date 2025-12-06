@@ -27,28 +27,23 @@ import ConfirmModal from '../common/ConfirmModal'
 export default function ProjectSelectView({
   projects,
   showAddProjectModal,
-  showEditProjectModal,
   showDeleteProjectConfirm,
   showProjectMemoModal,
   newProjectName,
-  editingProject,
   projectToDelete,
   editingProjectMemo,
   onSelectProject,
   onAddProject,
-  onEditProject,
+  onUpdateProjectName,
   onDeleteProject,
   onProjectNameChange,
-  onEditProjectNameChange,
   onCreateProject,
-  onUpdateProject,
   onConfirmDeleteProject,
   onCancelDeleteProject,
   onProjectMemoChange,
   onUpdateProjectMemo,
   onCloseProjectMemoModal,
   onCloseAddProjectModal,
-  onCloseEditProjectModal,
   onProjectsReorder
 }) {
   // 配置拖拽传感器
@@ -109,7 +104,7 @@ export default function ProjectSelectView({
                     <ProjectCard
                       project={project}
                       onSelect={onSelectProject}
-                      onEdit={onEditProject}
+                      onUpdateName={onUpdateProjectName}
                       onDelete={onDeleteProject}
                     />
                   </Col>
@@ -128,16 +123,6 @@ export default function ProjectSelectView({
         onNameChange={onProjectNameChange}
         onConfirm={onCreateProject}
         onCancel={onCloseAddProjectModal}
-      />
-
-      {/* 编辑项目模态框 */}
-      <ProjectModal
-        show={showEditProjectModal}
-        isEdit={true}
-        projectName={editingProject?.name || ''}
-        onNameChange={onEditProjectNameChange}
-        onConfirm={onUpdateProject}
-        onCancel={onCloseEditProjectModal}
       />
 
       {/* 删除项目确认模态框 */}

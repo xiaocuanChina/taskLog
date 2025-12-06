@@ -19,10 +19,8 @@ export default function App() {
   // 项目相关状态
   const [projects, setProjects] = useState([])
   const [showAddProjectModal, setShowAddProjectModal] = useState(false)
-  const [showEditProjectModal, setShowEditProjectModal] = useState(false)
   const [showDeleteProjectConfirm, setShowDeleteProjectConfirm] = useState(false)
   const [newProjectName, setNewProjectName] = useState('')
-  const [editingProject, setEditingProject] = useState(null)
   const [projectToDelete, setProjectToDelete] = useState(null)
   
   // 项目备忘相关状态
@@ -117,32 +115,24 @@ export default function App() {
     setCurrentView('project-select')
   }
 
-  // 打开编辑项目模态框
-  const handleEditProject = (project) => {
-    setEditingProject({ ...project })
-    setShowEditProjectModal(true)
-  }
-
-  // 更新项目
-  const handleUpdateProject = async () => {
-    if (!editingProject.name.trim()) {
+  // 行内编辑更新项目名称
+  const handleUpdateProjectName = async (projectId, newName) => {
+    if (!newName.trim()) {
       showToast('请输入项目名称', 'error')
       return
     }
 
     const result = await window.electron?.projects?.update({
-      id: editingProject.id,
-      name: editingProject.name
+      id: projectId,
+      name: newName
     })
 
     if (result?.success) {
-      setEditingProject(null)
-      setShowEditProjectModal(false)
       loadProjects()
-      if (currentProject?.id === editingProject.id) {
-        setCurrentProject({ ...currentProject, name: editingProject.name })
+      if (currentProject?.id === projectId) {
+        setCurrentProject({ ...currentProject, name: newName })
       }
-      showToast('项目更新成功！')
+      showToast('项目名称更新成功！')
     } else {
       showToast(result?.error || '更新失败', 'error')
     }
@@ -614,30 +604,25 @@ export default function App() {
         <WindowControls title="TaskLog - 项目选择" onConfigChange={handleConfigChange} />
         <ProjectSelectView
           projects={projects}
-        showAddProjectModal={showAddProjectModal}
-        showEditProjectModal={showEditProjectModal}
-        showDeleteProjectConfirm={showDeleteProjectConfirm}
-        showProjectMemoModal={showProjectMemoModal}
-        newProjectName={newProjectName}
-        editingProject={editingProject}
-        projectToDelete={projectToDelete}
-        editingProjectMemo={editingProjectMemo}
-        onSelectProject={handleSelectProject}
-        onAddProject={() => setShowAddProjectModal(true)}
-        onEditProject={handleEditProject}
-        onDeleteProject={handleOpenDeleteProjectConfirm}
-        onProjectNameChange={setNewProjectName}
-        onEditProjectNameChange={(name) => setEditingProject({ ...editingProject, name })}
-        onCreateProject={handleCreateProject}
-        onUpdateProject={handleUpdateProject}
-        onConfirmDeleteProject={handleConfirmDeleteProject}
-        onCancelDeleteProject={handleCancelDeleteProject}
-        onProjectMemoChange={(memo) => setEditingProjectMemo({ ...editingProjectMemo, memo })}
-        onUpdateProjectMemo={handleUpdateProjectMemo}
-        onCloseProjectMemoModal={() => setShowProjectMemoModal(false)}
-        onCloseAddProjectModal={() => setShowAddProjectModal(false)}
-        onCloseEditProjectModal={() => setShowEditProjectModal(false)}
-        onProjectsReorder={handleProjectsReorder}
+          showAddProjectModal={showAddProjectModal}
+          showDeleteProjectConfirm={showDeleteProjectConfirm}
+          showProjectMemoModal={showProjectMemoModal}
+          newProjectName={newProjectName}
+          projectToDelete={projectToDelete}
+          editingProjectMemo={editingProjectMemo}
+          onSelectProject={handleSelectProject}
+          onAddProject={() => setShowAddProjectModal(true)}
+          onUpdateProjectName={handleUpdateProjectName}
+          onDeleteProject={handleOpenDeleteProjectConfirm}
+          onProjectNameChange={setNewProjectName}
+          onCreateProject={handleCreateProject}
+          onConfirmDeleteProject={handleConfirmDeleteProject}
+          onCancelDeleteProject={handleCancelDeleteProject}
+          onProjectMemoChange={(memo) => setEditingProjectMemo({ ...editingProjectMemo, memo })}
+          onUpdateProjectMemo={handleUpdateProjectMemo}
+          onCloseProjectMemoModal={() => setShowProjectMemoModal(false)}
+          onCloseAddProjectModal={() => setShowAddProjectModal(false)}
+          onProjectsReorder={handleProjectsReorder}
         />
       </>
     )
