@@ -1,6 +1,6 @@
 /**
  * 任务添加/编辑模态框组件
- * 
+ *
  * 功能说明:
  * - 用于添加新任务或编辑现有任务
  * - 提供任务描述、模块、类型、发起人、备注等字段输入
@@ -9,13 +9,13 @@
  * - 模块名和任务类型支持自动补全
  * - 编辑模式下可管理已有图片和新增图片
  * - 使用 Ant Design Modal 和 Form 组件实现
- * 
+ *
  * 使用场景:
  * - 在任务管理视图中添加新任务
  * - 编辑待办任务的信息
  */
 import React, { useEffect, useRef } from 'react'
-import { Modal, Input, Form, Row, Col, Upload, Button, Switch, AutoComplete, Space, Tag } from 'antd'
+import { Modal, Input, Form, Row, Col, Button, Switch, AutoComplete, Space, Tag } from 'antd'
 import { UploadOutlined, DeleteOutlined, CodeOutlined } from '@ant-design/icons'
 import TaskImage from '../common/TaskImage'
 import styles from './TaskModal.module.css'
@@ -27,8 +27,6 @@ export default function TaskModal({
   task,
   modules,
   taskTypes = [],
-  showModuleDropdown,
-  showTypeDropdown,
   dragActive,
   onTaskChange,
   onModuleDropdownToggle,
@@ -82,8 +80,8 @@ export default function TaskModal({
     }
   }, [show])
   const languages = [
-    'javascript', 'typescript', 'python', 'java', 'c', 'cpp', 'csharp', 
-    'go', 'rust', 'php', 'ruby', 'sql', 'html', 'css', 'json', 
+    'javascript', 'typescript', 'python', 'java', 'c', 'cpp', 'csharp',
+    'go', 'rust', 'php', 'ruby', 'sql', 'html', 'css', 'json',
     'markdown', 'bash', 'powershell'
   ]
 
@@ -141,7 +139,7 @@ export default function TaskModal({
                   placeholder="请选择任务类型"
                   value={task?.type || ''}
                   onChange={(value) => onTaskChange({ ...task, type: value })}
-                  options={taskTypes.map(type => ({ 
+                  options={taskTypes.map(type => ({
                     value: type.name,
                     label: (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -191,19 +189,19 @@ export default function TaskModal({
                 <div style={{ fontSize: 13, color: '#8c8c8c', marginBottom: 8 }}>已有图片:</div>
                 <Space wrap>
                   {task.existingImages.map((imgPath, idx) => (
-                    <div 
-                      key={idx} 
-                      style={{ 
-                        position: 'relative', 
-                        width: 100, 
+                    <div
+                      key={idx}
+                      style={{
+                        position: 'relative',
+                        width: 100,
                         height: 100,
                         border: '1px solid #d9d9d9',
                         borderRadius: 4,
                         overflow: 'hidden'
                       }}
                     >
-                      <TaskImage 
-                        src={imgPath} 
+                      <TaskImage
+                        src={imgPath}
                         alt={`已有附件${idx + 1}`}
                         onClick={() => {
                            if (onPreviewImage) {
@@ -214,7 +212,7 @@ export default function TaskModal({
                                const newExistingImages = [...currentTask.existingImages]
                                newExistingImages.splice(deleteIndex, 1)
                                currentOnTaskChange({ ...currentTask, existingImages: newExistingImages })
-                               
+
                                // 返回更新后的预览图片列表
                                return newExistingImages
                              })
@@ -228,9 +226,9 @@ export default function TaskModal({
                         size="small"
                         icon={<DeleteOutlined />}
                         onClick={() => onRemoveExistingImage(idx)}
-                        style={{ 
-                          position: 'absolute', 
-                          top: 4, 
+                        style={{
+                          position: 'absolute',
+                          top: 4,
                           right: 4,
                           minWidth: 24,
                           height: 24,
@@ -244,8 +242,8 @@ export default function TaskModal({
             )}
 
             {/* 上传区域 */}
-            <div 
-              style={{ 
+            <div
+              style={{
                 border: dragActive ? '2px dashed #1890ff' : '2px dashed #d9d9d9',
                 borderRadius: 8,
                 padding: 24,
@@ -280,9 +278,9 @@ export default function TaskModal({
                 </div>
                 <Space wrap>
                   {task.images.map((file, idx) => (
-                    <div 
-                      key={idx} 
-                      style={{ 
+                    <div
+                      key={idx}
+                      style={{
                         position: 'relative',
                         width: 100,
                         border: '1px solid #d9d9d9',
@@ -290,8 +288,8 @@ export default function TaskModal({
                         padding: 4
                       }}
                     >
-                      <img 
-                        src={URL.createObjectURL(file)} 
+                      <img
+                        src={URL.createObjectURL(file)}
                         alt={file.name}
                         onClick={() => {
                           if (onPreviewImage) {
@@ -304,15 +302,15 @@ export default function TaskModal({
                               const newImages = [...currentTask.images]
                               newImages.splice(deleteIndex, 1)
                               currentOnTaskChange({ ...currentTask, images: newImages })
-                              
+
                               // 返回更新后的预览图片列表，用于 ImagePreview 更新显示
                               return newImages.map(f => URL.createObjectURL(f))
                             })
                           }
                         }}
-                        style={{  
-                          width: '100%', 
-                          height: 100, 
+                        style={{
+                          width: '100%',
+                          height: 100,
                           objectFit: 'cover',
                           borderRadius: 4,
                           cursor: 'pointer'
@@ -324,18 +322,18 @@ export default function TaskModal({
                         size="small"
                         icon={<DeleteOutlined />}
                         onClick={() => onRemoveImage(idx)}
-                        style={{ 
-                          position: 'absolute', 
-                          top: 8, 
+                        style={{
+                          position: 'absolute',
+                          top: 8,
                           right: 8,
                           minWidth: 24,
                           height: 24,
                           padding: 0
                         }}
                       />
-                      <div style={{ 
-                        fontSize: 11, 
-                        color: '#8c8c8c', 
+                      <div style={{
+                        fontSize: 11,
+                        color: '#8c8c8c',
                         marginTop: 4,
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
@@ -355,12 +353,12 @@ export default function TaskModal({
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
               <Switch
                 checked={task?.codeBlock?.enabled || false}
-                onChange={(checked) => onTaskChange({ 
-                  ...task, 
-                  codeBlock: { 
-                    ...(task?.codeBlock || {}), 
-                    enabled: checked 
-                  } 
+                onChange={(checked) => onTaskChange({
+                  ...task,
+                  codeBlock: {
+                    ...(task?.codeBlock || {}),
+                    enabled: checked
+                  }
                 })}
               />
               <CodeOutlined />
