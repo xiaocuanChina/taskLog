@@ -1,6 +1,6 @@
 import React from 'react'
 import { Divider, Button, Tooltip } from 'antd'
-import { UndoOutlined } from '@ant-design/icons'
+import { LogoutOutlined } from '@ant-design/icons'
 
 export default function RecycleBin({ modules, onRestore }) {
   if (!modules || modules.length === 0) return null
@@ -21,16 +21,14 @@ export default function RecycleBin({ modules, onRestore }) {
             <span style={{ flex: 1, color: '#cf1322', textDecoration: 'line-through' }}>
               {module.name}
             </span>
-            <Tooltip title="恢复模块">
+            <Tooltip title="移出回收站">
               <Button
                 type="text"
                 size="small"
-                icon={<UndoOutlined />}
+                icon={<LogoutOutlined />}
                 onClick={() => onRestore(module.id)}
                 style={{ color: '#1890ff' }}
-              >
-                恢复
-              </Button>
+              />
             </Tooltip>
           </div>
         ))}

@@ -391,7 +391,7 @@ export default function TaskManageView({
                 <div style={{marginBottom: 24, display: 'flex', alignItems: 'center', gap: 16}}>
                     <Tooltip 
                         title="Ctrl + N"
-                        overlayInnerStyle={{ padding: '4px 8px', fontSize: '12px' }}
+                        styles={{ body: { padding: '4px 8px', fontSize: '12px' } }}
                     >
                         <Button
                             type="primary"

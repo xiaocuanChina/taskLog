@@ -1,6 +1,6 @@
 /**
  * 编辑模块列表模态框组件
- * 
+ *
  * 功能说明:
  * - 用于批量管理当前项目的所有模块
  * - 支持查看所有模块及其任务数量
@@ -9,14 +9,14 @@
  * - 支持永久删除空模块（无待办任务时可删除）
  * - 支持拖拽排序模块（使用 @dnd-kit）
  * - 使用 Ant Design Modal 组件实现
- * 
+ *
  * 使用场景:
  * - 在任务管理界面点击"编辑模块"按钮时弹出
  * - 统一管理项目的模块结构
  */
 import React, { useState, useEffect, useRef } from 'react'
 import { Modal, Input, Button, Space, Tag, Empty, Popconfirm, Tooltip, Radio } from 'antd'
-import { FolderOutlined, EditOutlined, DeleteOutlined, CheckOutlined, CloseOutlined, HolderOutlined, UnorderedListOutlined, PlusOutlined } from '@ant-design/icons'
+import { FolderOutlined, EditOutlined, DeleteOutlined, BorderOuterOutlined, LoginOutlined, CheckOutlined, CloseOutlined, HolderOutlined, UnorderedListOutlined, PlusOutlined } from '@ant-design/icons'
 import RecycleBin from './RecycleBin'
 import { useToast } from '../../context/ToastContext'
 import {
@@ -120,24 +120,35 @@ function SortableModuleItem({
           </>
         ) : (
           <>
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 15, fontWeight: 600 }}>{module.name}</span>
-              <Tag color={pendingTaskCount > 0 ? 'orange' : 'default'}>
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+              <span
+                style={{
+                  fontSize: 15,
+                  fontWeight: 600,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap'
+                }}
+                title={module.name}
+              >
+                {module.name}
+              </span>
+              <Tag color={pendingTaskCount > 0 ? 'orange' : 'default'} style={{ flexShrink: 0 }}>
                 待办 {pendingTaskCount}
               </Tag>
-              <Tag color={taskCount - pendingTaskCount > 0 ? 'green' : 'default'}>
+              <Tag color={taskCount - pendingTaskCount > 0 ? 'green' : 'default'} style={{ flexShrink: 0 }}>
                 已完成 {taskCount - pendingTaskCount}
               </Tag>
             </div>
             <Space>
-              <Button
-                type="text"
-                size="small"
-                icon={<EditOutlined />}
-                onClick={onStartEdit}
-              >
-                编辑
-              </Button>
+              <Tooltip title="编辑">
+                <Button
+                  type="text"
+                  size="small"
+                  icon={<EditOutlined />}
+                  onClick={onStartEdit}
+                />
+              </Tooltip>
               {/* 移入回收站：待办任务数为0时可用 */}
               {pendingTaskCount === 0 ? (
                 <Popconfirm
@@ -147,26 +158,23 @@ function SortableModuleItem({
                   okText="确认"
                   cancelText="取消"
                 >
-                  <Button
-                    type="text"
-                    size="small"
-                    danger
-                    icon={<DeleteOutlined />}
-                  >
-                    移入回收站
-                  </Button>
+                  <Tooltip title="移入回收站">
+                    <Button
+                      type="text"
+                      size="small"
+                      style={{ color: '#d59310' }}
+                      icon={<LoginOutlined />}
+                    />
+                  </Tooltip>
                 </Popconfirm>
               ) : (
                 <Tooltip title="该模块下还有待办任务，无法移入回收站">
                   <Button
                     type="text"
                     size="small"
-                    danger
-                    icon={<DeleteOutlined />}
+                    icon={<LoginOutlined />}
                     disabled
-                  >
-                    移入回收站
-                  </Button>
+                  />
                 </Tooltip>
               )}
               {/* 永久删除：任务总数为0时可用 */}
@@ -179,14 +187,14 @@ function SortableModuleItem({
                   cancelText="取消"
                   okButtonProps={{ danger: true }}
                 >
-                  <Button
-                    type="text"
-                    size="small"
-                    danger
-                    icon={<DeleteOutlined />}
-                  >
-                    删除
-                  </Button>
+                  <Tooltip title="永久删除">
+                    <Button
+                      type="text"
+                      size="small"
+                      danger
+                      icon={<DeleteOutlined />}
+                    />
+                  </Tooltip>
                 </Popconfirm>
               ) : (
                 <Tooltip title="该模块下还有任务，无法永久删除">
@@ -196,9 +204,7 @@ function SortableModuleItem({
                     danger
                     icon={<DeleteOutlined />}
                     disabled
-                  >
-                    删除
-                  </Button>
+                  />
                 </Tooltip>
               )}
             </Space>
