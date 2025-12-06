@@ -29,7 +29,8 @@ import {
     CloseCircleOutlined,
     EditOutlined,
     DownOutlined,
-    UpOutlined
+    UpOutlined,
+    CalendarOutlined
 } from '@ant-design/icons'
 import WindowControls from '../common/WindowControls'
 import ModuleGroup from './ModuleGroup'
@@ -412,11 +413,13 @@ export default function TaskManageView({
                             items: [
                                 {
                                     key: 'today',
+                                    icon: <CalendarOutlined />,
                                     label: '导出今日日报',
                                     onClick: onExportReport
                                 },
                                 {
                                     key: 'pending',
+                                    icon: <FileExcelOutlined />,
                                     label: '导出未完成任务',
                                     onClick: onOpenExportPendingModal
                                 }
