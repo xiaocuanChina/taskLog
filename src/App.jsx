@@ -400,14 +400,27 @@ export default function App() {
   }
 
   // 在模块列表中删除模块
+  // 移入回收站
   const handleDeleteModuleInList = async (moduleId) => {
     const result = await window.electron?.modules?.delete(moduleId)
 
     if (result?.success) {
-      showToast('模块删除成功', 'success')
+      showToast('模块已移入回收站', 'success')
       await taskManagerHook.refreshData()
     } else {
-      showToast(result?.error || '模块删除失败', 'error')
+      showToast(result?.error || '操作失败', 'error')
+    }
+  }
+
+  // 永久删除模块
+  const handlePermanentDeleteModuleInList = async (moduleId) => {
+    const result = await window.electron?.modules?.permanentDelete(moduleId)
+
+    if (result?.success) {
+      showToast('模块已永久删除', 'success')
+      await taskManagerHook.refreshData()
+    } else {
+      showToast(result?.error || '删除失败', 'error')
     }
   }
 
@@ -420,6 +433,20 @@ export default function App() {
       await taskManagerHook.refreshData()
     } else {
       showToast(result?.error || '模块恢复失败', 'error')
+    }
+  }
+
+  // 新增模块
+  const handleAddModuleInList = async (moduleName) => {
+    const result = await window.electron?.modules?.add({
+      name: moduleName,
+      projectId: currentProject.id
+    })
+
+    if (result?.success !== false) {
+      await taskManagerHook.refreshData()
+    } else {
+      throw new Error(result?.error || '模块添加失败')
     }
   }
 
@@ -764,7 +791,9 @@ export default function App() {
       onOpenEditModuleList={handleOpenEditModuleList}
       onUpdateModuleInList={handleUpdateModuleInList}
       onDeleteModuleInList={handleDeleteModuleInList}
+      onPermanentDeleteModuleInList={handlePermanentDeleteModuleInList}
       onRestoreModuleInList={handleRestoreModuleInList}
+      onAddModuleInList={handleAddModuleInList}
       onReorderModules={handleReorderModules}
       onCloseEditModuleList={handleCloseEditModuleList}
     />

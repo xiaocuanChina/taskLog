@@ -142,7 +142,9 @@ export default function TaskManageView({
   onOpenEditModuleList,
   onUpdateModuleInList,
   onDeleteModuleInList,
+  onPermanentDeleteModuleInList,
   onRestoreModuleInList,
+  onAddModuleInList,
   onReorderModules,
   onCloseEditModuleList
 }) {
@@ -777,7 +779,9 @@ export default function TaskManageView({
         tasks={tasks}
         onUpdateModule={onUpdateModuleInList}
         onDeleteModule={onDeleteModuleInList}
+        onPermanentDeleteModule={onPermanentDeleteModuleInList}
         onRestoreModule={onRestoreModuleInList}
+        onAddModule={onAddModuleInList}
         onReorderModules={onReorderModules}
         onClose={onCloseEditModuleList}
       />

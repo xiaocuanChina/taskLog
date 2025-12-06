@@ -364,6 +364,29 @@ app.whenReady().then(() => {
     }
     return { success: false, error: '模块不存在' }
   })
+
+  // 永久删除模块
+  ipcMain.handle('modules:permanentDelete', (e, id) => {
+    const list = readModules()
+    const idx = list.findIndex(m => m.id === id)
+    if (idx >= 0) {
+      const module = list[idx]
+      
+      // 检查是否有任务使用该模块（任务总数必须为0才能永久删除）
+      const tasks = readTasks()
+      const hasTask = tasks.some(task => task.projectId === module.projectId && task.module === module.name)
+      
+      if (hasTask) {
+        return { success: false, error: '该模块下还有任务，无法永久删除' }
+      }
+      
+      // 永久删除：从列表中移除
+      list.splice(idx, 1)
+      writeModules(list)
+      return { success: true }
+    }
+    return { success: false, error: '模块不存在' }
+  })
   
   ipcMain.handle('modules:reorder', (e, payload) => {
     const list = readModules()

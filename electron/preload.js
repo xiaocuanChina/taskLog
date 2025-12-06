@@ -16,6 +16,7 @@ contextBridge.exposeInMainWorld('electron', {
     update: (module) => ipcRenderer.invoke('modules:update', module),
     delete: (id) => ipcRenderer.invoke('modules:delete', id),
     restore: (id) => ipcRenderer.invoke('modules:restore', id),
+    permanentDelete: (id) => ipcRenderer.invoke('modules:permanentDelete', id),
     reorder: (payload) => ipcRenderer.invoke('modules:reorder', payload)
   },
   tasks: {
