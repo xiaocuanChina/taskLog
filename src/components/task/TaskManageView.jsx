@@ -299,6 +299,20 @@ export default function TaskManageView({
         })
     }
 
+    // 监听快捷键 Ctrl + N
+    React.useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.ctrlKey && e.key.toLowerCase() === 'n') {
+                e.preventDefault()
+                if (!showAddTaskModal) {
+                    onOpenAddTaskModal()
+                }
+            }
+        }
+        window.addEventListener('keydown', handleKeyDown)
+        return () => window.removeEventListener('keydown', handleKeyDown)
+    }, [onOpenAddTaskModal, showAddTaskModal])
+
     return (
         <div style={{
             height: '100vh',
@@ -375,14 +389,19 @@ export default function TaskManageView({
             }}>
                 {/* 操作栏和统计 */}
                 <div style={{marginBottom: 24, display: 'flex', alignItems: 'center', gap: 16}}>
-                    <Button
-                        type="primary"
-                        size="large"
-                        icon={<PlusOutlined/>}
-                        onClick={onOpenAddTaskModal}
+                    <Tooltip 
+                        title="Ctrl + N"
+                        overlayInnerStyle={{ padding: '4px 8px', fontSize: '12px' }}
                     >
-                        添加新任务
-                    </Button>
+                        <Button
+                            type="primary"
+                            size="large"
+                            icon={<PlusOutlined/>}
+                            onClick={onOpenAddTaskModal}
+                        >
+                            添加新任务
+                        </Button>
+                    </Tooltip>
                     <Button
                         type="primary"
                         size="large"
