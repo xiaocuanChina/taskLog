@@ -382,6 +382,7 @@ export default function EditModuleListModal({
                 <Space size={4}>
                   <UnorderedListOutlined />
                   列表
+                  {localModules.length > 0 && <span style={{ fontSize: 12 }}>({localModules.length})</span>}
                 </Space>
               </Radio.Button>
               <Radio.Button value="recycle">
