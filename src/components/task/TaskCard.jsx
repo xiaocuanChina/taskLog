@@ -20,6 +20,7 @@ import { CheckOutlined, RollbackOutlined, DeleteOutlined, EditOutlined, ClockCir
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import TaskImage from '../common/TaskImage'
+import styles from './TaskCard.module.css'
 
 export default function TaskCard({ task, isCompleted, taskTypeColors = {}, onComplete, onRollback, onEdit, onDelete, onImageClick, onEditModule }) {
   const [isCompleting, setIsCompleting] = useState(false)
@@ -278,6 +279,7 @@ export default function TaskCard({ task, isCompleted, taskTypeColors = {}, onCom
               <SyntaxHighlighter 
                 language={task.codeBlock.language || 'text'} 
                 style={vscDarkPlus}
+                className={styles.taskCodeBlockContent}
                 customStyle={{
                   margin: 0,
                   borderRadius: 0,

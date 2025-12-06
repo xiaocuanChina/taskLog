@@ -18,6 +18,7 @@ import React, { useEffect, useRef } from 'react'
 import { Modal, Input, Form, Row, Col, Upload, Button, Switch, AutoComplete, Space, Tag } from 'antd'
 import { UploadOutlined, DeleteOutlined, CodeOutlined } from '@ant-design/icons'
 import TaskImage from '../common/TaskImage'
+import styles from './TaskModal.module.css'
 
 const { TextArea } = Input
 export default function TaskModal({
@@ -398,13 +399,7 @@ export default function TaskModal({
                     }
                   })}
                   rows={6}
-                  style={{
-                    fontFamily: 'Monaco, Consolas, "Courier New", monospace',
-                    fontSize: '13px',
-                    background: '#1e1e1e',
-                    color: '#d4d4d4',
-                    border: '2px solid #3a3a3a'
-                  }}
+                  className={styles.codeEditor}
                 />
               </div>
             )}

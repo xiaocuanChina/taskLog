@@ -331,6 +331,29 @@
   position: relative;
   display: block;
   box-sizing: border-box;
+  /* 滚动条样式 */
+  scrollbar-width: thin;
+  scrollbar-color: #4b5563 #1e1e1e;
+}
+
+.taskCodeBlockContent::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+.taskCodeBlockContent::-webkit-scrollbar-track {
+  background: #1e1e1e;
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+}
+
+.taskCodeBlockContent::-webkit-scrollbar-thumb {
+  background: #4b5563;
+  border-radius: 4px;
+}
+
+.taskCodeBlockContent::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
 }
 
 /* 编辑按钮 */
