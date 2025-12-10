@@ -790,6 +790,7 @@ export default function TaskManageView({
                 isEdit={false}
                 task={newTask}
                 modules={modules}
+                recycleModules={recycleModules}
                 taskTypes={taskTypes}
                 showModuleDropdown={showModuleDropdown}
                 showTypeDropdown={showTypeDropdown}
@@ -818,6 +819,7 @@ export default function TaskManageView({
                 isEdit={true}
                 task={editingTask || {}}
                 modules={modules}
+                recycleModules={recycleModules}
                 taskTypes={taskTypes}
                 showModuleDropdown={showEditModuleDropdown}
                 showTypeDropdown={showEditTypeDropdown}

@@ -26,6 +26,7 @@ export default function TaskModal({
   isEdit,
   task,
   modules,
+  recycleModules = [],
   taskTypes = [],
   dragActive,
   onTaskChange,
@@ -85,9 +86,22 @@ export default function TaskModal({
     'markdown', 'bash', 'powershell'
   ]
 
-  const moduleOptions = modules
-    .filter(mod => mod.name.toLowerCase().includes((task?.module || '').toLowerCase()))
-    .map(mod => ({ value: mod.name }))
+  const keyword = (task?.module || '').toLowerCase()
+  const activeModuleOptions = modules
+    .filter(mod => mod.name.toLowerCase().includes(keyword))
+    .map(mod => ({ value: mod.name, label: mod.name }))
+  const recycledModuleOptions = (recycleModules || [])
+    .filter(mod => mod.name.toLowerCase().includes(keyword))
+    .map(mod => ({
+      value: mod.name,
+      label: (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span>{mod.name}</span>
+          <Tag color="#eec50cff">在回收站</Tag>
+        </div>
+      )
+    }))
+  const moduleOptions = [...activeModuleOptions, ...recycledModuleOptions]
 
   return (
     <Modal
