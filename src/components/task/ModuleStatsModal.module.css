@@ -1,0 +1,34 @@
+/* 模块统计报表模态框样式 */
+
+/* 表格容器 */
+.tableWrapper :global(.ant-table-body) {
+    /* 滚动条整体样式 */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(102, 126, 234, 0.4) transparent;
+}
+
+/* Webkit 浏览器滚动条样式 */
+.tableWrapper :global(.ant-table-body)::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.tableWrapper :global(.ant-table-body)::-webkit-scrollbar-track {
+    background: rgba(102, 126, 234, 0.08);
+    border-radius: 10px;
+}
+
+.tableWrapper :global(.ant-table-body)::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 10px;
+    transition: background 0.3s ease;
+}
+
+.tableWrapper :global(.ant-table-body)::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, #5a6fd6 0%, #6a4190 100%);
+}
+
+.tableWrapper :global(.ant-table-body)::-webkit-scrollbar-corner {
+    background: transparent;
+}
+
