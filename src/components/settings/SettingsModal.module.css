@@ -220,3 +220,36 @@
   border-top: 1px solid #f0f0f0;
   padding: 16px 24px;
 }
+
+/* 主题色设置区域 */
+.themeColorSection {
+  padding: 4px 0;
+}
+
+.themeColorHeader {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.colorPickerRow {
+  display: flex;
+  gap: 32px;
+  margin-bottom: 16px;
+}
+
+.colorPickerItem {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.gradientPreview {
+  margin-top: 8px;
+}
+
+.gradientBar {
+  height: 40px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}

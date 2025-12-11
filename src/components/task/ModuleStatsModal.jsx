@@ -170,7 +170,7 @@ export default function ModuleStatsModal({
                         gap: 12,
                         marginBottom: 20,
                         padding: 16,
-                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        background: 'linear-gradient(135deg, var(--theme-start-color) 0%, var(--theme-end-color) 100%)',
                         borderRadius: 12
                     }}>
                         <div style={{

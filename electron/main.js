@@ -895,6 +895,13 @@ app.whenReady().then(() => {
 
   // 默认配置
   const defaultConfig = {
+    general: {
+      searchScope: 'all',
+      themeColors: {
+        startColor: '#667eea',
+        endColor: '#764ba2'
+      }
+    },
     taskTypes: [
       { name: 'BUG', color: '#ff4d4f' },
       { name: '代办', color: '#1890ff' },

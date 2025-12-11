@@ -11,7 +11,11 @@
 // 默认配置
 const DEFAULT_CONFIG = {
   general: {
-    searchScope: 'all' // 'module' | 'description' | 'all'
+    searchScope: 'all', // 'module' | 'description' | 'all'
+    themeColors: {
+      startColor: '#667eea',  // 渐变起始色
+      endColor: '#764ba2'     // 渐变结束色
+    }
   },
   taskTypes: [
     { name: 'BUG', color: '#ff4d4f' },
@@ -30,20 +34,25 @@ export async function getConfig() {
     if (!configStr) {
       return DEFAULT_CONFIG
     }
-    
+
     // 直接解析 JSON（主进程已经返回 JSON 字符串）
     const config = JSON.parse(configStr)
-    
+
     // 验证配置结构
     if (!config.taskTypes || !Array.isArray(config.taskTypes)) {
       return DEFAULT_CONFIG
     }
-    
+
     // 确保通用设置存在
     if (!config.general) {
       config.general = DEFAULT_CONFIG.general
     }
-    
+
+    // 确保 themeColors 存在
+    if (!config.general.themeColors) {
+      config.general.themeColors = DEFAULT_CONFIG.general.themeColors
+    }
+
     return config
   } catch (error) {
     console.error('读取配置失败:', error)
@@ -60,16 +69,23 @@ export async function saveConfig(config) {
     if (!config.taskTypes || !Array.isArray(config.taskTypes)) {
       throw new Error('配置格式错误')
     }
-    
+
     // 确保通用设置存在
     if (!config.general) {
       config.general = DEFAULT_CONFIG.general
     }
-    
+
+    // 确保 themeColors 存在
+    if (!config.general.themeColors) {
+      config.general.themeColors = DEFAULT_CONFIG.general.themeColors
+    }
+
     // 直接保存 JSON 字符串（主进程会处理存储）
     const configStr = JSON.stringify(config)
-    
-    await window.electron?.config?.save(configStr)
+    console.log('保存配置:', config.general?.themeColors)
+
+    const result = await window.electron?.config?.save(configStr)
+    console.log('配置保存结果:', result)
     return true
   } catch (error) {
     console.error('保存配置失败:', error)

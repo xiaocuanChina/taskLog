@@ -46,13 +46,23 @@ export default function SettingsModal({ visible, onClose }) {
   const loadConfig = async () => {
     const config = await getConfig()
     setTaskTypes(config.taskTypes)
-    form.setFieldsValue({ 
+
+    // 确保 general 配置完整
+    const generalConfig = {
+      searchScope: config.general?.searchScope || 'all',
+      themeColors: {
+        startColor: config.general?.themeColors?.startColor || '#667eea',
+        endColor: config.general?.themeColors?.endColor || '#764ba2'
+      }
+    }
+
+    form.setFieldsValue({
       taskTypes: config.taskTypes,
-      general: config.general || { searchScope: 'all' }
+      general: generalConfig
     })
-    setFormValues({ 
+    setFormValues({
       taskTypes: config.taskTypes,
-      general: config.general || { searchScope: 'all' }
+      general: generalConfig
     })
   }
 
@@ -83,15 +93,15 @@ export default function SettingsModal({ visible, onClose }) {
   const handleDragOver = (e, index) => {
     e.preventDefault()
     e.dataTransfer.dropEffect = 'move'
-    
+
     if (draggedIndex === null || draggedIndex === index) return
-    
+
     // 实时交换位置
     const newTaskTypes = [...taskTypes]
     const draggedItem = newTaskTypes[draggedIndex]
     newTaskTypes.splice(draggedIndex, 1)
     newTaskTypes.splice(index, 0, draggedItem)
-    
+
     setTaskTypes(newTaskTypes)
     form.setFieldsValue({ taskTypes: newTaskTypes })
     setFormValues({ taskTypes: newTaskTypes })
@@ -107,10 +117,10 @@ export default function SettingsModal({ visible, onClose }) {
   const handleSave = async () => {
     try {
       const values = await form.validateFields()
-      
+
       // 获取当前配置
       const config = await getConfig()
-      
+
       // 如果有任务类型数据，进行验证和转换
       let taskTypes = config.taskTypes
       if (values.taskTypes) {
@@ -133,12 +143,30 @@ export default function SettingsModal({ visible, onClose }) {
       }
 
       setSaveLoading(true)
-      const success = await saveConfig({ 
+
+      // 确保 general.themeColors 的颜色值是字符串
+      const generalConfig = {
+        searchScope: values.general?.searchScope || config.general?.searchScope || 'all',
+        themeColors: {
+          startColor: typeof values.general?.themeColors?.startColor === 'string'
+            ? values.general.themeColors.startColor
+            : (values.general?.themeColors?.startColor?.toHexString?.() || config.general?.themeColors?.startColor || '#667eea'),
+          endColor: typeof values.general?.themeColors?.endColor === 'string'
+            ? values.general.themeColors.endColor
+            : (values.general?.themeColors?.endColor?.toHexString?.() || config.general?.themeColors?.endColor || '#764ba2')
+        }
+      }
+
+      const success = await saveConfig({
         taskTypes,
-        general: values.general || config.general
+        general: generalConfig
       })
-      
+
       if (success) {
+        // 立即应用主题色到 CSS 变量
+        document.documentElement.style.setProperty('--theme-start-color', generalConfig.themeColors.startColor)
+        document.documentElement.style.setProperty('--theme-end-color', generalConfig.themeColors.endColor)
+        
         showToast('保存成功', 'success')
         onClose(true) // 传递 true 表示需要刷新
       } else {
@@ -156,6 +184,10 @@ export default function SettingsModal({ visible, onClose }) {
     setResetLoading(true)
     const success = await resetConfig()
     if (success) {
+      // 重置后应用默认主题色
+      document.documentElement.style.setProperty('--theme-start-color', '#667eea')
+      document.documentElement.style.setProperty('--theme-end-color', '#764ba2')
+      
       showToast('已重置为默认配置', 'success')
       await loadConfig()
     } else {
@@ -268,12 +300,12 @@ export default function SettingsModal({ visible, onClose }) {
             onClick={({ key }) => setActiveMenu(key)}
           />
         </div>
-        
+
         <div className={styles.settingsContent}>
           {activeMenu === 'general' && (
-            <GeneralSettings 
-              form={form} 
-              onFormChange={handleFormChange} 
+            <GeneralSettings
+              form={form}
+              onFormChange={handleFormChange}
             />
           )}
           {activeMenu === 'taskTypes' && (

@@ -48,6 +48,9 @@ export default function App() {
   // 导出未完成任务
   const [showExportPendingModal, setShowExportPendingModal] = useState(false)
 
+  // 模块统计报表
+  const [showModuleStatsModal, setShowModuleStatsModal] = useState(false)
+
   // 使用自定义 Hooks
   const taskModalHook = useTaskModal(taskTypes)
   const taskManagerHook = useTaskManager(currentProject)
@@ -69,6 +72,16 @@ export default function App() {
       colorMap[type.name] = color
     })
     setTaskTypeColors({ ...colorMap })
+
+    // 应用主题色到 CSS 变量
+    const themeColors = config.general?.themeColors
+    console.log('加载主题色配置:', themeColors)
+    if (themeColors) {
+      const { startColor, endColor } = themeColors
+      console.log('应用主题色:', startColor, endColor)
+      document.documentElement.style.setProperty('--theme-start-color', startColor || '#667eea')
+      document.documentElement.style.setProperty('--theme-end-color', endColor || '#764ba2')
+    }
   }
 
   // 加载项目列表
@@ -721,6 +734,9 @@ export default function App() {
       showExportPendingModal={showExportPendingModal}
       onOpenExportPendingModal={() => setShowExportPendingModal(true)}
       onCloseExportPendingModal={() => setShowExportPendingModal(false)}
+      showModuleStatsModal={showModuleStatsModal}
+      onOpenModuleStats={() => setShowModuleStatsModal(true)}
+      onCloseModuleStats={() => setShowModuleStatsModal(false)}
       onSearchChange={taskManagerHook.setSearchKeyword}
       onModuleFilterChange={taskManagerHook.setSelectedModuleFilter}
       onCompletedSearchChange={taskManagerHook.setCompletedSearchKeyword}

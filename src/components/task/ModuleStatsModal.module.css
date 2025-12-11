@@ -19,13 +19,14 @@
 }
 
 .tableWrapper :global(.ant-table-body)::-webkit-scrollbar-thumb {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, var(--theme-start-color) 0%, var(--theme-end-color) 100%);
     border-radius: 10px;
     transition: background 0.3s ease;
 }
 
 .tableWrapper :global(.ant-table-body)::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(135deg, #5a6fd6 0%, #6a4190 100%);
+    background: linear-gradient(135deg, var(--theme-start-color) 0%, var(--theme-end-color) 100%);
+    filter: brightness(0.9);
 }
 
 .tableWrapper :global(.ant-table-body)::-webkit-scrollbar-corner {

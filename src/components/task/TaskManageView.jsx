@@ -30,7 +30,8 @@ import {
     EditOutlined,
     DownOutlined,
     UpOutlined,
-    CalendarOutlined
+    CalendarOutlined,
+    BarChartOutlined
 } from '@ant-design/icons'
 import WindowControls from '../common/WindowControls'
 import ModuleGroup from './ModuleGroup'
@@ -42,6 +43,7 @@ import ProjectMemoModal from '../project/ProjectMemoModal'
 import EditTaskModuleModal from './EditTaskModuleModal'
 import EditModuleListModal from './EditModuleListModal'
 import ExportPendingTasksModal from './ExportPendingTasksModal'
+import ModuleStatsModal from './ModuleStatsModal'
 import styles from './TaskManageView.module.css'
 
 export default function TaskManageView({
@@ -87,6 +89,9 @@ export default function TaskManageView({
     showExportPendingModal,
     onOpenExportPendingModal,
     onCloseExportPendingModal,
+    showModuleStatsModal,
+    onOpenModuleStats,
+    onCloseModuleStats,
     onConfigChange,
     onSearchChange,
     onModuleFilterChange,
@@ -324,7 +329,7 @@ export default function TaskManageView({
             height: '100vh',
             display: 'flex',
             flexDirection: 'column',
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+            background: 'linear-gradient(135deg, var(--theme-start-color) 0%, var(--theme-end-color) 100%)'
         }}>
 
             <WindowControls title={`任务日志 - ${currentProject?.name}`} onConfigChange={onConfigChange} />
@@ -444,6 +449,15 @@ export default function TaskManageView({
                         style={{ background: 'rgba(255,255,255,0.95)', borderColor: '#d9d9d9' }}
                     >
                         编辑模块
+                    </Button>
+                    <Button
+                        type="default"
+                        size="large"
+                        icon={<BarChartOutlined />}
+                        onClick={onOpenModuleStats}
+                        style={{ background: 'rgba(255,255,255,0.95)', borderColor: '#d9d9d9' }}
+                    >
+                        统计报表
                     </Button>
 
                     <div style={{ flex: 1, display: 'flex', gap: 16, justifyContent: 'flex-end' }}>
@@ -910,6 +924,14 @@ export default function TaskManageView({
                 pendingTasks={pendingTasks}
                 onConfirm={onExportPendingTasks}
                 onCancel={onCloseExportPendingModal}
+            />
+
+            {/* 模块统计报表模态框 */}
+            <ModuleStatsModal
+                show={showModuleStatsModal}
+                modules={modules}
+                tasks={tasks}
+                onClose={onCloseModuleStats}
             />
         </div>
     )

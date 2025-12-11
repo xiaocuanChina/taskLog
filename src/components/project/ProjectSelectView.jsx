@@ -68,7 +68,7 @@ export default function ProjectSelectView({
     }
   }
   return (
-    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: 'linear-gradient(135deg, var(--theme-start-color) 0%, var(--theme-end-color) 100%)' }}>
       
       <WindowControls title="任务日志" />
 
