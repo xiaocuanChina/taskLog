@@ -1,17 +1,19 @@
 /**
- * 完成任务统计模态框组件
+ * 统计报表模态框组件
  * 
  * 功能说明:
- * - 以日历形式展示完成的任务
- * - 显示每天完成的任务数量
- * - 点击日期查看当天完成的具体任务
- * - 支持月份切换
+ * - 使用 Tab 切换模块统计和完成统计
+ * - 模块统计：展示各模块的任务统计数据
+ * - 完成统计：以日历形式展示完成的任务
  */
-import React, { useMemo, useState } from 'react'
-import { Modal, Calendar, Empty, Tag } from 'antd'
+import React, { useMemo, useState, useEffect } from 'react'
+import { Modal, Tabs, Table, Progress, Calendar, Empty, Tag, ConfigProvider } from 'antd'
 import { 
+    BarChartOutlined, 
     CalendarOutlined, 
     CheckCircleOutlined, 
+    ClockCircleOutlined, 
+    FileTextOutlined,
     LeftOutlined,
     RightOutlined,
     FieldTimeOutlined,
@@ -20,29 +22,157 @@ import {
 import dayjs from 'dayjs'
 import 'dayjs/locale/zh-cn'
 import zhCN from 'antd/locale/zh_CN'
-import { ConfigProvider } from 'antd'
-import styles from './CompletionStatsModal.module.css'
+import styles from './StatsModal.module.css'
 
 // 设置 dayjs 使用中文
 dayjs.locale('zh-cn')
 
-export default function CompletionStatsModal({
+export default function StatsModal({
     show,
+    modules = [],
     tasks = [],
     taskTypeColors = {},
     onClose
 }) {
-    // 当前选中的日期
+    // 当前激活的 Tab
+    const [activeTab, setActiveTab] = useState('module')
+    // 完成统计：当前选中的日期
     const [selectedDate, setSelectedDate] = useState(null)
-    // 当前日历显示的月份
+    // 完成统计：当前日历显示的月份
     const [currentMonth, setCurrentMonth] = useState(dayjs())
+
+    // 关闭时重置状态
+    useEffect(() => {
+        if (!show) {
+            setActiveTab('module')
+            setSelectedDate(null)
+            setCurrentMonth(dayjs())
+        }
+    }, [show])
+
+    // ============ 模块统计相关 ============
+    
+    // 计算各模块的统计数据
+    const moduleStatsData = useMemo(() => {
+        return modules.map(module => {
+            const moduleTasks = tasks.filter(task => task.module === module.name)
+            const completedCount = moduleTasks.filter(task => task.completed).length
+            const pendingCount = moduleTasks.filter(task => !task.completed).length
+            const totalCount = moduleTasks.length
+            const completionRate = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0
+
+            return {
+                key: module.id,
+                moduleName: module.name,
+                completedCount,
+                pendingCount,
+                totalCount,
+                completionRate
+            }
+        }).filter(stat => stat.totalCount > 0)
+    }, [modules, tasks])
+
+    // 模块统计汇总数据
+    const moduleSummaryData = useMemo(() => {
+        const totalCompleted = tasks.filter(task => task.completed).length
+        const totalPending = tasks.filter(task => !task.completed).length
+        const total = tasks.length
+        const overallRate = total > 0 ? Math.round((totalCompleted / total) * 100) : 0
+
+        return {
+            totalCompleted,
+            totalPending,
+            total,
+            overallRate
+        }
+    }, [tasks])
+
+    // 模块统计表格列配置
+    const moduleColumns = [
+        {
+            title: '模块名称',
+            dataIndex: 'moduleName',
+            key: 'moduleName',
+            width: 150,
+            render: (text) => (
+                <span style={{ fontWeight: 500 }}>{text}</span>
+            )
+        },
+        {
+            title: (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    <CheckCircleOutlined style={{ color: '#52c41a' }} />
+                    已完成
+                </span>
+            ),
+            dataIndex: 'completedCount',
+            key: 'completedCount',
+            width: 100,
+            align: 'center',
+            render: (count) => (
+                <span style={{ color: '#52c41a', fontWeight: 600, fontSize: 15 }}>
+                    {count}
+                </span>
+            )
+        },
+        {
+            title: (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    <ClockCircleOutlined style={{ color: '#faad14' }} />
+                    未完成
+                </span>
+            ),
+            dataIndex: 'pendingCount',
+            key: 'pendingCount',
+            width: 100,
+            align: 'center',
+            render: (count) => (
+                <span style={{ color: count > 0 ? '#faad14' : '#8c8c8c', fontWeight: 600, fontSize: 15 }}>
+                    {count}
+                </span>
+            )
+        },
+        {
+            title: (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    <FileTextOutlined style={{ color: '#722ed1' }} />
+                    总数
+                </span>
+            ),
+            dataIndex: 'totalCount',
+            key: 'totalCount',
+            width: 80,
+            align: 'center',
+            render: (count) => (
+                <span style={{ color: '#722ed1', fontWeight: 600, fontSize: 15 }}>
+                    {count}
+                </span>
+            )
+        },
+        {
+            title: '完成进度',
+            dataIndex: 'completionRate',
+            key: 'completionRate',
+            width: 180,
+            render: (rate) => (
+                <Progress
+                    percent={rate}
+                    size="small"
+                    strokeColor={{ '0%': '#667eea', '100%': '#52c41a' }}
+                    format={(percent) => `${percent}%`}
+                />
+            )
+        }
+    ]
+
+    // ============ 完成统计相关 ============
 
     // 获取所有完成的任务
     const completedTasks = useMemo(() => {
         return tasks.filter(task => task.completed && task.completedAt)
     }, [tasks])
 
-    // 按日期分组统计（使用 Map 便于快速查找）
+    // 按日期分组统计
     const tasksByDateMap = useMemo(() => {
         const map = new Map()
         
@@ -164,30 +294,112 @@ export default function CompletionStatsModal({
         setSelectedDate(dayjs())
     }
 
-    // 关闭任务详情
     const handleCloseDetail = () => {
         setSelectedDate(null)
     }
 
-    return (
-        <Modal
-            title={
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <CalendarOutlined style={{ color: '#52c41a', fontSize: 18 }} />
-                    <span>完成任务统计</span>
+    // Tab 内容项
+    const tabItems = [
+        {
+            key: 'module',
+            label: (
+                <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <BarChartOutlined />
+                    模块统计
+                </span>
+            ),
+            children: tasks.length === 0 ? (
+                <Empty description="暂无任务数据" />
+            ) : (
+                <div className={styles.moduleContent}>
+                    {/* 汇总卡片 */}
+                    <div className={styles.summaryHeader}>
+                        <div className={styles.summaryCards}>
+                            <div className={styles.summaryCard}>
+                                <div className={styles.summaryLabel}>总任务</div>
+                                <div className={styles.summaryValue} style={{ color: '#722ed1' }}>
+                                    {moduleSummaryData.total}
+                                </div>
+                            </div>
+                            <div className={styles.summaryCard}>
+                                <div className={styles.summaryLabel}>已完成</div>
+                                <div className={styles.summaryValue} style={{ color: '#52c41a' }}>
+                                    {moduleSummaryData.totalCompleted}
+                                </div>
+                            </div>
+                            <div className={styles.summaryCard}>
+                                <div className={styles.summaryLabel}>未完成</div>
+                                <div className={styles.summaryValue} style={{ color: '#faad14' }}>
+                                    {moduleSummaryData.totalPending}
+                                </div>
+                            </div>
+                            <div className={styles.summaryCard}>
+                                <div className={styles.summaryLabel}>完成率</div>
+                                <div className={styles.summaryValue} style={{ color: '#667eea' }}>
+                                    {moduleSummaryData.overallRate}%
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* 模块统计表格 */}
+                    <div className={styles.tableWrapper}>
+                        <Table
+                            columns={moduleColumns}
+                            dataSource={moduleStatsData}
+                            pagination={false}
+                            size="middle"
+                            scroll={{ y: 300 }}
+                            sticky
+                            locale={{ emptyText: '暂无模块数据' }}
+                            summary={() => (
+                                <Table.Summary fixed="bottom">
+                                    <Table.Summary.Row className={styles.summaryRow}>
+                                        <Table.Summary.Cell index={0}>
+                                            <span style={{ fontWeight: 600 }}>合计</span>
+                                        </Table.Summary.Cell>
+                                        <Table.Summary.Cell index={1} align="center">
+                                            <span style={{ color: '#52c41a', fontWeight: 600 }}>
+                                                {moduleSummaryData.totalCompleted}
+                                            </span>
+                                        </Table.Summary.Cell>
+                                        <Table.Summary.Cell index={2} align="center">
+                                            <span style={{ color: '#faad14', fontWeight: 600 }}>
+                                                {moduleSummaryData.totalPending}
+                                            </span>
+                                        </Table.Summary.Cell>
+                                        <Table.Summary.Cell index={3} align="center">
+                                            <span style={{ color: '#722ed1', fontWeight: 600 }}>
+                                                {moduleSummaryData.total}
+                                            </span>
+                                        </Table.Summary.Cell>
+                                        <Table.Summary.Cell index={4}>
+                                            <Progress
+                                                percent={moduleSummaryData.overallRate}
+                                                size="small"
+                                                strokeColor={{ '0%': '#667eea', '100%': '#52c41a' }}
+                                            />
+                                        </Table.Summary.Cell>
+                                    </Table.Summary.Row>
+                                </Table.Summary>
+                            )}
+                        />
+                    </div>
                 </div>
-            }
-            open={show}
-            onCancel={onClose}
-            footer={null}
-            width={900}
-            centered
-            styles={{ body: { padding: '16px 24px' } }}
-        >
-            {completedTasks.length === 0 ? (
+            )
+        },
+        {
+            key: 'completion',
+            label: (
+                <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <CalendarOutlined />
+                    完成统计
+                </span>
+            ),
+            children: completedTasks.length === 0 ? (
                 <Empty description="暂无完成的任务" />
             ) : (
-                <div className={styles.container}>
+                <div className={styles.completionContent}>
                     {/* 顶部统计汇总 */}
                     <div className={styles.summaryHeader}>
                         <div className={styles.summaryCards}>
@@ -198,7 +410,7 @@ export default function CompletionStatsModal({
                                 </div>
                             </div>
                             <div className={styles.summaryCard}>
-                                <div className={styles.summaryLabel}>修改任务天数</div>
+                                <div className={styles.summaryLabel}>活跃天数</div>
                                 <div className={styles.summaryValue} style={{ color: '#1890ff' }}>
                                     {monthStats.activeDays}
                                 </div>
@@ -334,7 +546,32 @@ export default function CompletionStatsModal({
                         </span>
                     </div>
                 </div>
-            )}
+            )
+        }
+    ]
+
+    return (
+        <Modal
+            title={
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <BarChartOutlined style={{ color: '#667eea', fontSize: 18 }} />
+                    <span>统计报表</span>
+                </div>
+            }
+            open={show}
+            onCancel={onClose}
+            footer={null}
+            width={900}
+            centered
+            styles={{ body: { padding: '0 24px 16px' } }}
+        >
+            <Tabs
+                activeKey={activeTab}
+                onChange={setActiveTab}
+                items={tabItems}
+                className={styles.tabs}
+            />
         </Modal>
     )
 }
+

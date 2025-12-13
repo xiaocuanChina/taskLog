@@ -48,11 +48,8 @@ export default function App() {
   // 导出未完成任务
   const [showExportPendingModal, setShowExportPendingModal] = useState(false)
 
-  // 模块统计报表
-  const [showModuleStatsModal, setShowModuleStatsModal] = useState(false)
-
-  // 完成任务统计
-  const [showCompletionStatsModal, setShowCompletionStatsModal] = useState(false)
+  // 统计报表模态框
+  const [showStatsModal, setShowStatsModal] = useState(false)
 
   // 使用自定义 Hooks
   const taskModalHook = useTaskModal(taskTypes)
@@ -737,12 +734,9 @@ export default function App() {
       showExportPendingModal={showExportPendingModal}
       onOpenExportPendingModal={() => setShowExportPendingModal(true)}
       onCloseExportPendingModal={() => setShowExportPendingModal(false)}
-      showModuleStatsModal={showModuleStatsModal}
-      onOpenModuleStats={() => setShowModuleStatsModal(true)}
-      onCloseModuleStats={() => setShowModuleStatsModal(false)}
-      showCompletionStatsModal={showCompletionStatsModal}
-      onOpenCompletionStats={() => setShowCompletionStatsModal(true)}
-      onCloseCompletionStats={() => setShowCompletionStatsModal(false)}
+      showStatsModal={showStatsModal}
+      onOpenStats={() => setShowStatsModal(true)}
+      onCloseStats={() => setShowStatsModal(false)}
       onSearchChange={taskManagerHook.setSearchKeyword}
       onModuleFilterChange={taskManagerHook.setSelectedModuleFilter}
       onCompletedSearchChange={taskManagerHook.setCompletedSearchKeyword}
