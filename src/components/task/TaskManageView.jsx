@@ -44,6 +44,7 @@ import EditTaskModuleModal from './EditTaskModuleModal'
 import EditModuleListModal from './EditModuleListModal'
 import ExportPendingTasksModal from './ExportPendingTasksModal'
 import ModuleStatsModal from './ModuleStatsModal'
+import CompletionStatsModal from './CompletionStatsModal'
 import styles from './TaskManageView.module.css'
 
 export default function TaskManageView({
@@ -92,6 +93,9 @@ export default function TaskManageView({
     showModuleStatsModal,
     onOpenModuleStats,
     onCloseModuleStats,
+    showCompletionStatsModal,
+    onOpenCompletionStats,
+    onCloseCompletionStats,
     onConfigChange,
     onSearchChange,
     onModuleFilterChange,
@@ -450,15 +454,34 @@ export default function TaskManageView({
                     >
                         编辑模块
                     </Button>
-                    <Button
-                        type="default"
-                        size="large"
-                        icon={<BarChartOutlined />}
-                        onClick={onOpenModuleStats}
-                        style={{ background: 'rgba(255,255,255,0.95)', borderColor: '#d9d9d9' }}
+                    <Dropdown
+                        menu={{
+                            items: [
+                                {
+                                    key: 'module',
+                                    icon: <BarChartOutlined />,
+                                    label: '模块统计',
+                                    onClick: onOpenModuleStats
+                                },
+                                {
+                                    key: 'completion',
+                                    icon: <CalendarOutlined />,
+                                    label: '完成统计',
+                                    onClick: onOpenCompletionStats
+                                }
+                            ]
+                        }}
+                        trigger={['click']}
                     >
-                        统计报表
-                    </Button>
+                        <Button
+                            type="default"
+                            size="large"
+                            icon={<BarChartOutlined />}
+                            style={{ background: 'rgba(255,255,255,0.95)', borderColor: '#d9d9d9' }}
+                        >
+                            统计报表 <DownOutlined />
+                        </Button>
+                    </Dropdown>
 
                     <div style={{ flex: 1, display: 'flex', gap: 16, justifyContent: 'flex-end' }}>
                         <Tooltip
@@ -932,6 +955,14 @@ export default function TaskManageView({
                 modules={modules}
                 tasks={tasks}
                 onClose={onCloseModuleStats}
+            />
+
+            {/* 完成任务统计模态框 */}
+            <CompletionStatsModal
+                show={showCompletionStatsModal}
+                tasks={tasks}
+                taskTypeColors={taskTypeColors}
+                onClose={onCloseCompletionStats}
             />
         </div>
     )

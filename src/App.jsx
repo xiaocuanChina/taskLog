@@ -51,6 +51,9 @@ export default function App() {
   // 模块统计报表
   const [showModuleStatsModal, setShowModuleStatsModal] = useState(false)
 
+  // 完成任务统计
+  const [showCompletionStatsModal, setShowCompletionStatsModal] = useState(false)
+
   // 使用自定义 Hooks
   const taskModalHook = useTaskModal(taskTypes)
   const taskManagerHook = useTaskManager(currentProject)
@@ -737,6 +740,9 @@ export default function App() {
       showModuleStatsModal={showModuleStatsModal}
       onOpenModuleStats={() => setShowModuleStatsModal(true)}
       onCloseModuleStats={() => setShowModuleStatsModal(false)}
+      showCompletionStatsModal={showCompletionStatsModal}
+      onOpenCompletionStats={() => setShowCompletionStatsModal(true)}
+      onCloseCompletionStats={() => setShowCompletionStatsModal(false)}
       onSearchChange={taskManagerHook.setSearchKeyword}
       onModuleFilterChange={taskManagerHook.setSelectedModuleFilter}
       onCompletedSearchChange={taskManagerHook.setCompletedSearchKeyword}
