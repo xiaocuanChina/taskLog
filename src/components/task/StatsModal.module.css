@@ -16,7 +16,12 @@
 }
 
 /* 统一内容区高度 */
-.moduleContent,
+.moduleContent {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
 .completionContent {
     display: flex;
     flex-direction: column;
@@ -58,8 +63,6 @@
 
 /* 表格容器 */
 .tableWrapper {
-    flex: 1;
-    min-height: 0;
     overflow: hidden;
     border: 1px solid #e8e8e8;
     border-radius: 12px;

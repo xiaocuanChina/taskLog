@@ -175,8 +175,7 @@ export default function ModuleStats({
                     dataSource={moduleStatsData}
                     pagination={false}
                     size="middle"
-                    scroll={{ y: 300 }}
-                    sticky
+                    scroll={moduleStatsData.length > 8 ? { y: 340 } : undefined}
                     locale={{ emptyText: '暂无模块数据' }}
                     summary={() => (
                         <Table.Summary fixed="bottom">
