@@ -310,6 +310,20 @@ export default function App() {
     showToast('任务已回滚到待办！')
   }
 
+  // 搁置任务
+  const handleShelveTask = async (id) => {
+    await window.electron?.tasks?.shelve(id)
+    await taskManagerHook.refreshData()
+    showToast('任务已搁置！')
+  }
+
+  // 取消搁置任务
+  const handleUnshelveTask = async (id) => {
+    await window.electron?.tasks?.unshelve(id)
+    await taskManagerHook.refreshData()
+    showToast('任务已取消搁置！')
+  }
+
   // 打开编辑任务模态框
   const handleEditTask = (task) => {
     taskModalHook.setEditingTask({
@@ -836,6 +850,11 @@ export default function App() {
       onAddModuleInList={handleAddModuleInList}
       onReorderModules={handleReorderModules}
       onCloseEditModuleList={handleCloseEditModuleList}
+      shelvedTasks={taskManagerHook.shelvedTasks}
+      showShelvedTasks={taskManagerHook.showShelvedTasks}
+      onToggleShelvedTasks={() => taskManagerHook.setShowShelvedTasks(!taskManagerHook.showShelvedTasks)}
+      onTaskShelve={handleShelveTask}
+      onTaskUnshelve={handleUnshelveTask}
     />
   )
 }

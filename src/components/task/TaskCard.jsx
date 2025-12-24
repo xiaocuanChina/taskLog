@@ -16,13 +16,13 @@
  */
 import React, { useState } from 'react'
 import { Card, Button, Tag, Space, Tooltip, message } from 'antd'
-import { CheckOutlined, RollbackOutlined, DeleteOutlined, EditOutlined, ClockCircleOutlined, LoadingOutlined, FolderOutlined, CopyOutlined } from '@ant-design/icons'
+import { CheckOutlined, RollbackOutlined, DeleteOutlined, EditOutlined, ClockCircleOutlined, LoadingOutlined, FolderOutlined, CopyOutlined, PauseCircleOutlined } from '@ant-design/icons'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import TaskImage from '../common/TaskImage'
 import styles from './TaskCard.module.css'
 
-export default function TaskCard({ task, isCompleted, taskTypeColors = {}, onComplete, onRollback, onEdit, onDelete, onImageClick, onEditModule }) {
+export default function TaskCard({ task, isCompleted, isShelved = false, taskTypeColors = {}, onComplete, onRollback, onEdit, onDelete, onImageClick, onEditModule, onShelve, onUnshelve }) {
   const [isCompleting, setIsCompleting] = useState(false)
   const [isRollingBack, setIsRollingBack] = useState(false)
   const [isCodeCopied, setIsCodeCopied] = useState(false)
@@ -51,6 +51,24 @@ export default function TaskCard({ task, isCompleted, taskTypeColors = {}, onCom
     }
   }
 
+  // 处理搁置任务
+  const handleShelve = async () => {
+    try {
+      await onShelve(task.id)
+    } catch (error) {
+      message.error('搁置失败，请重试')
+    }
+  }
+
+  // 处理取消搁置
+  const handleUnshelve = async () => {
+    try {
+      await onUnshelve(task.id)
+    } catch (error) {
+      message.error('取消搁置失败，请重试')
+    }
+  }
+
   // 复制代码
   const handleCopyCode = async () => {
     if (!task.codeBlock?.code) return
@@ -67,7 +85,7 @@ export default function TaskCard({ task, isCompleted, taskTypeColors = {}, onCom
   return (
     <Card
       size="small"
-      style={{ 
+      style={{
         marginBottom: 12,
         opacity: isCompleted ? 0.7 : 1,
         borderLeft: isCompleted ? '4px solid #52c41a' : '4px solid #1890ff',
@@ -77,18 +95,18 @@ export default function TaskCard({ task, isCompleted, taskTypeColors = {}, onCom
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', padding: '4px' }}>
           {/* 左侧：占位 */}
           <div style={{ width: 32 }} />
-          
+
           {/* 中间：完成/回滚按钮 */}
           <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
             {isCompleted ? (
-              <Button 
+              <Button
                 type="default"
                 size="middle"
                 icon={isRollingBack ? <LoadingOutlined /> : <RollbackOutlined />}
                 onClick={handleRollback}
                 loading={isRollingBack}
                 disabled={isRollingBack}
-                style={{ 
+                style={{
                   minWidth: 100,
                   fontWeight: 600,
                   fontSize: 14,
@@ -99,23 +117,23 @@ export default function TaskCard({ task, isCompleted, taskTypeColors = {}, onCom
                 {isRollingBack ? '回滚中...' : '回滚'}
               </Button>
             ) : (
-              <Button 
+              <Button
                 type="primary"
                 size="middle"
                 icon={isCompleting ? <LoadingOutlined /> : <CheckOutlined style={{ fontSize: 16 }} />}
                 onClick={handleComplete}
                 loading={isCompleting}
                 disabled={isCompleting}
-                style={{ 
-                  background: isCompleting 
-                    ? 'linear-gradient(135deg, #73d13d 0%, #95de64 100%)' 
+                style={{
+                  background: isCompleting
+                    ? 'linear-gradient(135deg, #73d13d 0%, #95de64 100%)'
                     : 'linear-gradient(135deg, #52c41a 0%, #73d13d 100%)',
                   borderColor: '#52c41a',
                   minWidth: 100,
                   fontWeight: 600,
                   fontSize: 14,
-                  boxShadow: isCompleting 
-                    ? '0 4px 12px rgba(82, 196, 26, 0.5)' 
+                  boxShadow: isCompleting
+                    ? '0 4px 12px rgba(82, 196, 26, 0.5)'
                     : '0 2px 8px rgba(82, 196, 26, 0.3)',
                   height: 32,
                   transform: isCompleting ? 'scale(0.95)' : 'scale(1)',
@@ -135,21 +153,51 @@ export default function TaskCard({ task, isCompleted, taskTypeColors = {}, onCom
               </Button>
             )}
           </div>
-          
-          {/* 右侧：编辑和删除按钮（仅待办任务显示） */}
-          {!isCompleted ? (
+
+          {/* 右侧：编辑、搁置和删除按钮（仅待办任务显示） */}
+          {!isCompleted && !isShelved ? (
             <Space size={4}>
+              <Tooltip title="搁置任务">
+                <Button
+                  type="text"
+                  size="small"
+                  icon={<PauseCircleOutlined />}
+                  onClick={handleShelve}
+                  style={{ color: '#faad14' }}
+                />
+              </Tooltip>
               <Tooltip title="编辑任务">
-                <Button 
-                  type="text" 
+                <Button
+                  type="text"
                   size="small"
                   icon={<EditOutlined />}
                   onClick={() => onEdit(task)}
                 />
               </Tooltip>
               <Tooltip title="删除任务">
-                <Button 
-                  type="text" 
+                <Button
+                  type="text"
+                  size="small"
+                  danger
+                  icon={<DeleteOutlined />}
+                  onClick={() => onDelete(task)}
+                />
+              </Tooltip>
+            </Space>
+          ) : isShelved ? (
+            <Space size={4}>
+              <Tooltip title="取消搁置">
+                <Button
+                  type="text"
+                  size="small"
+                  icon={<RollbackOutlined />}
+                  onClick={handleUnshelve}
+                  style={{ color: '#1890ff' }}
+                />
+              </Tooltip>
+              <Tooltip title="删除任务">
+                <Button
+                  type="text"
                   size="small"
                   danger
                   icon={<DeleteOutlined />}
@@ -173,12 +221,12 @@ export default function TaskCard({ task, isCompleted, taskTypeColors = {}, onCom
           <h4 style={{ margin: 0, fontSize: 15, fontWeight: 600, flex: 1 }}>{task.name}</h4>
           {!isCompleted && task.module && (
             <Tooltip title="修改所属模块">
-              <Tag 
+              <Tag
                 icon={<FolderOutlined />}
                 color="default"
-                style={{ 
-                  margin: 0, 
-                  fontSize: 12, 
+                style={{
+                  margin: 0,
+                  fontSize: 12,
                   padding: '2px 8px',
                   cursor: 'pointer',
                   border: '1px solid #d9d9d9'
@@ -193,20 +241,20 @@ export default function TaskCard({ task, isCompleted, taskTypeColors = {}, onCom
 
         <div style={{ fontSize: 12, color: '#8c8c8c', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 4 }}>
           <ClockCircleOutlined />
-          创建于 {new Date(task.createdAt).toLocaleString('zh-CN', { 
-            year: 'numeric', 
-            month: '2-digit', 
-            day: '2-digit', 
-            hour: '2-digit', 
-            minute: '2-digit' 
+          创建于 {new Date(task.createdAt).toLocaleString('zh-CN', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
           })}
         </div>
 
         {task.remark && (
-          <div style={{ 
-            padding: '8px 12px', 
-            background: '#f5f5f5', 
-            borderRadius: 4, 
+          <div style={{
+            padding: '8px 12px',
+            background: '#f5f5f5',
+            borderRadius: 4,
             fontSize: 13,
             marginBottom: 8,
             whiteSpace: 'pre-wrap',
@@ -220,10 +268,10 @@ export default function TaskCard({ task, isCompleted, taskTypeColors = {}, onCom
         {task.images && task.images.length > 0 && (
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
             {task.images.map((img, idx) => (
-              <div 
+              <div
                 key={idx}
                 onClick={() => onImageClick(img, task.images, idx)}
-                style={{ 
+                style={{
                   cursor: 'pointer',
                   width: 100,
                   height: 100,
@@ -232,8 +280,8 @@ export default function TaskCard({ task, isCompleted, taskTypeColors = {}, onCom
                   border: '1px solid #d9d9d9'
                 }}
               >
-                <TaskImage 
-                  src={img} 
+                <TaskImage
+                  src={img}
                   alt={`附件${idx + 1}`}
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 />
@@ -245,10 +293,10 @@ export default function TaskCard({ task, isCompleted, taskTypeColors = {}, onCom
         {/* 代码块显示 */}
         {task.codeBlock?.enabled && task.codeBlock?.code && (
           <div style={{ marginBottom: 8 }}>
-            <div style={{ 
-              background: '#1e1e1e', 
-              color: '#fff', 
-              padding: '4px 12px', 
+            <div style={{
+              background: '#1e1e1e',
+              color: '#fff',
+              padding: '4px 12px',
               fontSize: 12,
               borderTopLeftRadius: 4,
               borderTopRightRadius: 4,
@@ -263,10 +311,10 @@ export default function TaskCard({ task, isCompleted, taskTypeColors = {}, onCom
                   size="small"
                   icon={isCodeCopied ? <CheckOutlined style={{ color: '#52c41a' }} /> : <CopyOutlined style={{ color: '#fff' }} />}
                   onClick={handleCopyCode}
-                  style={{ 
-                    color: '#fff', 
-                    height: '20px', 
-                    padding: '0 4px', 
+                  style={{
+                    color: '#fff',
+                    height: '20px',
+                    padding: '0 4px',
                     minWidth: '24px',
                     display: 'flex',
                     alignItems: 'center',
@@ -276,8 +324,8 @@ export default function TaskCard({ task, isCompleted, taskTypeColors = {}, onCom
               </Tooltip>
             </div>
             <div style={{ borderRadius: '0 0 4px 4px', overflow: 'hidden' }}>
-              <SyntaxHighlighter 
-                language={task.codeBlock.language || 'text'} 
+              <SyntaxHighlighter
+                language={task.codeBlock.language || 'text'}
                 style={vscDarkPlus}
                 className={styles.taskCodeBlockContent}
                 customStyle={{

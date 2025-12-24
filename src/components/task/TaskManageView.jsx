@@ -31,10 +31,12 @@ import {
     DownOutlined,
     UpOutlined,
     CalendarOutlined,
-    BarChartOutlined
+    BarChartOutlined,
+    PauseCircleOutlined
 } from '@ant-design/icons'
 import WindowControls from '../common/WindowControls'
 import ModuleGroup from './ModuleGroup'
+import TaskCard from './TaskCard'
 import TaskModal from './TaskModal'
 import ImagePreview from '../common/ImagePreview'
 import ConfirmModal from '../common/ConfirmModal'
@@ -44,6 +46,7 @@ import EditTaskModuleModal from './EditTaskModuleModal'
 import EditModuleListModal from './EditModuleListModal'
 import ExportPendingTasksModal from './ExportPendingTasksModal'
 import StatsModal from './StatsModal'
+import ShelvedTasksModal from './ShelvedTasksModal'
 import styles from './TaskManageView.module.css'
 
 export default function TaskManageView({
@@ -157,7 +160,12 @@ export default function TaskManageView({
     onRestoreModuleInList,
     onAddModuleInList,
     onReorderModules,
-    onCloseEditModuleList
+    onCloseEditModuleList,
+    shelvedTasks = [],
+    showShelvedTasks,
+    onToggleShelvedTasks,
+    onTaskShelve,
+    onTaskUnshelve
 }) {
     const pendingTasksByModule = groupTasksByModule(pendingTasks)
     const completedTasksByModule = groupTasksByModule(completedTasks)
@@ -541,6 +549,34 @@ export default function TaskManageView({
                                 </div>
                             </Card>
                         </Tooltip>
+                        {shelvedTasks.length > 0 && (
+                            <Tooltip
+                                title={generateTaskTooltip(shelvedTasks)}
+                                placement="bottom"
+                                styles={{ root: { maxWidth: 400 } }}
+                            >
+                                <Card size="small"
+                                    onClick={onToggleShelvedTasks}
+                                    style={{
+                                        background: showShelvedTasks ? 'rgba(250, 173, 20, 0.15)' : 'rgba(255,255,255,0.95)',
+                                        minWidth: 120,
+                                        cursor: 'pointer',
+                                        border: showShelvedTasks ? '1px solid #faad14' : '1px solid transparent'
+                                    }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                        <PauseCircleOutlined style={{ fontSize: 18, color: '#faad14' }} />
+                                        <div>
+                                            <div style={{ color: '#8c8c8c', fontSize: 12 }}>搁置任务</div>
+                                            <div style={{
+                                                fontSize: 18,
+                                                fontWeight: 700,
+                                                color: '#faad14'
+                                            }}>{shelvedTasks.length}</div>
+                                        </div>
+                                    </div>
+                                </Card>
+                            </Tooltip>
+                        )}
                     </div>
                 </div>
 
@@ -663,6 +699,7 @@ export default function TaskManageView({
                                             onImageClick={onImageClick}
                                             onQuickAddTask={onQuickAddTask}
                                             onEditTaskModule={onOpenEditTaskModule}
+                                            onTaskShelve={onTaskShelve}
                                         />
                                     )
                                 })
@@ -933,6 +970,20 @@ export default function TaskManageView({
                 tasks={tasks}
                 taskTypeColors={taskTypeColors}
                 onClose={onCloseStats}
+            />
+
+            {/* 搁置任务模态框 */}
+            <ShelvedTasksModal
+                show={showShelvedTasks}
+                shelvedTasks={shelvedTasks}
+                taskTypeColors={taskTypeColors}
+                onTaskComplete={onTaskComplete}
+                onTaskRollback={onTaskRollback}
+                onTaskEdit={onTaskEdit}
+                onTaskDelete={onTaskDelete}
+                onImageClick={onImageClick}
+                onTaskUnshelve={onTaskUnshelve}
+                onClose={onToggleShelvedTasks}
             />
         </div>
     )

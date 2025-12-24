@@ -26,6 +26,8 @@ contextBridge.exposeInMainWorld('electron', {
     updateModule: (payload) => ipcRenderer.invoke('tasks:updateModule', payload),
     markDone: (id) => ipcRenderer.invoke('tasks:markDone', id),
     rollback: (id) => ipcRenderer.invoke('tasks:rollback', id),
+    shelve: (id) => ipcRenderer.invoke('tasks:shelve', id),
+    unshelve: (id) => ipcRenderer.invoke('tasks:unshelve', id),
     delete: (id) => ipcRenderer.invoke('tasks:delete', id),
     todayStats: (projectId) => ipcRenderer.invoke('tasks:todayStats', projectId),
     exportTodayReport: (projectId) => ipcRenderer.invoke('tasks:exportTodayReport', projectId),

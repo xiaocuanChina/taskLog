@@ -537,6 +537,32 @@ app.whenReady().then(() => {
     return null
   })
 
+  // 搁置任务
+  ipcMain.handle('tasks:shelve', (e, id) => {
+    const list = readTasks()
+    const idx = list.findIndex(x => x.id === id)
+    if (idx >= 0) {
+      list[idx].shelved = true
+      list[idx].shelvedAt = new Date().toISOString()
+      writeTasks(list)
+      return list[idx]
+    }
+    return null
+  })
+
+  // 取消搁置任务
+  ipcMain.handle('tasks:unshelve', (e, id) => {
+    const list = readTasks()
+    const idx = list.findIndex(x => x.id === id)
+    if (idx >= 0) {
+      list[idx].shelved = false
+      list[idx].shelvedAt = null
+      writeTasks(list)
+      return list[idx]
+    }
+    return null
+  })
+
   ipcMain.handle('tasks:updateModule', (e, payload) => {
     const list = readTasks()
     const idx = list.findIndex(x => x.id === payload.id)

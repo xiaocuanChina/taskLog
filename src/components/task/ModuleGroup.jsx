@@ -17,15 +17,15 @@ import React from 'react'
 import { Collapse, Input, Button, Space, Badge } from 'antd'
 import { CaretRightOutlined, EditOutlined, CheckOutlined, CloseOutlined, PlusOutlined } from '@ant-design/icons'
 import TaskCard from './TaskCard'
-export default function ModuleGroup({ 
-  moduleName, 
-  tasks, 
-  status, 
-  isCollapsed, 
+export default function ModuleGroup({
+  moduleName,
+  tasks,
+  status,
+  isCollapsed,
   isEditing,
   editingName,
   taskTypeColors = {},
-  onToggleCollapse, 
+  onToggleCollapse,
   onStartEdit,
   onEditNameChange,
   onSaveEdit,
@@ -36,7 +36,8 @@ export default function ModuleGroup({
   onTaskDelete,
   onImageClick,
   onQuickAddTask,
-  onEditTaskModule
+  onEditTaskModule,
+  onTaskShelve
 }) {
   const isCompleted = status === 'completed'
 
@@ -61,7 +62,7 @@ export default function ModuleGroup({
                 size="middle"
                 style={{ flex: 1 }}
               />
-              <Button 
+              <Button
                 type="primary"
                 size="middle"
                 icon={<CheckOutlined />}
@@ -69,7 +70,7 @@ export default function ModuleGroup({
               >
                 确认
               </Button>
-              <Button 
+              <Button
                 size="middle"
                 icon={<CloseOutlined />}
                 onClick={onCancelEdit}
@@ -81,8 +82,8 @@ export default function ModuleGroup({
             <>
               <span style={{ flex: 1 }}>
                 📦 {moduleName}
-                <Badge 
-                  count={tasks.length} 
+                <Badge
+                  count={tasks.length}
                   style={{ marginLeft: 8, backgroundColor: isCompleted ? '#52c41a' : '#1890ff' }}
                 />
               </span>
@@ -128,6 +129,7 @@ export default function ModuleGroup({
               onDelete={onTaskDelete}
               onImageClick={onImageClick}
               onEditModule={onEditTaskModule}
+              onShelve={onTaskShelve}
             />
           ))}
         </>
