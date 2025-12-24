@@ -545,12 +545,13 @@ export default function App() {
   }
 
   // 导出未完成任务
-  const handleExportPendingTasks = async (selectedModules, format = 'excel') => {
+  const handleExportPendingTasks = async (selectedModules, format = 'excel', selectedTaskIds = []) => {
     setShowExportPendingModal(false)
     const result = await window.electron?.tasks?.exportPendingTasks({
       projectId: currentProject.id,
       modules: selectedModules,
-      format: format
+      format: format,
+      taskIds: selectedTaskIds
     })
     if (result?.success) {
       const formatLabel = format === 'excel' ? 'Excel' : 'Markdown'

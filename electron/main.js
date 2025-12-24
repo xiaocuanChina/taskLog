@@ -672,14 +672,17 @@ app.whenReady().then(() => {
 
   // 导出未完成任务
   ipcMain.handle('tasks:exportPendingTasks', async (e, payload) => {
-    const { projectId, modules: selectedModules, format = 'excel' } = payload
+    const { projectId, modules: selectedModules, format = 'excel', taskIds = [] } = payload
     const list = readTasks()
 
     // 筛选未完成的任务
     let pendingTasks = list.filter(x => !x.completed && x.projectId === projectId)
 
-    // 如果选择了特定模块，则按模块筛选
-    if (selectedModules && selectedModules.length > 0) {
+    // 如果传入了任务ID列表，优先按任务ID过滤
+    if (taskIds && taskIds.length > 0) {
+      pendingTasks = pendingTasks.filter(x => taskIds.includes(x.id))
+    } else if (selectedModules && selectedModules.length > 0) {
+      // 否则按模块筛选
       pendingTasks = pendingTasks.filter(x => selectedModules.includes(x.module))
     }
 
