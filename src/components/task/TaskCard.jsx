@@ -292,8 +292,8 @@ export default function TaskCard({ task, isCompleted, isShelved = false, taskTyp
             whiteSpace: 'pre-wrap',
             wordBreak: 'break-word'
           }}>
-            <span style={{ fontWeight: 600 }}>📝 备注：</span>
-            {task.remark}
+            <div style={{ fontWeight: 600, marginBottom: 4 }}>📝 备注：</div>
+            <div>{task.remark}</div>
           </div>
         )}
 
