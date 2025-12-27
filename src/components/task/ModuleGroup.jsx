@@ -7,6 +7,7 @@
  * - 支持编辑模块名称(仅待办任务模块)
  * - 显示模块内任务数量徽章
  * - 包含该模块下的所有任务卡片
+ * - 支持收起状态下的拖拽排序（仅待办任务）
  * - 使用 Ant Design Collapse 组件实现
  * 
  * 使用场景:
@@ -15,8 +16,11 @@
  */
 import React from 'react'
 import { Collapse, Input, Button, Space, Badge } from 'antd'
-import { CaretRightOutlined, EditOutlined, CheckOutlined, CloseOutlined, PlusOutlined } from '@ant-design/icons'
+import { CaretRightOutlined, EditOutlined, CheckOutlined, CloseOutlined, PlusOutlined, HolderOutlined } from '@ant-design/icons'
+import { useSortable } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import TaskCard from './TaskCard'
+
 export default function ModuleGroup({
   moduleName,
   tasks,
@@ -37,9 +41,30 @@ export default function ModuleGroup({
   onImageClick,
   onQuickAddTask,
   onEditTaskModule,
-  onTaskShelve
+  onTaskShelve,
+  sortableId,
+  isDraggable = false
 }) {
   const isCompleted = status === 'completed'
+
+  // 拖拽排序相关
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ 
+    id: sortableId || moduleName, 
+    disabled: !isDraggable || !isCollapsed 
+  })
+
+  const sortableStyle = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  }
 
   const items = [
     {
@@ -80,6 +105,21 @@ export default function ModuleGroup({
             </div>
           ) : (
             <>
+              {/* 拖拽手柄 - 仅在收起状态且可拖拽时显示 */}
+              {isDraggable && isCollapsed && (
+                <HolderOutlined
+                  {...attributes}
+                  {...listeners}
+                  onClick={(e) => e.stopPropagation()}
+                  style={{
+                    fontSize: 16,
+                    color: '#8c8c8c',
+                    cursor: 'move',
+                    padding: '4px',
+                    marginLeft: -4
+                  }}
+                />
+              )}
               <span style={{ flex: 1 }}>
                 📦 {moduleName}
                 <Badge
@@ -138,12 +178,12 @@ export default function ModuleGroup({
   ]
 
   return (
-    <div style={{ marginBottom: 16 }}>
+    <div ref={setNodeRef} style={{ marginBottom: 16, ...sortableStyle }}>
       <Collapse
         activeKey={isCollapsed ? [] : ['1']}
         onChange={onToggleCollapse}
         expandIcon={({ isActive }) => <CaretRightOutlined rotate={isActive ? 90 : 0} />}
-        style={{ background: '#fafafa' }}
+        style={{ background: isDragging ? '#e6f7ff' : '#fafafa' }}
         items={items}
       />
     </div>

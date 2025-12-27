@@ -34,6 +34,19 @@ import {
     BarChartOutlined,
     PauseCircleOutlined
 } from '@ant-design/icons'
+import {
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+} from '@dnd-kit/core'
+import {
+    SortableContext,
+    sortableKeyboardCoordinates,
+    verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
 import WindowControls from '../common/WindowControls'
 import ModuleGroup from './ModuleGroup'
 import TaskCard from './TaskCard'
@@ -165,10 +178,37 @@ export default function TaskManageView({
     showShelvedTasks,
     onToggleShelvedTasks,
     onTaskShelve,
-    onTaskUnshelve
+    onTaskUnshelve,
+    onReorderPendingModules
 }) {
     const pendingTasksByModule = groupTasksByModule(pendingTasks)
     const completedTasksByModule = groupTasksByModule(completedTasks)
+
+    // 配置拖拽传感器
+    const sensors = useSensors(
+        useSensor(PointerSensor),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
+    )
+
+    // 检查待办任务是否全部收起
+    const allPendingCollapsed = pendingTasksByModule.length > 0 && pendingTasksByModule.every(group => {
+        const moduleKey = `${group.moduleName}-pending`
+        return collapsedModules[moduleKey]
+    })
+
+    // 处理待办模块拖拽排序
+    const handlePendingModuleDragEnd = (event) => {
+        const { active, over } = event
+        if (over && active.id !== over.id) {
+            const oldIndex = pendingTasksByModule.findIndex(g => g.moduleName === active.id)
+            const newIndex = pendingTasksByModule.findIndex(g => g.moduleName === over.id)
+            if (oldIndex !== -1 && newIndex !== -1 && onReorderPendingModules) {
+                onReorderPendingModules(oldIndex, newIndex)
+            }
+        }
+    }
 
     // 将数组转换为对象格式（用于某些功能）
     const pendingTasksByModuleObj = {}
@@ -673,36 +713,49 @@ export default function TaskManageView({
                                     />
                                 </div>
                             ) : (
-                                pendingTasksByModule.map(group => {
-                                    const moduleKey = `${group.moduleName}-pending`
-                                    const isCollapsed = collapsedModules[moduleKey]
-                                    const isEditing = editingModuleName?.moduleName === group.moduleName && editingModuleName?.status === 'pending'
-                                    return (
-                                        <ModuleGroup
-                                            key={group.moduleName}
-                                            moduleName={group.moduleName}
-                                            tasks={group.tasks}
-                                            status="pending"
-                                            isCollapsed={isCollapsed}
-                                            isEditing={isEditing}
-                                            editingName={editingModuleName?.newName || ''}
-                                            taskTypeColors={taskTypeColors}
-                                            onToggleCollapse={() => onToggleModuleCollapse(group.moduleName, 'pending')}
-                                            onStartEdit={() => onStartEditModuleName(group.moduleName, 'pending')}
-                                            onEditNameChange={onEditModuleNameChange}
-                                            onSaveEdit={onSaveModuleName}
-                                            onCancelEdit={onCancelEditModuleName}
-                                            onTaskComplete={onTaskComplete}
-                                            onTaskRollback={onTaskRollback}
-                                            onTaskEdit={onTaskEdit}
-                                            onTaskDelete={onTaskDelete}
-                                            onImageClick={onImageClick}
-                                            onQuickAddTask={onQuickAddTask}
-                                            onEditTaskModule={onOpenEditTaskModule}
-                                            onTaskShelve={onTaskShelve}
-                                        />
-                                    )
-                                })
+                                <DndContext
+                                    sensors={sensors}
+                                    collisionDetection={closestCenter}
+                                    onDragEnd={handlePendingModuleDragEnd}
+                                >
+                                    <SortableContext
+                                        items={pendingTasksByModule.map(g => g.moduleName)}
+                                        strategy={verticalListSortingStrategy}
+                                    >
+                                        {pendingTasksByModule.map(group => {
+                                            const moduleKey = `${group.moduleName}-pending`
+                                            const isCollapsed = collapsedModules[moduleKey]
+                                            const isEditing = editingModuleName?.moduleName === group.moduleName && editingModuleName?.status === 'pending'
+                                            return (
+                                                <ModuleGroup
+                                                    key={group.moduleName}
+                                                    moduleName={group.moduleName}
+                                                    tasks={group.tasks}
+                                                    status="pending"
+                                                    isCollapsed={isCollapsed}
+                                                    isEditing={isEditing}
+                                                    editingName={editingModuleName?.newName || ''}
+                                                    taskTypeColors={taskTypeColors}
+                                                    onToggleCollapse={() => onToggleModuleCollapse(group.moduleName, 'pending')}
+                                                    onStartEdit={() => onStartEditModuleName(group.moduleName, 'pending')}
+                                                    onEditNameChange={onEditModuleNameChange}
+                                                    onSaveEdit={onSaveModuleName}
+                                                    onCancelEdit={onCancelEditModuleName}
+                                                    onTaskComplete={onTaskComplete}
+                                                    onTaskRollback={onTaskRollback}
+                                                    onTaskEdit={onTaskEdit}
+                                                    onTaskDelete={onTaskDelete}
+                                                    onImageClick={onImageClick}
+                                                    onQuickAddTask={onQuickAddTask}
+                                                    onEditTaskModule={onOpenEditTaskModule}
+                                                    onTaskShelve={onTaskShelve}
+                                                    sortableId={group.moduleName}
+                                                    isDraggable={allPendingCollapsed}
+                                                />
+                                            )
+                                        })}
+                                    </SortableContext>
+                                </DndContext>
                             )}
                         </Card>
                     </Col>

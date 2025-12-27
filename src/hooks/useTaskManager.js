@@ -275,6 +275,35 @@ export function useTaskManager(currentProject) {
     }
   }
 
+  // 重新排序待办模块（拖拽排序）
+  const reorderPendingModules = async (oldIndex, newIndex, showToast) => {
+    // 获取当前待办任务的模块分组
+    const pendingGroups = groupTasksByModule(pendingTasks)
+    const moduleNames = pendingGroups.map(g => g.moduleName)
+
+    // 计算新的顺序
+    const [movedModule] = moduleNames.splice(oldIndex, 1)
+    moduleNames.splice(newIndex, 0, movedModule)
+
+    // 更新模块的 order 字段
+    const updatePromises = moduleNames.map(async (moduleName, index) => {
+      const module = modules.find(m => m.name === moduleName && m.projectId === currentProject.id)
+      if (module) {
+        return window.electron?.modules?.update({
+          id: module.id,
+          projectId: currentProject.id,
+          order: index
+        })
+      }
+    })
+
+    await Promise.all(updatePromises)
+    await refreshData()
+    if (showToast) {
+      showToast('模块排序已更新', 'success')
+    }
+  }
+
   return {
     modules,
     recycleModules,
@@ -302,6 +331,7 @@ export function useTaskManager(currentProject) {
     startEditModuleName,
     cancelEditModuleName,
     saveModuleName,
+    reorderPendingModules,
     refreshData,
     loadSearchScope
   }

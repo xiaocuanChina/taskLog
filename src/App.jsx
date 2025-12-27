@@ -855,6 +855,7 @@ export default function App() {
       onToggleShelvedTasks={() => taskManagerHook.setShowShelvedTasks(!taskManagerHook.showShelvedTasks)}
       onTaskShelve={handleShelveTask}
       onTaskUnshelve={handleUnshelveTask}
+      onReorderPendingModules={(oldIndex, newIndex) => taskManagerHook.reorderPendingModules(oldIndex, newIndex, showToast)}
     />
   )
 }
