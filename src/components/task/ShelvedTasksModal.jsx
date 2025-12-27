@@ -39,6 +39,7 @@ export default function ShelvedTasksModal({
     onTaskDelete,
     onImageClick,
     onTaskUnshelve,
+    onCheckItemChange,
     onClose
 }) {
     return (
@@ -94,6 +95,7 @@ export default function ShelvedTasksModal({
                             onDelete={onTaskDelete}
                             onImageClick={onImageClick}
                             onUnshelve={onTaskUnshelve}
+                            onCheckItemChange={onCheckItemChange}
                         />
                     ))}
                 </div>

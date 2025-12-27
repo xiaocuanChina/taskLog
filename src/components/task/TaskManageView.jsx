@@ -179,7 +179,8 @@ export default function TaskManageView({
     onToggleShelvedTasks,
     onTaskShelve,
     onTaskUnshelve,
-    onReorderPendingModules
+    onReorderPendingModules,
+    onCheckItemChange
 }) {
     const pendingTasksByModule = groupTasksByModule(pendingTasks)
     const completedTasksByModule = groupTasksByModule(completedTasks)
@@ -749,6 +750,7 @@ export default function TaskManageView({
                                                     onQuickAddTask={onQuickAddTask}
                                                     onEditTaskModule={onOpenEditTaskModule}
                                                     onTaskShelve={onTaskShelve}
+                                                    onCheckItemChange={onCheckItemChange}
                                                     sortableId={group.moduleName}
                                                     isDraggable={allPendingCollapsed}
                                                 />
@@ -1036,6 +1038,7 @@ export default function TaskManageView({
                 onTaskDelete={onTaskDelete}
                 onImageClick={onImageClick}
                 onTaskUnshelve={onTaskUnshelve}
+                onCheckItemChange={onCheckItemChange}
                 onClose={onToggleShelvedTasks}
             />
         </div>

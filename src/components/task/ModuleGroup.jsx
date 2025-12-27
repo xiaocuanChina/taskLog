@@ -42,6 +42,7 @@ export default function ModuleGroup({
   onQuickAddTask,
   onEditTaskModule,
   onTaskShelve,
+  onCheckItemChange,
   sortableId,
   isDraggable = false
 }) {
@@ -170,6 +171,7 @@ export default function ModuleGroup({
               onImageClick={onImageClick}
               onEditModule={onEditTaskModule}
               onShelve={onTaskShelve}
+              onCheckItemChange={onCheckItemChange}
             />
           ))}
         </>

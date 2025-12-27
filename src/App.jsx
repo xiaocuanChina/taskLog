@@ -270,7 +270,8 @@ export default function App() {
       initiator: taskModalHook.newTask.initiator,
       remark: taskModalHook.newTask.remark,
       images: [],
-      codeBlock: taskModalHook.newTask.codeBlock
+      codeBlock: taskModalHook.newTask.codeBlock,
+      checkItems: taskModalHook.newTask.checkItems
     }
 
     if (taskModalHook.newTask.images.length > 0) {
@@ -343,6 +344,17 @@ export default function App() {
         enabled: false,
         language: 'javascript',
         code: ''
+      },
+      checkItems: task.checkItems ? {
+        enabled: task.checkItems.enabled || false,
+        mode: task.checkItems.mode || 'multiple',
+        items: task.checkItems.items || [],
+        newItemName: ''
+      } : {
+        enabled: false,
+        mode: 'multiple',
+        items: [],
+        newItemName: ''
       }
     })
     taskModalHook.setShowEditTaskModal(true)
@@ -495,6 +507,17 @@ export default function App() {
     }
   }
 
+  // 处理勾选项变更
+  const handleCheckItemChange = async (taskId, newItems) => {
+    const result = await window.electron?.tasks?.updateCheckItems({
+      taskId,
+      checkItems: newItems
+    })
+
+    if (result?.success) {
+      await taskManagerHook.refreshData()
+    }
+  }
 
 
   // 更新任务
@@ -524,7 +547,8 @@ export default function App() {
       remark: taskModalHook.editingTask.remark,
       images: [],
       existingImages: taskModalHook.editingTask.existingImages,
-      codeBlock: taskModalHook.editingTask.codeBlock
+      codeBlock: taskModalHook.editingTask.codeBlock,
+      checkItems: taskModalHook.editingTask.checkItems
     }
 
     if (taskModalHook.editingTask.images.length > 0) {
@@ -856,6 +880,7 @@ export default function App() {
       onTaskShelve={handleShelveTask}
       onTaskUnshelve={handleUnshelveTask}
       onReorderPendingModules={(oldIndex, newIndex) => taskManagerHook.reorderPendingModules(oldIndex, newIndex, showToast)}
+      onCheckItemChange={handleCheckItemChange}
     />
   )
 }

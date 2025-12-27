@@ -20,6 +20,12 @@ export function useTaskModal(taskTypes = []) {
       enabled: false,
       language: 'javascript',
       code: ''
+    },
+    checkItems: {
+      enabled: false,
+      mode: 'multiple',
+      items: [],
+      newItemName: ''
     }
   })
   const [editingTask, setEditingTask] = useState(null)
@@ -57,6 +63,12 @@ export function useTaskModal(taskTypes = []) {
         enabled: false,
         language: 'javascript',
         code: ''
+      },
+      checkItems: {
+        enabled: false,
+        mode: 'multiple',
+        items: [],
+        newItemName: ''
       }
     })
   }

@@ -24,6 +24,7 @@ contextBridge.exposeInMainWorld('electron', {
     add: (task) => ipcRenderer.invoke('tasks:add', task),
     update: (task) => ipcRenderer.invoke('tasks:update', task),
     updateModule: (payload) => ipcRenderer.invoke('tasks:updateModule', payload),
+    updateCheckItems: (payload) => ipcRenderer.invoke('tasks:updateCheckItems', payload),
     markDone: (id) => ipcRenderer.invoke('tasks:markDone', id),
     rollback: (id) => ipcRenderer.invoke('tasks:rollback', id),
     shelve: (id) => ipcRenderer.invoke('tasks:shelve', id),

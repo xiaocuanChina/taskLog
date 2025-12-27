@@ -14,7 +14,7 @@
  * - 在任务管理视图中添加新任务
  * - 编辑待办任务的信息
  */
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Modal, Input, Form, Row, Col, Button, Switch, AutoComplete, Space, Tag } from 'antd'
 import { UploadOutlined, DeleteOutlined, CodeOutlined } from '@ant-design/icons'
 import TaskImage from '../common/TaskImage'
@@ -50,6 +50,16 @@ export default function TaskModal({
   useEffect(() => {
     latestProps.current = { task, onTaskChange }
   }, [task, onTaskChange])
+
+  // 勾选项名称重复错误状态
+  const [checkItemError, setCheckItemError] = useState('')
+  
+  // Modal 关闭时清除错误状态
+  useEffect(() => {
+    if (!show) {
+      setCheckItemError('')
+    }
+  }, [show])
 
   // 监听 Ctrl+S 快捷键
   useEffect(() => {
@@ -358,6 +368,166 @@ export default function TaskModal({
                     </div>
                   ))}
                 </Space>
+              </div>
+            )}
+          </Form.Item>
+
+          {/* 勾选项配置 */}
+          <Form.Item>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <Switch
+                checked={task?.checkItems?.enabled || false}
+                onChange={(checked) => onTaskChange({
+                  ...task,
+                  checkItems: {
+                    ...(task?.checkItems || {}),
+                    enabled: checked,
+                    mode: task?.checkItems?.mode || 'multiple',
+                    items: task?.checkItems?.items || []
+                  }
+                })}
+              />
+              <span>{task?.checkItems?.enabled ? '关闭勾选项' : '添加勾选项'}</span>
+            </div>
+
+            {task?.checkItems?.enabled && (
+              <div style={{ border: '1px solid #d9d9d9', borderRadius: 8, padding: 16 }}>
+                <Row gutter={16} style={{ marginBottom: 12 }}>
+                  <Col span={8}>
+                    <Form.Item label="勾选方式" style={{ marginBottom: 0 }}>
+                      <AutoComplete
+                        value={task?.checkItems?.mode === 'single' ? '单选' : '多选'}
+                        onChange={(value) => {
+                          const mode = value === '单选' ? 'single' : 'multiple'
+                          // 切换到单选时，只保留第一个已勾选的项
+                          let items = task?.checkItems?.items || []
+                          if (mode === 'single') {
+                            const firstChecked = items.findIndex(item => item.checked)
+                            items = items.map((item, idx) => ({
+                              ...item,
+                              checked: idx === firstChecked
+                            }))
+                          }
+                          onTaskChange({
+                            ...task,
+                            checkItems: {
+                              ...(task?.checkItems || {}),
+                              mode,
+                              items
+                            }
+                          })
+                        }}
+                        options={[{ value: '多选' }, { value: '单选' }]}
+                        style={{ width: '100%' }}
+                      />
+                    </Form.Item>
+                  </Col>
+                  <Col span={16}>
+                    <Form.Item 
+                      label="添加勾选项" 
+                      style={{ marginBottom: 0 }}
+                      validateStatus={checkItemError ? 'error' : undefined}
+                      help={checkItemError || undefined}
+                    >
+                      <Space.Compact style={{ width: '100%' }}>
+                        <Input
+                          placeholder="输入勾选项名称后按回车添加"
+                          value={task?.checkItems?.newItemName || ''}
+                          status={checkItemError ? 'error' : undefined}
+                          onChange={(e) => {
+                            setCheckItemError('')
+                            onTaskChange({
+                              ...task,
+                              checkItems: {
+                                ...(task?.checkItems || {}),
+                                newItemName: e.target.value
+                              }
+                            })
+                          }}
+                          onPressEnter={(e) => {
+                            e.preventDefault()
+                            const name = (task?.checkItems?.newItemName || '').trim()
+                            if (name) {
+                              const items = task?.checkItems?.items || []
+                              // 检查是否已存在同名勾选项
+                              const isDuplicate = items.some(item => item.name === name)
+                              if (isDuplicate) {
+                                setCheckItemError('勾选项名称不能重复')
+                                return
+                              }
+                              setCheckItemError('')
+                              onTaskChange({
+                                ...task,
+                                checkItems: {
+                                  ...(task?.checkItems || {}),
+                                  items: [...items, { id: Date.now().toString(), name, checked: false }],
+                                  newItemName: ''
+                                }
+                              })
+                            }
+                          }}
+                        />
+                        <Button
+                          type="primary"
+                          onClick={() => {
+                            const name = (task?.checkItems?.newItemName || '').trim()
+                            if (name) {
+                              const items = task?.checkItems?.items || []
+                              // 检查是否已存在同名勾选项
+                              const isDuplicate = items.some(item => item.name === name)
+                              if (isDuplicate) {
+                                setCheckItemError('勾选项名称不能重复')
+                                return
+                              }
+                              setCheckItemError('')
+                              onTaskChange({
+                                ...task,
+                                checkItems: {
+                                  ...(task?.checkItems || {}),
+                                  items: [...items, { id: Date.now().toString(), name, checked: false }],
+                                  newItemName: ''
+                                }
+                              })
+                            }
+                          }}
+                        >
+                          添加
+                        </Button>
+                      </Space.Compact>
+                    </Form.Item>
+                  </Col>
+                </Row>
+
+                {/* 勾选项列表 */}
+                {task?.checkItems?.items && task.checkItems.items.length > 0 && (
+                  <div style={{ marginTop: 8 }}>
+                    <div style={{ fontSize: 13, color: '#8c8c8c', marginBottom: 8 }}>
+                      已添加的勾选项 ({task.checkItems.items.length}):
+                    </div>
+                    <Space wrap>
+                      {task.checkItems.items.map((item, idx) => (
+                        <Tag
+                          key={item.id}
+                          closable
+                          onClose={() => {
+                            const items = [...task.checkItems.items]
+                            items.splice(idx, 1)
+                            onTaskChange({
+                              ...task,
+                              checkItems: {
+                                ...(task?.checkItems || {}),
+                                items
+                              }
+                            })
+                          }}
+                          style={{ padding: '4px 8px', fontSize: 13 }}
+                        >
+                          {item.name}
+                        </Tag>
+                      ))}
+                    </Space>
+                  </div>
+                )}
               </div>
             )}
           </Form.Item>

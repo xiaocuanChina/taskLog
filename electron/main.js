@@ -449,6 +449,7 @@ app.whenReady().then(() => {
       remark: payload?.remark || '',
       images: saved,
       codeBlock: payload?.codeBlock || { enabled: false, language: 'javascript', code: '' },
+      checkItems: payload?.checkItems || { enabled: false, mode: 'multiple', items: [] },
       completed: false,
       createdAt: new Date().toISOString(),
       completedAt: null
@@ -504,6 +505,7 @@ app.whenReady().then(() => {
       list[idx].remark = payload?.remark || ''
       list[idx].images = [...existingImages, ...saved]
       list[idx].codeBlock = payload?.codeBlock || list[idx].codeBlock || { enabled: false, language: 'javascript', code: '' }
+      list[idx].checkItems = payload?.checkItems || list[idx].checkItems
       list[idx].updatedAt = new Date().toISOString()
 
       writeTasks(list)
@@ -522,6 +524,22 @@ app.whenReady().then(() => {
       return list[idx]
     }
     return null
+  })
+
+  // 更新任务勾选项
+  ipcMain.handle('tasks:updateCheckItems', (e, payload) => {
+    const list = readTasks()
+    const idx = list.findIndex(x => x.id === payload.taskId)
+    if (idx >= 0) {
+      list[idx].checkItems = {
+        ...list[idx].checkItems,
+        items: payload.checkItems
+      }
+      list[idx].updatedAt = new Date().toISOString()
+      writeTasks(list)
+      return { success: true, task: list[idx] }
+    }
+    return { success: false, error: '任务不存在' }
   })
 
   // 回滚任务状态（将已完成改为待办）

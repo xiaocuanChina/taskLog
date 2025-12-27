@@ -15,14 +15,14 @@
  * - 区分待办任务和已完成任务的展示
  */
 import React, { useState } from 'react'
-import { Card, Button, Tag, Space, Tooltip, message } from 'antd'
+import { Card, Button, Tag, Space, Tooltip, message, Checkbox, Radio, Progress } from 'antd'
 import { CheckOutlined, RollbackOutlined, DeleteOutlined, EditOutlined, ClockCircleOutlined, LoadingOutlined, FolderOutlined, CopyOutlined, PauseCircleOutlined } from '@ant-design/icons'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import TaskImage from '../common/TaskImage'
 import styles from './TaskCard.module.css'
 
-export default function TaskCard({ task, isCompleted, isShelved = false, taskTypeColors = {}, onComplete, onRollback, onEdit, onDelete, onImageClick, onEditModule, onShelve, onUnshelve }) {
+export default function TaskCard({ task, isCompleted, isShelved = false, taskTypeColors = {}, onComplete, onRollback, onEdit, onDelete, onImageClick, onEditModule, onShelve, onUnshelve, onCheckItemChange }) {
   const [isCompleting, setIsCompleting] = useState(false)
   const [isRollingBack, setIsRollingBack] = useState(false)
   const [isCodeCopied, setIsCodeCopied] = useState(false)
@@ -81,6 +81,38 @@ export default function TaskCard({ task, isCompleted, isShelved = false, taskTyp
       message.error('复制失败')
     }
   }
+
+  // 处理勾选项变更
+  const handleCheckItemChange = (itemId, checked) => {
+    if (!onCheckItemChange) return
+    const checkItems = task.checkItems
+    let newItems = [...checkItems.items]
+    
+    if (checkItems.mode === 'single') {
+      // 单选模式：取消其他项，只选中当前项
+      newItems = newItems.map(item => ({
+        ...item,
+        checked: item.id === itemId ? checked : false
+      }))
+    } else {
+      // 多选模式：直接更新当前项
+      newItems = newItems.map(item => 
+        item.id === itemId ? { ...item, checked } : item
+      )
+    }
+    
+    onCheckItemChange(task.id, newItems)
+  }
+
+  // 计算勾选进度
+  const getCheckProgress = () => {
+    if (!task.checkItems?.enabled || !task.checkItems?.items?.length) return null
+    const total = task.checkItems.items.length
+    const checked = task.checkItems.items.filter(item => item.checked).length
+    return { total, checked, percent: Math.round((checked / total) * 100) }
+  }
+
+  const checkProgress = getCheckProgress()
 
   return (
     <Card
@@ -262,6 +294,72 @@ export default function TaskCard({ task, isCompleted, isShelved = false, taskTyp
           }}>
             <span style={{ fontWeight: 600 }}>📝 备注：</span>
             {task.remark}
+          </div>
+        )}
+
+        {/* 勾选项显示 */}
+        {task.checkItems?.enabled && task.checkItems?.items?.length > 0 && (
+          <div style={{
+            padding: '8px 12px',
+            background: '#fafafa',
+            borderRadius: 4,
+            marginBottom: 8,
+            border: '1px solid #f0f0f0'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+              <span style={{ fontWeight: 600, fontSize: 13 }}>
+                ✅ 勾选项 ({task.checkItems.mode === 'single' ? '单选' : '多选'})
+              </span>
+              {checkProgress && (
+                <span style={{ fontSize: 12, color: '#8c8c8c' }}>
+                  {checkProgress.checked}/{checkProgress.total}
+                </span>
+              )}
+            </div>
+            {checkProgress && (
+              <Progress 
+                percent={checkProgress.percent} 
+                size="small" 
+                style={{ marginBottom: 8 }}
+                strokeColor={checkProgress.percent === 100 ? '#52c41a' : '#1890ff'}
+              />
+            )}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {task.checkItems.mode === 'single' ? (
+                <Radio.Group
+                  value={task.checkItems.items.find(item => item.checked)?.id}
+                  onChange={(e) => handleCheckItemChange(e.target.value, true)}
+                  disabled={isCompleted}
+                >
+                  <Space direction="vertical" size={4}>
+                    {task.checkItems.items.map(item => (
+                      <Radio key={item.id} value={item.id} style={{ fontSize: 13 }}>
+                        {item.name}
+                      </Radio>
+                    ))}
+                  </Space>
+                </Radio.Group>
+              ) : (
+                <Space direction="vertical" size={4}>
+                  {task.checkItems.items.map(item => (
+                    <Checkbox
+                      key={item.id}
+                      checked={item.checked}
+                      onChange={(e) => handleCheckItemChange(item.id, e.target.checked)}
+                      disabled={isCompleted}
+                      style={{ fontSize: 13 }}
+                    >
+                      <span style={{ 
+                        textDecoration: item.checked ? 'line-through' : 'none',
+                        color: item.checked ? '#8c8c8c' : 'inherit'
+                      }}>
+                        {item.name}
+                      </span>
+                    </Checkbox>
+                  ))}
+                </Space>
+              )}
+            </div>
           </div>
         )}
 
