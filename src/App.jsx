@@ -348,11 +348,13 @@ export default function App() {
       checkItems: task.checkItems ? {
         enabled: task.checkItems.enabled || false,
         mode: task.checkItems.mode || 'multiple',
+        linkage: task.checkItems.linkage,
         items: task.checkItems.items || [],
         newItemName: ''
       } : {
         enabled: false,
         mode: 'multiple',
+        linkage: true,
         items: [],
         newItemName: ''
       }

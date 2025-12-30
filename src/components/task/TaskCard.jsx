@@ -97,54 +97,65 @@ export default function TaskCard({ task, isCompleted, isShelved = false, taskTyp
     } else {
       // 多选模式：支持父子联动
 
-      // 1. 更新当前项及其所有子项（向下联动）
-      const updateChildren = (parentId, isChecked, items) => {
-        // 查找直接子项
-        items.forEach(item => {
-          if (item.parentId === parentId) {
-            item.checked = isChecked
-            // 递归更新孙子项
-            updateChildren(item.id, isChecked, items)
-          }
-        })
-      }
+      // 检查是否开启了父子联动（默认为开启）
+      const isLinkageEnabled = task.checkItems.linkage !== false
 
-      // 为了方便处理，先找到当前项，更新它
-      const currentItemIndex = newItems.findIndex(item => item.id === itemId)
-      if (currentItemIndex > -1) {
-        newItems[currentItemIndex] = { ...newItems[currentItemIndex], checked }
-        // 向下更新子节点
-        updateChildren(itemId, checked, newItems)
-      }
+      if (isLinkageEnabled) {
+        // 1. 更新当前项及其所有子项（向下联动）
+        const updateChildren = (parentId, isChecked, items) => {
+          // 查找直接子项
+          items.forEach(item => {
+            if (item.parentId === parentId) {
+              item.checked = isChecked
+              // 递归更新孙子项
+              updateChildren(item.id, isChecked, items)
+            }
+          })
+        }
 
-      // 2. 更新所有父级项（向上联动）
-      // 检查某个父级的所有子级是否都已勾选
-      const checkParentStatus = (parentId, items) => {
-        const children = items.filter(item => item.parentId === parentId)
-        if (children.length === 0) return false
-        return children.every(item => item.checked)
-      }
+        // 为了方便处理，先找到当前项，更新它
+        const currentItemIndex = newItems.findIndex(item => item.id === itemId)
+        if (currentItemIndex > -1) {
+          newItems[currentItemIndex] = { ...newItems[currentItemIndex], checked }
+          // 向下更新子节点
+          updateChildren(itemId, checked, newItems)
+        }
 
-      // 递归向上更新
-      const updateParents = (currentId, items) => {
-        const currentItem = items.find(item => item.id === currentId)
-        if (!currentItem || !currentItem.parentId) return
+        // 2. 更新所有父级项（向上联动）
+        // 检查某个父级的所有子级是否都已勾选
+        const checkParentStatus = (parentId, items) => {
+          const children = items.filter(item => item.parentId === parentId)
+          if (children.length === 0) return false
+          return children.every(item => item.checked)
+        }
 
-        const parentId = currentItem.parentId
-        const parentIndex = items.findIndex(item => item.id === parentId)
-        if (parentIndex > -1) {
-          const allSiblingsChecked = checkParentStatus(parentId, items)
-          // 只有状态改变时才更新
-          if (items[parentIndex].checked !== allSiblingsChecked) {
-            items[parentIndex] = { ...items[parentIndex], checked: allSiblingsChecked }
-            // 继续向上递归
-            updateParents(parentId, items)
+        // 递归向上更新
+        const updateParents = (currentId, items) => {
+          const currentItem = items.find(item => item.id === currentId)
+          if (!currentItem || !currentItem.parentId) return
+
+          const parentId = currentItem.parentId
+          const parentIndex = items.findIndex(item => item.id === parentId)
+          if (parentIndex > -1) {
+            const allSiblingsChecked = checkParentStatus(parentId, items)
+            // 只有状态改变时才更新
+            if (items[parentIndex].checked !== allSiblingsChecked) {
+              items[parentIndex] = { ...items[parentIndex], checked: allSiblingsChecked }
+              // 继续向上递归
+              updateParents(parentId, items)
+            }
           }
         }
-      }
 
-      // 触发向上更新
-      updateParents(itemId, newItems)
+        // 触发向上更新
+        updateParents(itemId, newItems)
+      } else {
+        // 不联动，只更新当前项
+        const currentItemIndex = newItems.findIndex(item => item.id === itemId)
+        if (currentItemIndex > -1) {
+          newItems[currentItemIndex] = { ...newItems[currentItemIndex], checked }
+        }
+      }
     }
 
     onCheckItemChange(task.id, newItems)

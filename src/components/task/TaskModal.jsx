@@ -528,37 +528,55 @@ export default function TaskModal({
               </div>
 
               {task?.checkItems?.enabled && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontSize: 13, color: '#666' }}>勾选方式:</span>
-                  <Radio.Group
-                    value={task?.checkItems?.mode || 'multiple'}
-                    onChange={(e) => {
-                      const mode = e.target.value
-                      // 切换到单选时，只保留第一个已勾选的项
-                      let items = task?.checkItems?.items || []
-                      if (mode === 'single') {
-                        const firstChecked = items.findIndex(item => item.checked)
-                        items = items.map((item, idx) => ({
-                          ...item,
-                          checked: idx === firstChecked
-                        }))
-                      }
-                      onTaskChange({
-                        ...task,
-                        checkItems: {
-                          ...(task?.checkItems || {}),
-                          mode,
-                          items
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 13, color: '#666' }}>勾选方式:</span>
+                    <Radio.Group
+                      value={task?.checkItems?.mode || 'multiple'}
+                      onChange={(e) => {
+                        const mode = e.target.value
+                        // 切换到单选时，只保留第一个已勾选的项
+                        let items = task?.checkItems?.items || []
+                        if (mode === 'single') {
+                          const firstChecked = items.findIndex(item => item.checked)
+                          items = items.map((item, idx) => ({
+                            ...item,
+                            checked: idx === firstChecked
+                          }))
                         }
-                      })
-                    }}
-                    optionType="button"
-                    buttonStyle="solid"
-                    size="small"
-                  >
-                    <Radio.Button value="multiple">多选</Radio.Button>
-                    <Radio.Button value="single">单选</Radio.Button>
-                  </Radio.Group>
+                        onTaskChange({
+                          ...task,
+                          checkItems: {
+                            ...(task?.checkItems || {}),
+                            mode,
+                            items
+                          }
+                        })
+                      }}
+                      optionType="button"
+                      buttonStyle="solid"
+                      size="small"
+                    >
+                      <Radio.Button value="multiple">多选</Radio.Button>
+                      <Radio.Button value="single">单选</Radio.Button>
+                    </Radio.Group>
+                  </div>
+                  {task?.checkItems?.mode !== 'single' && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 13, color: '#666' }}>父子联动:</span>
+                      <Switch
+                        size="small"
+                        checked={task?.checkItems?.linkage !== false} // 默认为 true
+                        onChange={(checked) => onTaskChange({
+                          ...task,
+                          checkItems: {
+                            ...(task?.checkItems || {}),
+                            linkage: checked
+                          }
+                        })}
+                      />
+                    </div>
+                  )}
                 </div>
               )}
             </div>
