@@ -15,7 +15,7 @@
  * - 编辑待办任务的信息
  */
 import React, { useEffect, useRef, useState, useMemo } from 'react'
-import { Modal, Input, Form, Row, Col, Button, Switch, AutoComplete, Space, Tag, Tree, TreeSelect, Tooltip } from 'antd'
+import { Modal, Input, Form, Row, Col, Button, Switch, AutoComplete, Space, Tag, Tree, Tooltip, Radio } from 'antd'
 import { UploadOutlined, DeleteOutlined, CodeOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons'
 import TaskImage from '../common/TaskImage'
 import styles from './TaskModal.module.css'
@@ -510,141 +510,64 @@ export default function TaskModal({
 
           {/* 勾选项配置 */}
           <Form.Item>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-              <Switch
-                checked={task?.checkItems?.enabled || false}
-                onChange={(checked) => onTaskChange({
-                  ...task,
-                  checkItems: {
-                    ...(task?.checkItems || {}),
-                    enabled: checked,
-                    mode: task?.checkItems?.mode || 'multiple',
-                    items: task?.checkItems?.items || []
-                  }
-                })}
-              />
-              <span>{task?.checkItems?.enabled ? '关闭勾选项' : '添加勾选项'}</span>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Switch
+                  checked={task?.checkItems?.enabled || false}
+                  onChange={(checked) => onTaskChange({
+                    ...task,
+                    checkItems: {
+                      ...(task?.checkItems || {}),
+                      enabled: checked,
+                      mode: task?.checkItems?.mode || 'multiple',
+                      items: task?.checkItems?.items || []
+                    }
+                  })}
+                />
+                <span>{task?.checkItems?.enabled ? '关闭勾选项' : '添加勾选项'}</span>
+              </div>
+
+              {task?.checkItems?.enabled && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 13, color: '#666' }}>勾选方式:</span>
+                  <Radio.Group
+                    value={task?.checkItems?.mode || 'multiple'}
+                    onChange={(e) => {
+                      const mode = e.target.value
+                      // 切换到单选时，只保留第一个已勾选的项
+                      let items = task?.checkItems?.items || []
+                      if (mode === 'single') {
+                        const firstChecked = items.findIndex(item => item.checked)
+                        items = items.map((item, idx) => ({
+                          ...item,
+                          checked: idx === firstChecked
+                        }))
+                      }
+                      onTaskChange({
+                        ...task,
+                        checkItems: {
+                          ...(task?.checkItems || {}),
+                          mode,
+                          items
+                        }
+                      })
+                    }}
+                    optionType="button"
+                    buttonStyle="solid"
+                    size="small"
+                  >
+                    <Radio.Button value="multiple">多选</Radio.Button>
+                    <Radio.Button value="single">单选</Radio.Button>
+                  </Radio.Group>
+                </div>
+              )}
             </div>
 
             {task?.checkItems?.enabled && (
               <div style={{ border: '1px solid #d9d9d9', borderRadius: 8, padding: 16 }}>
-                <Row gutter={16} style={{ marginBottom: 12 }}>
-                  <Col span={6}>
-                    <Form.Item label="父级勾选项" style={{ marginBottom: 0 }}>
-                      <TreeSelect
-                        style={{ width: '100%' }}
-                        value={task?.checkItems?.newItemParentId}
-                        dropdownStyle={{ maxHeight: 400, overflow: 'auto' }}
-                        treeData={treeData}
-                        placeholder="无(作为顶级项)"
-                        treeDefaultExpandAll
-                        allowClear
-                        onChange={(value) => {
-                          onTaskChange({
-                            ...task,
-                            checkItems: {
-                              ...(task?.checkItems || {}),
-                              newItemParentId: value
-                            }
-                          })
-                        }}
-                      />
-                    </Form.Item>
-                  </Col>
-
-                  <Col span={5}>
-                    <Form.Item label="勾选方式" style={{ marginBottom: 0 }}>
-                      <AutoComplete
-                        value={task?.checkItems?.mode === 'single' ? '单选' : '多选'}
-                        onChange={(value) => {
-                          const mode = value === '单选' ? 'single' : 'multiple'
-                          // 切换到单选时，只保留第一个已勾选的项
-                          let items = task?.checkItems?.items || []
-                          if (mode === 'single') {
-                            const firstChecked = items.findIndex(item => item.checked)
-                            items = items.map((item, idx) => ({
-                              ...item,
-                              checked: idx === firstChecked
-                            }))
-                          }
-                          onTaskChange({
-                            ...task,
-                            checkItems: {
-                              ...(task?.checkItems || {}),
-                              mode,
-                              items
-                            }
-                          })
-                        }}
-                        options={[{ value: '多选' }, { value: '单选' }]}
-                        style={{ width: '100%' }}
-                      />
-                    </Form.Item>
-                  </Col>
-
-                  <Col span={13}>
-                    <Form.Item
-                      label={editingItemId ? "编辑勾选项" : "添加勾选项"}
-                      style={{ marginBottom: 0 }}
-                      validateStatus={checkItemError ? 'error' : undefined}
-                      help={checkItemError || undefined}
-                    >
-                      <Space.Compact style={{ width: '100%' }}>
-                        <Input
-                          placeholder="输入名称"
-                          value={task?.checkItems?.newItemName || ''}
-                          status={checkItemError ? 'error' : undefined}
-                          onChange={(e) => {
-                            setCheckItemError('')
-                            onTaskChange({
-                              ...task,
-                              checkItems: {
-                                ...(task?.checkItems || {}),
-                                newItemName: e.target.value
-                              }
-                            })
-                          }}
-                          onPressEnter={(e) => {
-                            e.preventDefault()
-                            handleAddOrUpdateCheckItem()
-                          }}
-                        />
-                        <Tooltip title={editingItemId ? "确认修改" : "添加"}>
-                          <Button
-                            type="primary"
-                            onClick={handleAddOrUpdateCheckItem}
-                            icon={editingItemId ? <EditOutlined /> : <PlusOutlined />}
-                          >
-                            {editingItemId ? '修改' : '添加'}
-                          </Button>
-                        </Tooltip>
-                        {editingItemId && (
-                          <Tooltip title="取消编辑">
-                            <Button
-                              onClick={() => {
-                                setEditingItemId(null)
-                                onTaskChange({
-                                  ...task,
-                                  checkItems: {
-                                    ...(task?.checkItems || {}),
-                                    newItemName: '',
-                                    newItemParentId: null
-                                  }
-                                })
-                              }}
-                            >
-                              取消
-                            </Button>
-                          </Tooltip>
-                        )}
-                      </Space.Compact>
-                    </Form.Item>
-                  </Col>
-                </Row>
-
                 {/* 勾选项树形列表 */}
                 {task?.checkItems?.items && task.checkItems.items.length > 0 && (
-                  <div style={{ marginTop: 8 }}>
+                  <div style={{ marginBottom: 16 }}>
                     <div style={{ fontSize: 13, color: '#8c8c8c', marginBottom: 8 }}>
                       已添加的勾选项 ({task.checkItems.items.length}):
                     </div>
@@ -654,26 +577,51 @@ export default function TaskModal({
                       titleRender={(nodeData) => (
                         <div className="group" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', paddingRight: 8 }}>
                           <span>{nodeData.title}</span>
-                          <Space size="small">
-                            <Button
-                              type="text"
-                              size="small"
-                              icon={<EditOutlined />}
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleEditClick(nodeData)
-                              }}
-                            />
-                            <Button
-                              type="text"
-                              size="small"
-                              danger
-                              icon={<DeleteOutlined />}
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleDeleteCheckItem(nodeData.id)
-                              }}
-                            />
+                          <Space size={2}>
+                            <Tooltip title="添加子项">
+                              <Button
+                                type="text"
+                                size="small"
+                                icon={<PlusOutlined />}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  // 设置父级ID，重置编辑状态
+                                  setEditingItemId(null)
+                                  setCheckItemError('')
+                                  onTaskChange({
+                                    ...task,
+                                    checkItems: {
+                                      ...(task?.checkItems || {}),
+                                      newItemName: '',
+                                      newItemParentId: nodeData.id
+                                    }
+                                  })
+                                }}
+                              />
+                            </Tooltip>
+                            <Tooltip title="编辑">
+                              <Button
+                                type="text"
+                                size="small"
+                                icon={<EditOutlined />}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleEditClick(nodeData)
+                                }}
+                              />
+                            </Tooltip>
+                            <Tooltip title="删除">
+                              <Button
+                                type="text"
+                                size="small"
+                                danger
+                                icon={<DeleteOutlined />}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleDeleteCheckItem(nodeData.id)
+                                }}
+                              />
+                            </Tooltip>
                           </Space>
                         </div>
                       )}
@@ -681,6 +629,89 @@ export default function TaskModal({
                     />
                   </div>
                 )}
+
+                {/* 输入区域 */}
+                <div style={{ marginTop: 12 }}>
+                  {/* 父级提示 */}
+                  {!editingItemId && task?.checkItems?.newItemParentId && (
+                    <div style={{ marginBottom: 8, display: 'flex', alignItems: 'center', fontSize: 13 }}>
+                      <span style={{ color: '#8c8c8c', marginRight: 8 }}>添加到:</span>
+                      <Tag
+                        closable
+                        onClose={() => {
+                          onTaskChange({
+                            ...task,
+                            checkItems: {
+                              ...(task?.checkItems || {}),
+                              newItemParentId: null
+                            }
+                          })
+                        }}
+                        color="blue"
+                      >
+                        {task.checkItems.items.find(i => i.id === task.checkItems.newItemParentId)?.name || '未知项'}
+                      </Tag>
+                    </div>
+                  )}
+                  {/* 编辑提示 */}
+                  {editingItemId && (
+                    <div style={{ marginBottom: 8, display: 'flex', alignItems: 'center', fontSize: 13 }}>
+                      <span style={{ color: '#faad14', marginRight: 8 }}>正在编辑:</span>
+                      <Tag
+                        closable
+                        onClose={() => {
+                          setEditingItemId(null)
+                          onTaskChange({
+                            ...task,
+                            checkItems: {
+                              ...(task?.checkItems || {}),
+                              newItemName: '',
+                              newItemParentId: null
+                            }
+                          })
+                        }}
+                        color="orange"
+                      >
+                        {task.checkItems.items.find(i => i.id === editingItemId)?.name || '未知项'}
+                      </Tag>
+                    </div>
+                  )}
+
+                  <Form.Item
+                    style={{ marginBottom: 0 }}
+                    validateStatus={checkItemError ? 'error' : undefined}
+                    help={checkItemError || undefined}
+                  >
+                    <Space.Compact style={{ width: '100%' }}>
+                      <Input
+                        placeholder={editingItemId ? "修改勾选项名称" : (task?.checkItems?.newItemParentId ? "输入子项名称" : "添加勾选项")}
+                        value={task?.checkItems?.newItemName || ''}
+                        status={checkItemError ? 'error' : undefined}
+                        onChange={(e) => {
+                          setCheckItemError('')
+                          onTaskChange({
+                            ...task,
+                            checkItems: {
+                              ...(task?.checkItems || {}),
+                              newItemName: e.target.value
+                            }
+                          })
+                        }}
+                        onPressEnter={(e) => {
+                          e.preventDefault()
+                          handleAddOrUpdateCheckItem()
+                        }}
+                      />
+                      <Button
+                        type="primary"
+                        onClick={handleAddOrUpdateCheckItem}
+                        icon={editingItemId ? <EditOutlined /> : <PlusOutlined />}
+                      >
+                        {editingItemId ? '保存' : '添加'}
+                      </Button>
+                    </Space.Compact>
+                  </Form.Item>
+                </div>
               </div>
             )}
           </Form.Item>

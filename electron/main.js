@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, Menu, dialog } = require('electron')
+const { app, BrowserWindow, ipcMain, Menu, dialog, shell } = require('electron')
 const path = require('path')
 const fs = require('fs')
 const AdmZip = require('adm-zip')
@@ -171,6 +171,11 @@ app.whenReady().then(() => {
     return da.getFullYear() === db.getFullYear() && da.getMonth() === db.getMonth() && da.getDate() === db.getDate()
   }
   ipcMain.handle('ping', () => 'pong')
+
+  // 系统功能
+  ipcMain.handle('shell:openExternal', (e, url) => {
+    return shell.openExternal(url)
+  })
 
   // 项目管理
   ipcMain.handle('projects:list', () => {

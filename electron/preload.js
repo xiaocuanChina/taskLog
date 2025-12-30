@@ -53,5 +53,9 @@ contextBridge.exposeInMainWorld('electron', {
     minimize: () => ipcRenderer.send('window:minimize'),
     maximize: () => ipcRenderer.send('window:maximize'),
     close: () => ipcRenderer.send('window:close')
+  },
+  // 系统功能
+  shell: {
+    openExternal: (url) => ipcRenderer.invoke('shell:openExternal', url)
   }
 })
