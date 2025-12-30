@@ -87,7 +87,7 @@ export default function TaskCard({ task, isCompleted, isShelved = false, taskTyp
     if (!onCheckItemChange) return
     const checkItems = task.checkItems
     let newItems = [...checkItems.items]
-    
+
     if (checkItems.mode === 'single') {
       // 单选模式：取消其他项，只选中当前项
       newItems = newItems.map(item => ({
@@ -96,11 +96,11 @@ export default function TaskCard({ task, isCompleted, isShelved = false, taskTyp
       }))
     } else {
       // 多选模式：直接更新当前项
-      newItems = newItems.map(item => 
+      newItems = newItems.map(item =>
         item.id === itemId ? { ...item, checked } : item
       )
     }
-    
+
     onCheckItemChange(task.id, newItems)
   }
 
@@ -317,48 +317,72 @@ export default function TaskCard({ task, isCompleted, isShelved = false, taskTyp
               )}
             </div>
             {checkProgress && (
-              <Progress 
-                percent={checkProgress.percent} 
-                size="small" 
+              <Progress
+                percent={checkProgress.percent}
+                size="small"
                 style={{ marginBottom: 8 }}
                 strokeColor={checkProgress.percent === 100 ? '#52c41a' : '#1890ff'}
               />
             )}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              {task.checkItems.mode === 'single' ? (
-                <Radio.Group
-                  value={task.checkItems.items.find(item => item.checked)?.id}
-                  onChange={(e) => handleCheckItemChange(e.target.value, true)}
-                  disabled={isCompleted}
-                >
-                  <Space direction="vertical" size={4}>
-                    {task.checkItems.items.map(item => (
-                      <Radio key={item.id} value={item.id} style={{ fontSize: 13 }}>
-                        {item.name}
-                      </Radio>
-                    ))}
-                  </Space>
-                </Radio.Group>
-              ) : (
-                <Space direction="vertical" size={4}>
-                  {task.checkItems.items.map(item => (
-                    <Checkbox
-                      key={item.id}
-                      checked={item.checked}
-                      onChange={(e) => handleCheckItemChange(item.id, e.target.checked)}
-                      disabled={isCompleted}
-                      style={{ fontSize: 13 }}
-                    >
-                      <span style={{ 
-                        textDecoration: item.checked ? 'line-through' : 'none',
-                        color: item.checked ? '#8c8c8c' : 'inherit'
-                      }}>
-                        {item.name}
-                      </span>
-                    </Checkbox>
-                  ))}
-                </Space>
-              )}
+              {(() => {
+                // 递归渲染函数
+                const renderCheckItems = (parentId = null, level = 0) => {
+                  // 找到当前层级的项
+                  const currentLevelItems = task.checkItems.items.filter(item =>
+                    // 兼容旧数据：如果没有 parentId 属性，视为空
+                    (item.parentId || null) === parentId
+                  )
+
+                  if (currentLevelItems.length === 0) return null
+
+                  return currentLevelItems.map(item => (
+                    <div key={item.id} style={{ marginLeft: level * 20 }}>
+                      {task.checkItems.mode === 'single' ? (
+                        <Radio
+                          value={item.id}
+                          style={{ fontSize: 13 }}
+                          disabled={isCompleted}
+                          checked={item.checked}
+                          onChange={(e) => handleCheckItemChange(item.id, true)}
+                        >
+                          {item.name}
+                        </Radio>
+                      ) : (
+                        <Checkbox
+                          checked={item.checked}
+                          onChange={(e) => handleCheckItemChange(item.id, e.target.checked)}
+                          disabled={isCompleted}
+                          style={{ fontSize: 13 }}
+                        >
+                          <span style={{
+                            textDecoration: item.checked ? 'line-through' : 'none',
+                            color: item.checked ? '#8c8c8c' : 'inherit'
+                          }}>
+                            {item.name}
+                          </span>
+                        </Checkbox>
+                      )}
+                      {/* 递归渲染子项 */}
+                      {renderCheckItems(item.id, level + 1)}
+                    </div>
+                  ))
+                }
+
+                return task.checkItems.mode === 'single' ? (
+                  // 单选模式外层包裹 Radio.Group (虽然我们递归手动控制了checked，但为了保持 Radio 互斥样式的正确性，
+                  // 这里可能需要调整。由于 Antd Radio.Group 不支持嵌套太深且容易样式混乱，
+                  // 我们这里改为直接使用受控 Radio，不包裹 Radio.Group，或者只在最外层包裹。
+                  // 鉴于树形结构，Radio.Group 可能不适合，直接用受控 Radio 更灵活)
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    {renderCheckItems()}
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    {renderCheckItems()}
+                  </div>
+                )
+              })()}
             </div>
           </div>
         )}

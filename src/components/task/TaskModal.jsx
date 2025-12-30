@@ -14,13 +14,35 @@
  * - 在任务管理视图中添加新任务
  * - 编辑待办任务的信息
  */
-import React, { useEffect, useRef, useState } from 'react'
-import { Modal, Input, Form, Row, Col, Button, Switch, AutoComplete, Space, Tag } from 'antd'
-import { UploadOutlined, DeleteOutlined, CodeOutlined } from '@ant-design/icons'
+import React, { useEffect, useRef, useState, useMemo } from 'react'
+import { Modal, Input, Form, Row, Col, Button, Switch, AutoComplete, Space, Tag, Tree, TreeSelect, Tooltip } from 'antd'
+import { UploadOutlined, DeleteOutlined, CodeOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons'
 import TaskImage from '../common/TaskImage'
 import styles from './TaskModal.module.css'
 
 const { TextArea } = Input
+
+// 辅助函数：将平铺列表转换为树形结构
+const buildTreeData = (items) => {
+  const itemMap = {}
+  const tree = []
+
+  // 初始化每个节点
+  items.forEach(item => {
+    itemMap[item.id] = { ...item, key: item.id, value: item.id, title: item.name, children: [] }
+  })
+
+  // 构建树
+  items.forEach(item => {
+    if (item.parentId && itemMap[item.parentId]) {
+      itemMap[item.parentId].children.push(itemMap[item.id])
+    } else {
+      tree.push(itemMap[item.id])
+    }
+  })
+
+  return tree
+}
 export default function TaskModal({
   show,
   isEdit,
@@ -53,11 +75,14 @@ export default function TaskModal({
 
   // 勾选项名称重复错误状态
   const [checkItemError, setCheckItemError] = useState('')
-  
-  // Modal 关闭时清除错误状态
+  // 当前正在编辑的勾选项ID
+  const [editingItemId, setEditingItemId] = useState(null)
+
+  // Modal 关闭时清除错误状态和编辑状态
   useEffect(() => {
     if (!show) {
       setCheckItemError('')
+      setEditingItemId(null)
     }
   }, [show])
 
@@ -112,6 +137,117 @@ export default function TaskModal({
       )
     }))
   const moduleOptions = [...activeModuleOptions, ...recycledModuleOptions]
+
+  // 生成树形数据
+  const treeData = useMemo(() => {
+    return buildTreeData(task?.checkItems?.items || [])
+  }, [task?.checkItems?.items])
+
+  // 处理添加/更新勾选项
+  const handleAddOrUpdateCheckItem = () => {
+    const name = (task?.checkItems?.newItemName || '').trim()
+    if (!name) return
+
+    const items = task?.checkItems?.items || []
+
+    // 检查重名 (排除自身)
+    const isDuplicate = items.some(item => item.name === name && item.id !== editingItemId)
+    if (isDuplicate) {
+      setCheckItemError('勾选项名称不能重复')
+      return
+    }
+
+    setCheckItemError('')
+
+    let newItems = [...items]
+
+    if (editingItemId) {
+      // 更新现有项
+      newItems = newItems.map(item => {
+        if (item.id === editingItemId) {
+          return {
+            ...item,
+            name,
+            parentId: task?.checkItems?.newItemParentId || null
+          }
+        }
+        return item
+      })
+      setEditingItemId(null)
+    } else {
+      // 添加新项
+      newItems.push({
+        id: Date.now().toString(),
+        name,
+        checked: false,
+        parentId: task?.checkItems?.newItemParentId || null
+      })
+    }
+
+    onTaskChange({
+      ...task,
+      checkItems: {
+        ...(task?.checkItems || {}),
+        items: newItems,
+        newItemName: '',
+        newItemParentId: null // 重置父级选择
+      }
+    })
+  }
+
+  // 处理删除勾选项
+  const handleDeleteCheckItem = (itemId) => {
+    const items = task?.checkItems?.items || []
+    // 递归查找所有子节点的ID
+    const getChildrenIds = (parentId, allItems) => {
+      let ids = []
+      allItems.forEach(item => {
+        if (item.parentId === parentId) {
+          ids.push(item.id)
+          ids = [...ids, ...getChildrenIds(item.id, allItems)]
+        }
+      })
+      return ids
+    }
+
+    const idsToDelete = [itemId, ...getChildrenIds(itemId, items)]
+    const newItems = items.filter(item => !idsToDelete.includes(item.id))
+
+    onTaskChange({
+      ...task,
+      checkItems: {
+        ...(task?.checkItems || {}),
+        items: newItems
+      }
+    })
+
+    // 如果正在编辑的项被删除了，退出编辑模式
+    if (editingItemId && idsToDelete.includes(editingItemId)) {
+      setEditingItemId(null)
+      onTaskChange({
+        ...task,
+        checkItems: {
+          ...(task?.checkItems || {}),
+          items: newItems,
+          newItemName: '',
+          newItemParentId: null
+        }
+      })
+    }
+  }
+
+  // 处理点击编辑
+  const handleEditClick = (item) => {
+    setEditingItemId(item.id)
+    onTaskChange({
+      ...task,
+      checkItems: {
+        ...(task?.checkItems || {}),
+        newItemName: item.name,
+        newItemParentId: item.parentId || null
+      }
+    })
+  }
 
   return (
     <Modal
@@ -228,19 +364,19 @@ export default function TaskModal({
                         src={imgPath}
                         alt={`已有附件${idx + 1}`}
                         onClick={() => {
-                           if (onPreviewImage) {
-                             // 已有图片直接传递路径
-                             onPreviewImage(imgPath, task.existingImages, idx, (deleteIndex) => {
-                               const { task: currentTask, onTaskChange: currentOnTaskChange } = latestProps.current
-                               // 先从任务数据中移除图片
-                               const newExistingImages = [...currentTask.existingImages]
-                               newExistingImages.splice(deleteIndex, 1)
-                               currentOnTaskChange({ ...currentTask, existingImages: newExistingImages })
+                          if (onPreviewImage) {
+                            // 已有图片直接传递路径
+                            onPreviewImage(imgPath, task.existingImages, idx, (deleteIndex) => {
+                              const { task: currentTask, onTaskChange: currentOnTaskChange } = latestProps.current
+                              // 先从任务数据中移除图片
+                              const newExistingImages = [...currentTask.existingImages]
+                              newExistingImages.splice(deleteIndex, 1)
+                              currentOnTaskChange({ ...currentTask, existingImages: newExistingImages })
 
-                               // 返回更新后的预览图片列表
-                               return newExistingImages
-                             })
-                           }
+                              // 返回更新后的预览图片列表
+                              return newExistingImages
+                            })
+                          }
                         }}
                         style={{ width: '100%', height: '100%', objectFit: 'cover', cursor: 'pointer' }}
                       />
@@ -393,7 +529,30 @@ export default function TaskModal({
             {task?.checkItems?.enabled && (
               <div style={{ border: '1px solid #d9d9d9', borderRadius: 8, padding: 16 }}>
                 <Row gutter={16} style={{ marginBottom: 12 }}>
-                  <Col span={8}>
+                  <Col span={6}>
+                    <Form.Item label="父级勾选项" style={{ marginBottom: 0 }}>
+                      <TreeSelect
+                        style={{ width: '100%' }}
+                        value={task?.checkItems?.newItemParentId}
+                        dropdownStyle={{ maxHeight: 400, overflow: 'auto' }}
+                        treeData={treeData}
+                        placeholder="无(作为顶级项)"
+                        treeDefaultExpandAll
+                        allowClear
+                        onChange={(value) => {
+                          onTaskChange({
+                            ...task,
+                            checkItems: {
+                              ...(task?.checkItems || {}),
+                              newItemParentId: value
+                            }
+                          })
+                        }}
+                      />
+                    </Form.Item>
+                  </Col>
+
+                  <Col span={5}>
                     <Form.Item label="勾选方式" style={{ marginBottom: 0 }}>
                       <AutoComplete
                         value={task?.checkItems?.mode === 'single' ? '单选' : '多选'}
@@ -422,16 +581,17 @@ export default function TaskModal({
                       />
                     </Form.Item>
                   </Col>
-                  <Col span={16}>
-                    <Form.Item 
-                      label="添加勾选项" 
+
+                  <Col span={13}>
+                    <Form.Item
+                      label={editingItemId ? "编辑勾选项" : "添加勾选项"}
                       style={{ marginBottom: 0 }}
                       validateStatus={checkItemError ? 'error' : undefined}
                       help={checkItemError || undefined}
                     >
                       <Space.Compact style={{ width: '100%' }}>
                         <Input
-                          placeholder="输入勾选项名称后按回车添加"
+                          placeholder="输入名称"
                           value={task?.checkItems?.newItemName || ''}
                           status={checkItemError ? 'error' : undefined}
                           onChange={(e) => {
@@ -446,86 +606,79 @@ export default function TaskModal({
                           }}
                           onPressEnter={(e) => {
                             e.preventDefault()
-                            const name = (task?.checkItems?.newItemName || '').trim()
-                            if (name) {
-                              const items = task?.checkItems?.items || []
-                              // 检查是否已存在同名勾选项
-                              const isDuplicate = items.some(item => item.name === name)
-                              if (isDuplicate) {
-                                setCheckItemError('勾选项名称不能重复')
-                                return
-                              }
-                              setCheckItemError('')
-                              onTaskChange({
-                                ...task,
-                                checkItems: {
-                                  ...(task?.checkItems || {}),
-                                  items: [...items, { id: Date.now().toString(), name, checked: false }],
-                                  newItemName: ''
-                                }
-                              })
-                            }
+                            handleAddOrUpdateCheckItem()
                           }}
                         />
-                        <Button
-                          type="primary"
-                          onClick={() => {
-                            const name = (task?.checkItems?.newItemName || '').trim()
-                            if (name) {
-                              const items = task?.checkItems?.items || []
-                              // 检查是否已存在同名勾选项
-                              const isDuplicate = items.some(item => item.name === name)
-                              if (isDuplicate) {
-                                setCheckItemError('勾选项名称不能重复')
-                                return
-                              }
-                              setCheckItemError('')
-                              onTaskChange({
-                                ...task,
-                                checkItems: {
-                                  ...(task?.checkItems || {}),
-                                  items: [...items, { id: Date.now().toString(), name, checked: false }],
-                                  newItemName: ''
-                                }
-                              })
-                            }
-                          }}
-                        >
-                          添加
-                        </Button>
+                        <Tooltip title={editingItemId ? "确认修改" : "添加"}>
+                          <Button
+                            type="primary"
+                            onClick={handleAddOrUpdateCheckItem}
+                            icon={editingItemId ? <EditOutlined /> : <PlusOutlined />}
+                          >
+                            {editingItemId ? '修改' : '添加'}
+                          </Button>
+                        </Tooltip>
+                        {editingItemId && (
+                          <Tooltip title="取消编辑">
+                            <Button
+                              onClick={() => {
+                                setEditingItemId(null)
+                                onTaskChange({
+                                  ...task,
+                                  checkItems: {
+                                    ...(task?.checkItems || {}),
+                                    newItemName: '',
+                                    newItemParentId: null
+                                  }
+                                })
+                              }}
+                            >
+                              取消
+                            </Button>
+                          </Tooltip>
+                        )}
                       </Space.Compact>
                     </Form.Item>
                   </Col>
                 </Row>
 
-                {/* 勾选项列表 */}
+                {/* 勾选项树形列表 */}
                 {task?.checkItems?.items && task.checkItems.items.length > 0 && (
                   <div style={{ marginTop: 8 }}>
                     <div style={{ fontSize: 13, color: '#8c8c8c', marginBottom: 8 }}>
                       已添加的勾选项 ({task.checkItems.items.length}):
                     </div>
-                    <Space wrap>
-                      {task.checkItems.items.map((item, idx) => (
-                        <Tag
-                          key={item.id}
-                          closable
-                          onClose={() => {
-                            const items = [...task.checkItems.items]
-                            items.splice(idx, 1)
-                            onTaskChange({
-                              ...task,
-                              checkItems: {
-                                ...(task?.checkItems || {}),
-                                items
-                              }
-                            })
-                          }}
-                          style={{ padding: '4px 8px', fontSize: 13 }}
-                        >
-                          {item.name}
-                        </Tag>
-                      ))}
-                    </Space>
+                    <Tree
+                      treeData={treeData}
+                      defaultExpandAll
+                      titleRender={(nodeData) => (
+                        <div className="group" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', paddingRight: 8 }}>
+                          <span>{nodeData.title}</span>
+                          <Space size="small">
+                            <Button
+                              type="text"
+                              size="small"
+                              icon={<EditOutlined />}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleEditClick(nodeData)
+                              }}
+                            />
+                            <Button
+                              type="text"
+                              size="small"
+                              danger
+                              icon={<DeleteOutlined />}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleDeleteCheckItem(nodeData.id)
+                              }}
+                            />
+                          </Space>
+                        </div>
+                      )}
+                      blockNode
+                    />
                   </div>
                 )}
               </div>
