@@ -314,6 +314,10 @@ app.whenReady().then(() => {
 
       const oldName = list[idx].name
       list[idx].name = payload?.name || list[idx].name
+      // 更新 order 字段（如果有传入）
+      if (payload?.order !== undefined) {
+        list[idx].order = payload.order
+      }
       list[idx].updatedAt = new Date().toISOString()
       writeModules(list)
 
