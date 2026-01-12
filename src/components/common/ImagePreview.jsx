@@ -22,6 +22,7 @@ export default function ImagePreview({ imagePreview, onClose, onPrev, onNext, on
   const [position, setPosition] = useState({ x: 0, y: 0 })
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
+  const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 })
 
   // 重置缩放比例和位置
   useEffect(() => {
@@ -76,10 +77,42 @@ export default function ImagePreview({ imagePreview, onClose, onPrev, onNext, on
       const deltaX = e.clientX - dragStart.x
       const deltaY = e.clientY - dragStart.y
       
-      setPosition(prev => ({
-        x: prev.x + deltaX,
-        y: prev.y + deltaY
-      }))
+      setPosition(prev => {
+        const newX = prev.x + deltaX
+        const newY = prev.y + deltaY
+        
+        // 获取容器尺寸
+        const container = document.querySelector('.image-preview-container')
+        if (!container || !imageDimensions.width || !imageDimensions.height) {
+          return { x: newX, y: newY }
+        }
+        
+        const containerRect = container.getBoundingClientRect()
+        
+        // 计算缩放后的图片尺寸
+        const scaledWidth = imageDimensions.width * scale
+        const scaledHeight = imageDimensions.height * scale
+        
+        // 计算边界限制
+        // 图片左边缘不能超过容器左边缘
+        const maxX = 0
+        // 图片右边缘不能超过容器右边缘
+        const minX = containerRect.width - scaledWidth
+        
+        // 图片上边缘不能超过容器上边缘
+        const maxY = 0
+        // 图片下边缘不能超过容器下边缘
+        const minY = containerRect.height - scaledHeight
+        
+        // 限制位置在边界内
+        const boundedX = Math.max(Math.min(maxX, minX), Math.min(maxX, newX))
+        const boundedY = Math.max(Math.min(maxY, minY), Math.min(maxY, newY))
+        
+        return {
+          x: boundedX,
+          y: boundedY
+        }
+      })
       
       setDragStart({ x: e.clientX, y: e.clientY })
     }
@@ -97,7 +130,7 @@ export default function ImagePreview({ imagePreview, onClose, onPrev, onNext, on
       window.removeEventListener('mousemove', handleMouseMove)
       window.removeEventListener('mouseup', handleMouseUp)
     }
-  }, [isDragging, dragStart, imagePreview.show])
+  }, [isDragging, dragStart, imagePreview.show, scale, imageDimensions])
 
   // 开始拖拽
   const handleMouseDown = (e) => {
@@ -264,11 +297,19 @@ export default function ImagePreview({ imagePreview, onClose, onPrev, onNext, on
           src={imagePreview.src} 
           alt="预览图片"
           onMouseDown={handleMouseDown}
+          onLoad={(e) => {
+            // 记录图片的实际显示尺寸
+            setImageDimensions({
+              width: e.target.offsetWidth,
+              height: e.target.offsetHeight
+            })
+          }}
           style={{ 
             maxWidth: '100%', 
             maxHeight: '70vh', 
             objectFit: 'contain',
             transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
+            transformOrigin: 'top left',
             transition: isDragging ? 'none' : 'transform 0.2s ease',
             cursor: scale > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default',
             userSelect: 'none'
