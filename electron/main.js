@@ -1024,7 +1024,7 @@ app.whenReady().then(() => {
   ipcMain.handle('data:export', async () => {
     try {
       const exportData = {
-        version: '1.0.0',
+        version: app.getVersion(),
         exportTime: new Date().toISOString(),
         config: JSON.parse(fs.existsSync(configFile) ? fs.readFileSync(configFile, 'utf-8') : JSON.stringify(defaultConfig)),
         projects: readProjects(),
