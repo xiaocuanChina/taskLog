@@ -73,47 +73,53 @@ export default function ImagePreview({ imagePreview, onClose, onPrev, onNext, on
 
     const handleMouseMove = (e) => {
       if (!isDragging) return
-      
+
       const deltaX = e.clientX - dragStart.x
       const deltaY = e.clientY - dragStart.y
-      
+
+      setIsDragging(true) // Ensure dragging state is maintained
+
       setPosition(prev => {
         const newX = prev.x + deltaX
         const newY = prev.y + deltaY
-        
+
         // 获取容器尺寸
         const container = document.querySelector('.image-preview-container')
         if (!container || !imageDimensions.width || !imageDimensions.height) {
           return { x: newX, y: newY }
         }
-        
+
         const containerRect = container.getBoundingClientRect()
-        
+
         // 计算缩放后的图片尺寸
         const scaledWidth = imageDimensions.width * scale
         const scaledHeight = imageDimensions.height * scale
-        
-        // 计算边界限制
-        // 图片左边缘不能超过容器左边缘
-        const maxX = 0
-        // 图片右边缘不能超过容器右边缘
-        const minX = containerRect.width - scaledWidth
-        
-        // 图片上边缘不能超过容器上边缘
-        const maxY = 0
-        // 图片下边缘不能超过容器下边缘
-        const minY = containerRect.height - scaledHeight
-        
+
+        // 计算水平边界 (assuming transform-origin: center)
+        // 图片宽度大于容器时，允许拖动偏移量
+        let limitX = 0
+        if (scaledWidth > containerRect.width) {
+          limitX = (scaledWidth - containerRect.width) / 2
+        }
+
+        // 计算垂直边界
+        let limitY = 0
+        if (scaledHeight > containerRect.height) {
+          limitY = (scaledHeight - containerRect.height) / 2
+        }
+
         // 限制位置在边界内
-        const boundedX = Math.max(Math.min(maxX, minX), Math.min(maxX, newX))
-        const boundedY = Math.max(Math.min(maxY, minY), Math.min(maxY, newY))
-        
+        // 注意：因为 transform-origin 是 center，所以向左拖动对应负值，向右对应正值
+        // 范围应该是 [-limitX, limitX]
+        const boundedX = Math.max(-limitX, Math.min(limitX, newX))
+        const boundedY = Math.max(-limitY, Math.min(limitY, newY))
+
         return {
           x: boundedX,
           y: boundedY
         }
       })
-      
+
       setDragStart({ x: e.clientX, y: e.clientY })
     }
 
@@ -161,9 +167,9 @@ export default function ImagePreview({ imagePreview, onClose, onPrev, onNext, on
       zIndex={1100}
       style={{ top: 20 }}
       styles={{
-        body: { 
-          display: 'flex', 
-          justifyContent: 'center', 
+        body: {
+          display: 'flex',
+          justifyContent: 'center',
           alignItems: 'center',
           minHeight: '70vh',
           position: 'relative',
@@ -179,10 +185,10 @@ export default function ImagePreview({ imagePreview, onClose, onPrev, onNext, on
             size="large"
             icon={<LeftOutlined />}
             onClick={onPrev}
-            style={{ 
-              position: 'absolute', 
-              left: 20, 
-              top: '50%', 
+            style={{
+              position: 'absolute',
+              left: 20,
+              top: '50%',
               transform: 'translateY(-50%)',
               zIndex: 1
             }}
@@ -193,10 +199,10 @@ export default function ImagePreview({ imagePreview, onClose, onPrev, onNext, on
             size="large"
             icon={<RightOutlined />}
             onClick={onNext}
-            style={{ 
-              position: 'absolute', 
-              right: 20, 
-              top: '50%', 
+            style={{
+              position: 'absolute',
+              right: 20,
+              top: '50%',
               transform: 'translateY(-50%)',
               zIndex: 1
             }}
@@ -266,7 +272,7 @@ export default function ImagePreview({ imagePreview, onClose, onPrev, onNext, on
                 cancelText: '取消',
                 onOk: () => {
                   onDelete(imagePreview.currentIndex)
-                  
+
                   // 如果只有一张图片，删除后直接关闭
                   if (imagePreview.images.length <= 1) {
                     onClose()
@@ -289,12 +295,12 @@ export default function ImagePreview({ imagePreview, onClose, onPrev, onNext, on
         </div>
       )}
 
-      <div 
+      <div
         className="image-preview-container"
         style={{ textAlign: 'center' }}
       >
-        <TaskImage 
-          src={imagePreview.src} 
+        <TaskImage
+          src={imagePreview.src}
           alt="预览图片"
           onMouseDown={handleMouseDown}
           onLoad={(e) => {
@@ -304,23 +310,23 @@ export default function ImagePreview({ imagePreview, onClose, onPrev, onNext, on
               height: e.target.offsetHeight
             })
           }}
-          style={{ 
-            maxWidth: '100%', 
-            maxHeight: '70vh', 
+          style={{
+            maxWidth: '100%',
+            maxHeight: '70vh',
             objectFit: 'contain',
             transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
-            transformOrigin: 'top left',
+            transformOrigin: 'center',
             transition: isDragging ? 'none' : 'transform 0.2s ease',
             cursor: scale > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default',
             userSelect: 'none'
           }}
         />
-        
+
         {imagePreview.images.length > 1 && (
-          <div style={{ 
-            marginTop: 16, 
-            fontSize: 14, 
-            color: '#8c8c8c' 
+          <div style={{
+            marginTop: 16,
+            fontSize: 14,
+            color: '#8c8c8c'
           }}>
             {imagePreview.currentIndex + 1} / {imagePreview.images.length}
           </div>
