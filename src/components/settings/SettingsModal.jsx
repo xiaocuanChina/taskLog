@@ -166,7 +166,7 @@ export default function SettingsModal({ visible, onClose }) {
         // 立即应用主题色到 CSS 变量
         document.documentElement.style.setProperty('--theme-start-color', generalConfig.themeColors.startColor)
         document.documentElement.style.setProperty('--theme-end-color', generalConfig.themeColors.endColor)
-        
+
         showToast('保存成功', 'success')
         onClose(true) // 传递 true 表示需要刷新
       } else {
@@ -187,7 +187,7 @@ export default function SettingsModal({ visible, onClose }) {
       // 重置后应用默认主题色
       document.documentElement.style.setProperty('--theme-start-color', '#667eea')
       document.documentElement.style.setProperty('--theme-end-color', '#764ba2')
-      
+
       showToast('已重置为默认配置', 'success')
       await loadConfig()
     } else {

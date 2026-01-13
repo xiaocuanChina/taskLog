@@ -4,6 +4,7 @@ import { ConfigProvider } from 'antd'
 import zhCN from 'antd/locale/zh_CN'
 import 'antd/dist/reset.css'
 import App from './App.jsx'
+import './styles/common.module.css'
 import { ToastProvider } from './context/ToastContext'
 
 // 应用主题色到 CSS 变量
@@ -17,14 +18,14 @@ const applyThemeColors = (startColor, endColor) => {
 const initTheme = async () => {
   const defaultStartColor = '#667eea'
   const defaultEndColor = '#764ba2'
-  
+
   try {
     // 等待 Electron API 准备好
     if (!window.electron?.config?.get) {
       console.log('Electron API 未准备好，使用默认主题色')
       return
     }
-    
+
     const configStr = await window.electron.config.get()
     if (configStr) {
       const config = JSON.parse(configStr)
