@@ -172,6 +172,9 @@ app.whenReady().then(() => {
   }
   ipcMain.handle('ping', () => 'pong')
 
+  // 应用信息
+  ipcMain.handle('app:getVersion', () => app.getVersion())
+
   // 系统功能
   ipcMain.handle('shell:openExternal', (e, url) => {
     return shell.openExternal(url)

@@ -57,5 +57,9 @@ contextBridge.exposeInMainWorld('electron', {
   // 系统功能
   shell: {
     openExternal: (url) => ipcRenderer.invoke('shell:openExternal', url)
+  },
+  // 应用信息
+  app: {
+    getVersion: () => ipcRenderer.invoke('app:getVersion')
   }
 })
