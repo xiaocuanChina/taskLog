@@ -19,6 +19,28 @@ import { Modal, Input, Form, Row, Col, Button, Switch, AutoComplete, Space, Tag,
 import { UploadOutlined, DeleteOutlined, CodeOutlined, EditOutlined, PlusOutlined, FileTextOutlined, HolderOutlined } from '@ant-design/icons'
 import TaskImage from '../common/TaskImage'
 import styles from './TaskModal.module.css'
+import Editor from 'react-simple-code-editor'
+import Prism from 'prismjs'
+import 'prismjs/themes/prism-tomorrow.css'
+import 'prismjs/components/prism-javascript'
+import 'prismjs/components/prism-typescript'
+import 'prismjs/components/prism-python'
+import 'prismjs/components/prism-java'
+import 'prismjs/components/prism-c'
+import 'prismjs/components/prism-cpp'
+import 'prismjs/components/prism-csharp'
+import 'prismjs/components/prism-go'
+import 'prismjs/components/prism-rust'
+import 'prismjs/components/prism-markup'
+import 'prismjs/components/prism-markup-templating'
+import 'prismjs/components/prism-php'
+import 'prismjs/components/prism-ruby'
+import 'prismjs/components/prism-sql'
+import 'prismjs/components/prism-css'
+import 'prismjs/components/prism-json'
+import 'prismjs/components/prism-markdown'
+import 'prismjs/components/prism-bash'
+import 'prismjs/components/prism-powershell'
 
 const { TextArea } = Input
 
@@ -302,7 +324,7 @@ export default function TaskModal({
       newParentId = info.node.parentId || null
       const siblings = newItems.filter(i => (i.parentId || null) === newParentId)
       const dropIndex = siblings.findIndex(i => i.id === dropKey)
-      
+
       if (dropPosition === -1) {
         // 放到目标节点前面
         insertIndex = newItems.findIndex(i => i.id === dropKey)
@@ -323,7 +345,7 @@ export default function TaskModal({
 
     // 更新拖拽项的父级
     const updatedDragItem = { ...dragItem, parentId: newParentId }
-    
+
     // 插入到新位置
     newItems.splice(insertIndex, 0, updatedDragItem)
 
@@ -346,7 +368,7 @@ export default function TaskModal({
   // 保存备注
   const handleSaveRemark = () => {
     if (!editingRemarkItemId) return
-    
+
     const items = task?.checkItems?.items || []
     const newItems = items.map(item => {
       if (item.id === editingRemarkItemId) {
@@ -940,19 +962,38 @@ export default function TaskModal({
                     </Form.Item>
                   </Col>
                 </Row>
-                <TextArea
-                  placeholder="请输入代码..."
-                  value={task?.codeBlock?.code || ''}
-                  onChange={(e) => onTaskChange({
-                    ...task,
-                    codeBlock: {
-                      ...(task?.codeBlock || {}),
-                      code: e.target.value
-                    }
-                  })}
-                  rows={6}
-                  className={styles.codeEditor}
-                />
+                <div style={{
+                  border: '1px solid #d9d9d9',
+                  borderRadius: 4,
+                  overflow: 'hidden',
+                  backgroundColor: '#2d2d2d',
+                  fontFamily: '"Fira code", "Fira Mono", monospace',
+                }}>
+                  <Editor
+                    value={task?.codeBlock?.code || ''}
+                    onValueChange={(code) => onTaskChange({
+                      ...task,
+                      codeBlock: {
+                        ...(task?.codeBlock || {}),
+                        code
+                      }
+                    })}
+                    highlight={code => {
+                      const lang = task?.codeBlock?.language || 'javascript'
+                      const prismLang = lang === 'html' ? 'markup' : lang
+                      const grammar = Prism.languages[prismLang] || Prism.languages.javascript
+                      return Prism.highlight(code, grammar, prismLang)
+                    }}
+                    padding={10}
+                    style={{
+                      fontFamily: '"Fira code", "Fira Mono", monospace',
+                      fontSize: 14,
+                      minHeight: '150px',
+                      color: '#ccc',
+                    }}
+                    textareaClassName={styles.codeEditorTextarea}
+                  />
+                </div>
               </div>
             )}
           </Form.Item>
