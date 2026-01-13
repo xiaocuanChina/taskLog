@@ -527,6 +527,18 @@ app.whenReady().then(() => {
     const list = readTasks()
     const idx = list.findIndex(x => x.id === id)
     if (idx >= 0) {
+      // 保存完成前的勾选状态（用于回滚时还原）
+      if (list[idx].checkItems?.enabled && list[idx].checkItems?.items?.length > 0) {
+        list[idx].checkItemsBeforeComplete = list[idx].checkItems.items.map(item => ({
+          id: item.id,
+          checked: item.checked
+        }))
+        // 将所有勾选项设为已勾选
+        list[idx].checkItems.items = list[idx].checkItems.items.map(item => ({
+          ...item,
+          checked: true
+        }))
+      }
       list[idx].completed = true
       list[idx].completedAt = new Date().toISOString()
       writeTasks(list)
@@ -558,6 +570,19 @@ app.whenReady().then(() => {
     if (idx >= 0) {
       list[idx].completed = false
       list[idx].completedAt = null
+      // 恢复完成前的勾选状态
+      if (list[idx].checkItemsBeforeComplete && list[idx].checkItems?.items?.length > 0) {
+        const beforeState = list[idx].checkItemsBeforeComplete
+        list[idx].checkItems.items = list[idx].checkItems.items.map(item => {
+          const savedState = beforeState.find(s => s.id === item.id)
+          return {
+            ...item,
+            checked: savedState ? savedState.checked : false
+          }
+        })
+        // 清除保存的状态
+        delete list[idx].checkItemsBeforeComplete
+      }
       writeTasks(list)
       return list[idx]
     }

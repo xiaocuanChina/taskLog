@@ -396,29 +396,57 @@ export default function TaskCard({ task, isCompleted, isShelved = false, taskTyp
                   return currentLevelItems.map(item => (
                     <div key={item.id} style={{ marginLeft: level * 20 }}>
                       {task.checkItems.mode === 'single' ? (
-                        <Radio
-                          value={item.id}
-                          style={{ fontSize: 13 }}
-                          disabled={isCompleted}
-                          checked={item.checked}
-                          onChange={(e) => handleCheckItemChange(item.id, true)}
-                        >
-                          {item.name}
-                        </Radio>
-                      ) : (
-                        <Checkbox
-                          checked={item.checked}
-                          onChange={(e) => handleCheckItemChange(item.id, e.target.checked)}
-                          disabled={isCompleted}
-                          style={{ fontSize: 13 }}
-                        >
-                          <span style={{
-                            textDecoration: item.checked ? 'line-through' : 'none',
-                            color: item.checked ? '#8c8c8c' : 'inherit'
-                          }}>
+                        <div>
+                          <Radio
+                            value={item.id}
+                            style={{ fontSize: 13 }}
+                            disabled={isCompleted}
+                            checked={item.checked}
+                            onChange={(e) => handleCheckItemChange(item.id, true)}
+                          >
                             {item.name}
-                          </span>
-                        </Checkbox>
+                          </Radio>
+                          {/* 备注单独一行显示 */}
+                          {item.remark && (
+                            <div style={{
+                              marginLeft: 24,
+                              marginTop: 2,
+                              fontSize: 12,
+                              color: '#8c8c8c',
+                              lineHeight: 1.4
+                            }}>
+                              {item.remark}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div>
+                          <Checkbox
+                            checked={item.checked}
+                            onChange={(e) => handleCheckItemChange(item.id, e.target.checked)}
+                            disabled={isCompleted}
+                            style={{ fontSize: 13 }}
+                          >
+                            <span style={{
+                              textDecoration: item.checked ? 'line-through' : 'none',
+                              color: item.checked ? '#8c8c8c' : 'inherit'
+                            }}>
+                              {item.name}
+                            </span>
+                          </Checkbox>
+                          {/* 备注单独一行显示 */}
+                          {item.remark && (
+                            <div style={{
+                              marginLeft: 24,
+                              marginTop: 2,
+                              fontSize: 12,
+                              color: '#8c8c8c',
+                              lineHeight: 1.4
+                            }}>
+                              {item.remark}
+                            </div>
+                          )}
+                        </div>
                       )}
                       {/* 递归渲染子项 */}
                       {renderCheckItems(item.id, level + 1)}
