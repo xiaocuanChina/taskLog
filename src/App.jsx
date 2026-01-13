@@ -27,6 +27,7 @@ export default function App() {
   const [showProjectMemoModal, setShowProjectMemoModal] = useState(false)
   const [showProjectMemoView, setShowProjectMemoView] = useState(false)
   const [editingProjectMemo, setEditingProjectMemo] = useState(null)
+  const [memoEditFromView, setMemoEditFromView] = useState(false) // 标记是否从查看页面进入编辑
 
   // Toast 提示
   const showToast = useToast()
@@ -204,6 +205,7 @@ export default function App() {
   // 打开项目备忘编辑
   const handleOpenProjectMemoEdit = () => {
     setShowProjectMemoView(false)
+    setMemoEditFromView(true) // 标记从查看页面进入
     setShowProjectMemoModal(true)
   }
 
@@ -214,7 +216,21 @@ export default function App() {
       name: currentProject.name,
       memo: ''
     })
+    setMemoEditFromView(false) // 直接添加，不是从查看页面进入
     setShowProjectMemoModal(true)
+  }
+
+  // 关闭项目备忘编辑模态框
+  const handleCloseProjectMemoModal = () => {
+    setShowProjectMemoModal(false)
+    if (memoEditFromView) {
+      // 从查看页面进入的，返回查看页面
+      setShowProjectMemoView(true)
+      setMemoEditFromView(false)
+    } else {
+      // 直接添加的，清空编辑数据
+      setEditingProjectMemo(null)
+    }
   }
 
   // 更新项目备忘
@@ -226,6 +242,7 @@ export default function App() {
 
     if (result?.success) {
       setShowProjectMemoModal(false)
+      setMemoEditFromView(false) // 重置标记
       setEditingProjectMemo(null)
       loadProjects()
       if (currentProject?.id === editingProjectMemo.id) {
@@ -720,7 +737,7 @@ export default function App() {
           onCancelDeleteProject={handleCancelDeleteProject}
           onProjectMemoChange={(memo) => setEditingProjectMemo({ ...editingProjectMemo, memo })}
           onUpdateProjectMemo={handleUpdateProjectMemo}
-          onCloseProjectMemoModal={() => setShowProjectMemoModal(false)}
+          onCloseProjectMemoModal={handleCloseProjectMemoModal}
           onCloseAddProjectModal={() => setShowAddProjectModal(false)}
           onProjectsReorder={handleProjectsReorder}
         />
@@ -859,7 +876,7 @@ export default function App() {
       onCloseProjectMemoView={handleCloseProjectMemoView}
       onProjectMemoChange={(memo) => setEditingProjectMemo({ ...editingProjectMemo, memo })}
       onUpdateProjectMemo={handleUpdateProjectMemo}
-      onCloseProjectMemoModal={() => setShowProjectMemoModal(false)}
+      onCloseProjectMemoModal={handleCloseProjectMemoModal}
       onOpenAddProjectMemo={handleOpenAddProjectMemo}
       onCloseImagePreview={handleCloseImagePreview}
       onPrevImage={handlePrevImage}
