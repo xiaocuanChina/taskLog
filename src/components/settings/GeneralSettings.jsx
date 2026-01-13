@@ -59,7 +59,7 @@ export default function GeneralSettings({ form, onFormChange }) {
                 >
                   <ColorPicker
                     showText
-                    disabledAlpha
+                    format="hex"
                   />
                 </Form.Item>
               </div>
@@ -72,7 +72,7 @@ export default function GeneralSettings({ form, onFormChange }) {
                 >
                   <ColorPicker
                     showText
-                    disabledAlpha
+                    format="hex"
                   />
                 </Form.Item>
               </div>
