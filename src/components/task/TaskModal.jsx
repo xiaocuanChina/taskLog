@@ -14,9 +14,9 @@
  * - 在任务管理视图中添加新任务
  * - 编辑待办任务的信息
  */
-import React, { useEffect, useRef, useState, useMemo } from 'react'
+import { useEffect, useRef, useState, useMemo } from 'react'
 import { Modal, Input, Form, Row, Col, Button, Switch, AutoComplete, Space, Tag, Tree, Tooltip, Radio } from 'antd'
-import { UploadOutlined, DeleteOutlined, CodeOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons'
+import { UploadOutlined, DeleteOutlined, CodeOutlined, EditOutlined, PlusOutlined, FileTextOutlined, HolderOutlined } from '@ant-design/icons'
 import TaskImage from '../common/TaskImage'
 import styles from './TaskModal.module.css'
 
@@ -29,7 +29,7 @@ const buildTreeData = (items) => {
 
   // 初始化每个节点
   items.forEach(item => {
-    itemMap[item.id] = { ...item, key: item.id, value: item.id, title: item.name, children: [] }
+    itemMap[item.id] = { ...item, key: item.id, value: item.id, title: item.name, remark: item.remark || '', children: [] }
   })
 
   // 构建树
@@ -77,6 +77,10 @@ export default function TaskModal({
   const [checkItemError, setCheckItemError] = useState('')
   // 当前正在编辑的勾选项ID
   const [editingItemId, setEditingItemId] = useState(null)
+  // 当前正在编辑备注的勾选项ID
+  const [editingRemarkItemId, setEditingRemarkItemId] = useState(null)
+  // 备注输入值
+  const [remarkInputValue, setRemarkInputValue] = useState('')
 
   // Modal 关闭时清除错误状态和编辑状态
   useEffect(() => {
@@ -92,6 +96,31 @@ export default function TaskModal({
       if (e.ctrlKey && e.key === 's') {
         e.preventDefault()
         if (show) {
+          // 如果正在编辑备注，先保存备注，不触发整个任务保存
+          if (editingRemarkItemId) {
+            const currentTask = latestProps.current.task
+            const items = currentTask?.checkItems?.items || []
+            const newItems = items.map(item => {
+              if (item.id === editingRemarkItemId) {
+                return { ...item, remark: remarkInputValue.trim() }
+              }
+              return item
+            })
+            const updatedTask = {
+              ...currentTask,
+              checkItems: {
+                ...(currentTask?.checkItems || {}),
+                items: newItems
+              }
+            }
+            // 保存备注并退出编辑状态
+            latestProps.current.onTaskChange(updatedTask)
+            setEditingRemarkItemId(null)
+            setRemarkInputValue('')
+            // 只保存备注，不触发任务确认
+            return
+          }
+          // 没有在编辑备注时，才触发任务保存
           onConfirm()
         }
       }
@@ -104,7 +133,7 @@ export default function TaskModal({
     return () => {
       window.removeEventListener('keydown', handleKeyDown)
     }
-  }, [show, onConfirm])
+  }, [show, onConfirm, editingRemarkItemId, remarkInputValue])
 
   // Modal 打开时自动聚焦到任务描述输入框
   useEffect(() => {
@@ -239,6 +268,7 @@ export default function TaskModal({
   // 处理点击编辑
   const handleEditClick = (item) => {
     setEditingItemId(item.id)
+    setEditingRemarkItemId(null)
     onTaskChange({
       ...task,
       checkItems: {
@@ -247,6 +277,99 @@ export default function TaskModal({
         newItemParentId: item.parentId || null
       }
     })
+  }
+
+  // 处理拖拽排序
+  const handleDrop = (info) => {
+    const dropKey = info.node.key
+    const dragKey = info.dragNode.key
+    const dropPos = info.node.pos.split('-')
+    const dropPosition = info.dropPosition - Number(dropPos[dropPos.length - 1])
+
+    const items = task?.checkItems?.items || []
+    const dragItem = items.find(i => i.id === dragKey)
+    if (!dragItem) return
+
+    // 移除拖拽项
+    let newItems = items.filter(i => i.id !== dragKey)
+
+    // 确定新的父级和位置
+    let newParentId = null
+    let insertIndex = 0
+
+    if (info.dropToGap) {
+      // 放到节点之间
+      newParentId = info.node.parentId || null
+      const siblings = newItems.filter(i => (i.parentId || null) === newParentId)
+      const dropIndex = siblings.findIndex(i => i.id === dropKey)
+      
+      if (dropPosition === -1) {
+        // 放到目标节点前面
+        insertIndex = newItems.findIndex(i => i.id === dropKey)
+      } else {
+        // 放到目标节点后面
+        insertIndex = newItems.findIndex(i => i.id === dropKey) + 1
+      }
+    } else {
+      // 放到节点内部（作为子节点）
+      newParentId = dropKey
+      // 插入到该父节点的子节点末尾
+      const lastChildIndex = newItems.reduce((lastIdx, item, idx) => {
+        if ((item.parentId || null) === newParentId) return idx
+        return lastIdx
+      }, -1)
+      insertIndex = lastChildIndex + 1
+    }
+
+    // 更新拖拽项的父级
+    const updatedDragItem = { ...dragItem, parentId: newParentId }
+    
+    // 插入到新位置
+    newItems.splice(insertIndex, 0, updatedDragItem)
+
+    onTaskChange({
+      ...task,
+      checkItems: {
+        ...(task?.checkItems || {}),
+        items: newItems
+      }
+    })
+  }
+
+  // 处理点击备注编辑
+  const handleRemarkClick = (item) => {
+    setEditingRemarkItemId(item.id)
+    setRemarkInputValue(item.remark || '')
+    setEditingItemId(null)
+  }
+
+  // 保存备注
+  const handleSaveRemark = () => {
+    if (!editingRemarkItemId) return
+    
+    const items = task?.checkItems?.items || []
+    const newItems = items.map(item => {
+      if (item.id === editingRemarkItemId) {
+        return { ...item, remark: remarkInputValue.trim() }
+      }
+      return item
+    })
+
+    onTaskChange({
+      ...task,
+      checkItems: {
+        ...(task?.checkItems || {}),
+        items: newItems
+      }
+    })
+    setEditingRemarkItemId(null)
+    setRemarkInputValue('')
+  }
+
+  // 取消备注编辑
+  const handleCancelRemark = () => {
+    setEditingRemarkItemId(null)
+    setRemarkInputValue('')
   }
 
   return (
@@ -592,55 +715,100 @@ export default function TaskModal({
                     <Tree
                       treeData={treeData}
                       defaultExpandAll
+                      draggable
+                      onDrop={handleDrop}
                       titleRender={(nodeData) => (
-                        <div className="group" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', paddingRight: 8 }}>
-                          <span>{nodeData.title}</span>
-                          <Space size={2}>
-                            <Tooltip title="添加子项">
-                              <Button
-                                type="text"
-                                size="small"
-                                icon={<PlusOutlined />}
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  // 设置父级ID，重置编辑状态
-                                  setEditingItemId(null)
-                                  setCheckItemError('')
-                                  onTaskChange({
-                                    ...task,
-                                    checkItems: {
-                                      ...(task?.checkItems || {}),
-                                      newItemName: '',
-                                      newItemParentId: nodeData.id
-                                    }
-                                  })
-                                }}
+                        <div style={{ display: 'flex', flexDirection: 'column', width: '100%', paddingRight: 8 }}>
+                          <div className="group" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                              <span>{nodeData.title}</span>
+                              {nodeData.remark && (
+                                <Tooltip title={nodeData.remark}>
+                                  <FileTextOutlined style={{ color: '#1890ff', fontSize: 12 }} />
+                                </Tooltip>
+                              )}
+                            </div>
+                            <Space size={2}>
+                              {/* 备注按钮 */}
+                              <Tooltip title="备注">
+                                <Button
+                                  type="text"
+                                  size="small"
+                                  icon={<FileTextOutlined />}
+                                  style={{ color: nodeData.remark ? '#1890ff' : undefined }}
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleRemarkClick(nodeData)
+                                  }}
+                                />
+                              </Tooltip>
+                              <Tooltip title="添加子项">
+                                <Button
+                                  type="text"
+                                  size="small"
+                                  icon={<PlusOutlined />}
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    // 设置父级ID，重置编辑状态
+                                    setEditingItemId(null)
+                                    setEditingRemarkItemId(null)
+                                    setCheckItemError('')
+                                    onTaskChange({
+                                      ...task,
+                                      checkItems: {
+                                        ...(task?.checkItems || {}),
+                                        newItemName: '',
+                                        newItemParentId: nodeData.id
+                                      }
+                                    })
+                                  }}
+                                />
+                              </Tooltip>
+                              <Tooltip title="编辑">
+                                <Button
+                                  type="text"
+                                  size="small"
+                                  icon={<EditOutlined />}
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleEditClick(nodeData)
+                                  }}
+                                />
+                              </Tooltip>
+                              <Tooltip title="删除">
+                                <Button
+                                  type="text"
+                                  size="small"
+                                  danger
+                                  icon={<DeleteOutlined />}
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleDeleteCheckItem(nodeData.id)
+                                  }}
+                                />
+                              </Tooltip>
+                              <Tooltip title="拖动排序">
+                                <HolderOutlined style={{ cursor: 'grab', color: '#999', padding: '4px' }} />
+                              </Tooltip>
+                            </Space>
+                          </div>
+                          {/* 备注编辑区域 */}
+                          {editingRemarkItemId === nodeData.id && (
+                            <div style={{ marginTop: 8, marginBottom: 4 }} onClick={(e) => e.stopPropagation()}>
+                              <TextArea
+                                placeholder="输入备注内容"
+                                value={remarkInputValue}
+                                onChange={(e) => setRemarkInputValue(e.target.value)}
+                                autoSize={{ minRows: 2, maxRows: 6 }}
+                                autoFocus
+                                style={{ marginBottom: 8 }}
                               />
-                            </Tooltip>
-                            <Tooltip title="编辑">
-                              <Button
-                                type="text"
-                                size="small"
-                                icon={<EditOutlined />}
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  handleEditClick(nodeData)
-                                }}
-                              />
-                            </Tooltip>
-                            <Tooltip title="删除">
-                              <Button
-                                type="text"
-                                size="small"
-                                danger
-                                icon={<DeleteOutlined />}
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  handleDeleteCheckItem(nodeData.id)
-                                }}
-                              />
-                            </Tooltip>
-                          </Space>
+                              <Space>
+                                <Button type="primary" size="small" onClick={handleSaveRemark}>保存</Button>
+                                <Button size="small" onClick={handleCancelRemark}>取消</Button>
+                              </Space>
+                            </div>
+                          )}
                         </div>
                       )}
                       blockNode
