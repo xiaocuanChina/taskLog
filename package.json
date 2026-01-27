@@ -50,11 +50,21 @@
     "win": {
       "target": [
         {
-          "target": "dir"
+          "target": "nsis"
+        },
+        {
+          "target": "zip"
         }
       ],
       "icon": "build/icon.ico",
       "sign": null
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "TaskLog"
     },
     "mac": {
       "target": [
