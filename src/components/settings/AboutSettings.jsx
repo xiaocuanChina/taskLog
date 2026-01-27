@@ -2,7 +2,8 @@
  * 关于组件
  */
 import React, { useState, useEffect } from 'react'
-import { Divider } from 'antd'
+import { Divider, Button } from 'antd'
+import { GithubOutlined } from '@ant-design/icons'
 import styles from './SettingsModal.module.css'
 
 export default function AboutSettings() {
@@ -26,10 +27,15 @@ export default function AboutSettings() {
         <p><strong>版本：</strong>{version}</p>
         <p><strong>作者：</strong>小爨</p>
         <p><strong>描述：</strong>一个简洁高效的基础任务记录工具</p>
-        <p><strong>项目地址：</strong><a href="#" onClick={(e) => {
-          e.preventDefault()
-          window.electron.shell.openExternal('https://github.com/xiaocuanChina/taskLog')
-        }}>https://github.com/xiaocuanChina/taskLog</a></p>
+        <div style={{ textAlign: 'right', marginTop: 12 }}>
+          <Button
+            type="primary"
+            icon={<GithubOutlined />}
+            onClick={() => window.electron.shell.openExternal('https://github.com/xiaocuanChina/taskLog')}
+          >
+            GitHub
+          </Button>
+        </div>
       </div>
     </div>
   )
