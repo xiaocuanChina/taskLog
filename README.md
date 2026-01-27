@@ -62,10 +62,10 @@ npm run dev
 项目版本号统一在 `package.json` 中管理，使用 npm 内置命令修改：
 
 ```bash
-# 补丁版本 1.0.0 → 1.0.1
+# 补丁版本 0.0.1 → 0.0.2
 npm version patch
 
-# 次版本 1.0.0 → 1.1.0
+# 次版本 0.1.0 → 0.1.0
 npm version minor
 
 # 主版本 1.0.0 → 2.0.0
