@@ -201,8 +201,13 @@ export default function TaskModal({
 
     const items = task?.checkItems?.items || []
 
-    // 检查重名 (排除自身)
-    const isDuplicate = items.some(item => item.name === name && item.id !== editingItemId)
+    // 检查重名 (排除自身，且仅在同级检查)
+    const targetParentId = task?.checkItems?.newItemParentId || null
+    const isDuplicate = items.some(item => 
+      item.name === name && 
+      item.id !== editingItemId && 
+      (item.parentId || null) === targetParentId
+    )
     if (isDuplicate) {
       setCheckItemError('勾选项名称不能重复')
       return

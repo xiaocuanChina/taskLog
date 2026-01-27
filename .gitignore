@@ -39,3 +39,5 @@ build.bat
 tasksData.lnk
 
 /.cursor/rules/1.mdc
+
+.shared
