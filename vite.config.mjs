@@ -16,10 +16,17 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     emptyOutDir: true,
+    chunkSizeWarningLimit: 1500,
     rollupOptions: {
       output: {
         manualChunks: {
-          vendor: ['react', 'react-dom']
+          'vendor-react': ['react', 'react-dom'],
+          'vendor-antd': ['antd'],
+          'vendor-antd-icons': ['@ant-design/icons'],
+          'vendor-exceljs': ['exceljs'],
+          'vendor-xlsx': ['xlsx'],
+          'vendor-dnd': ['@dnd-kit/core', '@dnd-kit/sortable', '@dnd-kit/utilities'],
+          'vendor-code-editor': ['react-simple-code-editor', 'react-syntax-highlighter', 'prismjs']
         }
       }
     }
