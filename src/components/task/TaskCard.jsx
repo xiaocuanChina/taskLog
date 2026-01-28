@@ -31,7 +31,7 @@ export default function TaskCard({ task, isCompleted, isShelved = false, taskTyp
   const [isDraggingSelection, setIsDraggingSelection] = useState(false)
   const isDraggingRef = useRef(false) // 用于在 Click 事件中同步获取拖拽状态
   const [dragStartIndex, setDragStartIndex] = useState(null)
-  const [clickTimeout, setClickTimeout] = useState(null)
+  const clickTimeoutRef = useRef(null)
   const showToast = useToast()
 
   // 同步 ref
@@ -41,7 +41,7 @@ export default function TaskCard({ task, isCompleted, isShelved = false, taskTyp
 
   // 切换图片选择
   const toggleImageSelection = (e, index) => {
-    e.stopPropagation()
+    e?.stopPropagation?.()
     const newSelected = new Set(selectedImages)
     if (newSelected.has(index)) {
       newSelected.delete(index)
@@ -138,11 +138,23 @@ export default function TaskCard({ task, isCompleted, isShelved = false, taskTyp
         return
     }
 
-    // 如果处于选择模式（已有图片被选中），则单击触发选中/取消选中
+    // 如果处于选择模式（已有图片被选中）
     if (selectedImages.size > 0) {
-      toggleImageSelection(e, idx)
+      // 引入防抖处理，区分单击和双击
+      // 如果已经有定时器，说明是双击的前奏，这里先清除
+      if (clickTimeoutRef.current) {
+        clearTimeout(clickTimeoutRef.current)
+        clickTimeoutRef.current = null
+      }
+
+      // 设置新的定时器，延迟执行单击逻辑
+      clickTimeoutRef.current = setTimeout(() => {
+        // 在选择模式下，单击图片总是触发选中/取消选中
+        toggleImageSelection(null, idx)
+        clickTimeoutRef.current = null
+      }, 250) // 250ms 延迟
     } else {
-      // 否则直接触发预览
+      // 未处于选择模式，直接触发预览
       onImageClick(img, images, idx)
     }
   }
@@ -741,6 +753,11 @@ export default function TaskCard({ task, isCompleted, isShelved = false, taskTyp
                   onDoubleClick={(e) => {
                     if (selectedImages.size > 0) {
                       e.stopPropagation()
+                      // 双击事件触发时，清除单击定时器，阻止单击逻辑执行
+                      if (clickTimeoutRef.current) {
+                        clearTimeout(clickTimeoutRef.current)
+                        clickTimeoutRef.current = null
+                      }
                       onImageClick(img, task.images, idx)
                     }
                   }}
@@ -762,8 +779,8 @@ export default function TaskCard({ task, isCompleted, isShelved = false, taskTyp
                       onClick={(e) => toggleImageSelection(e, idx)}
                       style={{ 
                         position: 'static',
-                        opacity: selectedImages.has(idx) && selectedImages.size > 1 ? 1 : 0,
-                        pointerEvents: selectedImages.has(idx) && selectedImages.size > 1 ? 'auto' : 'none'
+                        opacity: selectedImages.has(idx) ? 1 : 0,
+                        pointerEvents: selectedImages.has(idx) ? 'auto' : 'none'
                       }} 
                     />
                   </div>
