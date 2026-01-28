@@ -2,6 +2,7 @@ const { app, BrowserWindow, ipcMain, Menu, dialog, shell } = require('electron')
 const path = require('path')
 const fs = require('fs')
 const AdmZip = require('adm-zip')
+const { execFile } = require('child_process')
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -971,6 +972,31 @@ app.whenReady().then(() => {
       return imagePath
     }
     return path.join(imagesDir, imagePath)
+  })
+
+  // 剪贴板文件写入（支持多文件）
+  ipcMain.handle('clipboard:writeFiles', (e, filePaths) => {
+    if (!Array.isArray(filePaths) || filePaths.length === 0) return false
+    
+    // 目前仅支持 Windows
+    if (process.platform === 'win32') {
+      return new Promise((resolve) => {
+        // 构建 PowerShell 命令
+        // 使用单引号包裹路径，并转义单引号 (两个单引号)
+        const paths = filePaths.map(p => `'${p.replace(/'/g, "''")}'`).join(',')
+        const psCommand = `Set-Clipboard -Path ${paths}`
+        
+        execFile('powershell', ['-Command', psCommand], (error) => {
+          if (error) {
+            console.error('Failed to copy files to clipboard:', error)
+            resolve(false)
+          } else {
+            resolve(true)
+          }
+        })
+      })
+    }
+    return false
   })
 
   // 配置管理

@@ -255,34 +255,59 @@
   gap: 6px;
   margin-top: 6px;
   flex-wrap: wrap;
+  user-select: none; /* 防止原生文本选中干扰 */
 }
 
 .taskImageWrapper {
   cursor: pointer;
   position: relative;
   transition: all 0.2s ease;
+  border-radius: 4px;
 }
 
+/* 移除悬停放大和阴影效果，保持平稳 */
 .taskImageWrapper:hover {
-  transform: scale(1.05);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  /* 仅保留轻微的亮度变化或无变化，根据用户需求"不需要蓝色标识" */
+  filter: brightness(0.95);
 }
 
-.taskImageWrapper::after {
-  content: '🔍';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 24px;
+/* 选中状态：仅通过复选框标识，移除蓝色边框和缩放 */
+.taskImageWrapper.selected {
+  /* 可以选择加一个极细的边框或者完全不加，用户说"不需要选中文字那样的蓝色标识" */
+  /* 这里我们只保留复选框的显示，移除其他选中样式 */
+}
+
+/* 移除放大镜 */
+/* .taskImageWrapper::after was removed */
+
+.taskImageCheckbox {
+  /* position: absolute;  moved to wrapper div */
+  /* top: 4px; */
+  /* left: 4px; */
+  /* z-index: 10; */
   opacity: 0;
-  transition: opacity 0.2s ease;
-  pointer-events: none;
+  transition: opacity 0.2s;
+  background: transparent; /* 移除白色背景 */
+  border-radius: 2px;
+  padding: 0;
 }
 
-.taskImageWrapper:hover::after {
-  opacity: 0.9;
-}
+/* 仅在选中时显示复选框，hover时不显示 */
+/* 用户需求：只有当选中了多个图片时，才显示复选框 */
+/* 
+   由于 CSS 无法感知父组件的"选中数量"，我们需要在 JSX 中动态控制这个 class 或者 style。
+   或者我们通过 JavaScript 控制是否渲染 Checkbox，或者给 wrapper 加一个 .multiple-selected 类。
+   这里暂时保持基础样式，显示逻辑移交 JSX 控制。
+*/
+/* .taskImageWrapper.selected .taskImageCheckbox {
+  opacity: 1;
+} */
+
+/* 为了让用户能看到并点击复选框以进行取消操作，hover时也应该显示复选框 */
+/* 用户新需求：鼠标悬浮不显示，只有拖动选中多张后才显示（实际上就是只在selected状态下显示） */
+/* .taskImageWrapper:hover .taskImageCheckbox {
+  opacity: 1;
+} */
 
 .taskImage {
   width: 50px;
@@ -291,6 +316,7 @@
   border-radius: 6px;
   border: 2px solid #e2e8f0;
   transition: all 0.3s ease;
+  display: block; /* 消除底部间隙 */
 }
 
 /* 代码块显示 */

@@ -38,6 +38,10 @@ contextBridge.exposeInMainWorld('electron', {
   image: {
     getPath: (imagePath) => ipcRenderer.invoke('image:getPath', imagePath)
   },
+  // 剪贴板
+  clipboard: {
+    writeFiles: (filePaths) => ipcRenderer.invoke('clipboard:writeFiles', filePaths)
+  },
   // 配置管理
   config: {
     get: () => ipcRenderer.invoke('config:get'),
