@@ -15,17 +15,19 @@
  * - 区分待办任务和已完成任务的展示
  */
 import React, { useState } from 'react'
-import { Card, Button, Tag, Space, Tooltip, message, Checkbox, Radio, Progress } from 'antd'
+import { Card, Button, Tag, Space, Tooltip, Checkbox, Radio, Progress, Dropdown } from 'antd'
 import { CheckOutlined, RollbackOutlined, DeleteOutlined, EditOutlined, ClockCircleOutlined, LoadingOutlined, FolderOutlined, CopyOutlined, PauseCircleOutlined } from '@ant-design/icons'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import TaskImage from '../common/TaskImage'
+import { useToast } from '../../context/ToastContext'
 import styles from './TaskCard.module.css'
 
 export default function TaskCard({ task, isCompleted, isShelved = false, taskTypeColors = {}, onComplete, onRollback, onEdit, onDelete, onImageClick, onEditModule, onShelve, onUnshelve, onCheckItemChange }) {
   const [isCompleting, setIsCompleting] = useState(false)
   const [isRollingBack, setIsRollingBack] = useState(false)
   const [isCodeCopied, setIsCodeCopied] = useState(false)
+  const showToast = useToast()
 
   // 处理完成任务
   const handleComplete = async () => {
@@ -33,7 +35,7 @@ export default function TaskCard({ task, isCompleted, isShelved = false, taskTyp
     try {
       await onComplete(task.id)
     } catch (error) {
-      message.error('操作失败，请重试')
+      showToast('操作失败，请重试', 'error')
     } finally {
       setTimeout(() => setIsCompleting(false), 300)
     }
@@ -45,7 +47,7 @@ export default function TaskCard({ task, isCompleted, isShelved = false, taskTyp
     try {
       await onRollback(task.id)
     } catch (error) {
-      message.error('操作失败，请重试')
+      showToast('操作失败，请重试', 'error')
     } finally {
       setTimeout(() => setIsRollingBack(false), 300)
     }
@@ -56,7 +58,7 @@ export default function TaskCard({ task, isCompleted, isShelved = false, taskTyp
     try {
       await onShelve(task.id)
     } catch (error) {
-      message.error('搁置失败，请重试')
+      showToast('搁置失败，请重试', 'error')
     }
   }
 
@@ -65,7 +67,7 @@ export default function TaskCard({ task, isCompleted, isShelved = false, taskTyp
     try {
       await onUnshelve(task.id)
     } catch (error) {
-      message.error('取消搁置失败，请重试')
+      showToast('取消搁置失败，请重试', 'error')
     }
   }
 
@@ -75,10 +77,44 @@ export default function TaskCard({ task, isCompleted, isShelved = false, taskTyp
     try {
       await navigator.clipboard.writeText(task.codeBlock.code)
       setIsCodeCopied(true)
-      message.success('代码已复制')
+      showToast('代码已复制')
       setTimeout(() => setIsCodeCopied(false), 2000)
     } catch (error) {
-      message.error('复制失败')
+      showToast('复制失败', 'error')
+    }
+  }
+
+  // 复制图片
+  const handleCopyImage = async (img) => {
+    try {
+      let src = img
+      // 这里的逻辑参考 TaskImage 组件的处理，确保获取绝对路径
+      if (!src.startsWith('blob:') && !src.startsWith('http')) {
+         if (src.startsWith('file://')) {
+            const cleanPath = src.replace('file://', '')
+            const absPath = await window.electron?.image?.getPath(cleanPath)
+            if (absPath) {
+              src = `file:///${absPath.replace(/\\/g, '/')}`
+            }
+         } else {
+            const absPath = await window.electron?.image?.getPath(src)
+            if (absPath) {
+              src = `file:///${absPath.replace(/\\/g, '/')}`
+            }
+         }
+      }
+      
+      const response = await fetch(src)
+      const blob = await response.blob()
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          [blob.type]: blob
+        })
+      ])
+      showToast('图片已复制')
+    } catch (error) {
+      console.error('Copy image failed:', error)
+      showToast('复制图片失败', 'error')
     }
   }
 
@@ -475,24 +511,38 @@ export default function TaskCard({ task, isCompleted, isShelved = false, taskTyp
         {task.images && task.images.length > 0 && (
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
             {task.images.map((img, idx) => (
-              <div
+              <Dropdown
                 key={idx}
-                onClick={() => onImageClick(img, task.images, idx)}
-                style={{
-                  cursor: 'pointer',
-                  width: 100,
-                  height: 100,
-                  borderRadius: 4,
-                  overflow: 'hidden',
-                  border: '1px solid #d9d9d9'
+                menu={{
+                  items: [
+                    {
+                      key: 'copy',
+                      label: '复制图片',
+                      icon: <CopyOutlined />,
+                      onClick: () => handleCopyImage(img)
+                    }
+                  ]
                 }}
+                trigger={['contextMenu']}
               >
-                <TaskImage
-                  src={img}
-                  alt={`附件${idx + 1}`}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                />
-              </div>
+                <div
+                  onClick={() => onImageClick(img, task.images, idx)}
+                  style={{
+                    cursor: 'pointer',
+                    width: 100,
+                    height: 100,
+                    borderRadius: 4,
+                    overflow: 'hidden',
+                    border: '1px solid #d9d9d9'
+                  }}
+                >
+                  <TaskImage
+                    src={img}
+                    alt={`附件${idx + 1}`}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                </div>
+              </Dropdown>
             ))}
           </div>
         )}
