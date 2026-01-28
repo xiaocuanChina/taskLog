@@ -1,6 +1,6 @@
 /**
  * 任务卡片组件
- * 
+ *
  * 功能说明:
  * - 用于展示单个任务的详细信息
  * - 显示任务名称、类型、创建时间、备注等信息
@@ -9,7 +9,7 @@
  * - 支持代码块展示,带语法高亮
  * - 根据任务状态(待办/已完成)显示不同的操作按钮
  * - 使用 Ant Design Card 组件实现
- * 
+ *
  * 使用场景:
  * - 在模块分组中展示任务列表
  * - 区分待办任务和已完成任务的展示
@@ -70,15 +70,15 @@ export default function TaskCard({ task, isCompleted, isShelved = false, taskTyp
          // 首次检测到移动，进入拖拽模式
          setIsDraggingSelection(true)
       }
-      
+
       const start = Math.min(dragStartIndex, index)
       const end = Math.max(dragStartIndex, index)
-      
+
       // 基于初始状态进行合并/反转
       // 如果某个图片在 initialSelectedImages 中已存在，且在当前拖拽范围内，则视为反选（取消勾选）
       // 如果不在 initialSelectedImages 中，但在当前拖拽范围内，则视为选中
       const newSelected = new Set(initialSelectedImages)
-      
+
       // 遍历当前拖拽范围内的所有图片
       for (let i = start; i <= end; i++) {
         if (initialSelectedImages.has(i)) {
@@ -97,7 +97,7 @@ export default function TaskCard({ task, isCompleted, isShelved = false, taskTyp
   const handleMouseUp = (index) => {
     if (isDraggingSelection) {
       // 拖拽结束时，不需要清空选中状态，保留用户的所有选择
-      
+
       // 延迟清除，确保 Click 事件能读到 isDraggingRef 为 true
       setTimeout(() => {
         setIsDraggingSelection(false)
@@ -135,7 +135,7 @@ export default function TaskCard({ task, isCompleted, isShelved = false, taskTyp
   const handleImageClick = (e, img, images, idx) => {
     // 阻止冒泡
     e.stopPropagation()
-    
+
     // 如果刚刚发生了拖拽选择，或者正在拖拽中，阻止点击事件
     if (isDraggingRef.current) {
         return
@@ -222,7 +222,7 @@ export default function TaskCard({ task, isCompleted, isShelved = false, taskTyp
     try {
       // 确定要复制的图片列表
       let imagesToCopy = []
-      
+
       // 如果当前图片被选中，且还有其他图片被选中，则复制所有选中的图片
       if (selectedImages.has(idx) && selectedImages.size > 0) {
         imagesToCopy = task.images.filter((_, i) => selectedImages.has(i))
@@ -237,7 +237,7 @@ export default function TaskCard({ task, isCompleted, isShelved = false, taskTyp
       if (imagesToCopy.length > 1 && window.electron?.clipboard?.writeFiles) {
         const filePaths = []
         let allPathsFound = true
-        
+
         for (const imageSrc of imagesToCopy) {
           // 跳过 blob 和 http 图片，只处理本地文件
           if (!imageSrc.startsWith('blob:') && !imageSrc.startsWith('http')) {
@@ -269,7 +269,7 @@ export default function TaskCard({ task, isCompleted, isShelved = false, taskTyp
 
       // 2. 降级处理：尝试构建 ClipboardItem
       const clipboardItems = []
-      
+
       for (const imageSrc of imagesToCopy) {
           let src = imageSrc
           // 这里的逻辑参考 TaskImage 组件的处理，确保获取绝对路径
@@ -287,14 +287,14 @@ export default function TaskCard({ task, isCompleted, isShelved = false, taskTyp
                 }
              }
           }
-          
+
           const response = await fetch(src)
           const blob = await response.blob()
           clipboardItems.push(new ClipboardItem({
               [blob.type]: blob
           }))
       }
-      
+
       if (clipboardItems.length > 0) {
           try {
             // 尝试写入（注意：大多数浏览器不支持多 Item 写入）
@@ -311,7 +311,7 @@ export default function TaskCard({ task, isCompleted, isShelved = false, taskTyp
             }
           }
       }
-      
+
       // 复制完成后清除选中状态
       setSelectedImages(new Set())
     } catch (error) {
@@ -711,7 +711,7 @@ export default function TaskCard({ task, isCompleted, isShelved = false, taskTyp
         )}
 
         {task.images && task.images.length > 0 && (
-          <div 
+          <div
             style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}
             onMouseLeave={() => handleMouseUp()}
           >
@@ -725,7 +725,7 @@ export default function TaskCard({ task, isCompleted, isShelved = false, taskTyp
                       label: (
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                           <span>复制图片</span>
-                          <span style={{ fontSize: '10px', color: '#999' }}>图片可拖动多选复制</span>
+                          <span style={{ fontSize: '10px', color: '#999' }}>图片可拖动实现多选</span>
                         </div>
                       ),
                       icon: <CopyOutlined />,
@@ -773,15 +773,15 @@ export default function TaskCard({ task, isCompleted, isShelved = false, taskTyp
                     style={{ position: 'absolute', top: 4, left: 4, zIndex: 10 }}
                   >
                     {/* 选中时显示，或者有选中项且悬浮时显示 */}
-                    <Checkbox 
+                    <Checkbox
                       className={styles.taskImageCheckbox}
                       checked={selectedImages.has(idx)}
                       onClick={(e) => toggleImageSelection(e, idx)}
-                      style={{ 
+                      style={{
                         position: 'static',
                         opacity: selectedImages.has(idx) || (selectedImages.size > 0 && hoveredImageIndex === idx) ? 1 : 0,
                         pointerEvents: selectedImages.has(idx) || (selectedImages.size > 0 && hoveredImageIndex === idx) ? 'auto' : 'none'
-                      }} 
+                      }}
                     />
                   </div>
                   <TaskImage
