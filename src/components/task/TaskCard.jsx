@@ -28,10 +28,13 @@ export default function TaskCard({ task, isCompleted, isShelved = false, taskTyp
   const [isRollingBack, setIsRollingBack] = useState(false)
   const [isCodeCopied, setIsCodeCopied] = useState(false)
   const [selectedImages, setSelectedImages] = useState(new Set())
+  // 记录开始拖拽前的已选中集合，用于支持增量选择
+  const [initialSelectedImages, setInitialSelectedImages] = useState(new Set())
   const [isDraggingSelection, setIsDraggingSelection] = useState(false)
   const isDraggingRef = useRef(false) // 用于在 Click 事件中同步获取拖拽状态
   const [dragStartIndex, setDragStartIndex] = useState(null)
   const clickTimeoutRef = useRef(null)
+  const [hoveredImageIndex, setHoveredImageIndex] = useState(null)
   const showToast = useToast()
 
   // 同步 ref
@@ -55,8 +58,8 @@ export default function TaskCard({ task, isCompleted, isShelved = false, taskTyp
   const handleMouseDown = (index) => {
     // 仅记录起始点，不立即开始选择，等待移动或松开
     setDragStartIndex(index)
-    // 也不立即清除选中，因为可能是点击已选中的图片
-    // 只有在确定是单击且未选中时，或者开始拖拽时，才清除
+    // 记录当前的选中状态，以便在拖拽过程中进行增量合并
+    setInitialSelectedImages(new Set(selectedImages))
   }
 
   // 拖拽过程中的鼠标进入
@@ -68,20 +71,23 @@ export default function TaskCard({ task, isCompleted, isShelved = false, taskTyp
          setIsDraggingSelection(true)
       }
       
-      // 用户反馈：拖动选中 a,b,c 后又拖回 a，需要更新选中范围
-      // 这里的逻辑已经是计算 start 到 end 的范围，所以是支持“拖回”的。
-      // 只要 dragStartIndex 不变，current index 变了，范围就会重算。
-      // 例如 start=0, current=2 -> [0,1,2]
-      // 拖回 start=0, current=0 -> [0]
-      // 所以核心逻辑不用变，只需要确保每次都重新计算并覆盖。
-      
       const start = Math.min(dragStartIndex, index)
       const end = Math.max(dragStartIndex, index)
       
-      const newSelected = new Set()
-      // 选中范围内所有的图片
+      // 基于初始状态进行合并/反转
+      // 如果某个图片在 initialSelectedImages 中已存在，且在当前拖拽范围内，则视为反选（取消勾选）
+      // 如果不在 initialSelectedImages 中，但在当前拖拽范围内，则视为选中
+      const newSelected = new Set(initialSelectedImages)
+      
+      // 遍历当前拖拽范围内的所有图片
       for (let i = start; i <= end; i++) {
-        newSelected.add(i)
+        if (initialSelectedImages.has(i)) {
+          // 如果之前已选中，现在再次被拖拽覆盖，则取消选中
+          newSelected.delete(i)
+        } else {
+          // 如果之前未选中，则选中
+          newSelected.add(i)
+        }
       }
       setSelectedImages(newSelected)
     }
@@ -90,16 +96,15 @@ export default function TaskCard({ task, isCompleted, isShelved = false, taskTyp
   // 结束拖拽（或完成单击）
   const handleMouseUp = (index) => {
     if (isDraggingSelection) {
-      // 如果是拖拽结束，且最终只选中了1个或更少（例如拖回原点），则清空选中
-      // 避免出现"不可见的选中状态"导致后续操作困惑
-      if (selectedImages.size <= 1) {
-        setSelectedImages(new Set())
-      }
-
+      // 拖拽结束时，不需要清空选中状态，保留用户的所有选择
+      
       // 延迟清除，确保 Click 事件能读到 isDraggingRef 为 true
       setTimeout(() => {
         setIsDraggingSelection(false)
+        setInitialSelectedImages(new Set()) // 清空初始状态缓存
       }, 0)
+    } else {
+      setInitialSelectedImages(new Set()) // 清空初始状态缓存
     }
     setDragStartIndex(null)
   }
@@ -108,10 +113,7 @@ export default function TaskCard({ task, isCompleted, isShelved = false, taskTyp
   useEffect(() => {
     const handleGlobalMouseUp = () => {
         if (isDraggingSelection) {
-            // 同样处理全局松开的情况
-            if (selectedImages.size <= 1) {
-                setSelectedImages(new Set())
-            }
+            // 全局释放时同样不需要自动清空，保留已选内容
         }
 
         if (isDraggingSelection || dragStartIndex !== null) {
@@ -119,6 +121,7 @@ export default function TaskCard({ task, isCompleted, isShelved = false, taskTyp
             setTimeout(() => {
                 setIsDraggingSelection(false)
                 setDragStartIndex(null)
+                setInitialSelectedImages(new Set())
             }, 0)
         }
     }
@@ -126,7 +129,7 @@ export default function TaskCard({ task, isCompleted, isShelved = false, taskTyp
     return () => {
         window.removeEventListener('mouseup', handleGlobalMouseUp)
     }
-  }, [isDraggingSelection, dragStartIndex, selectedImages])
+  }, [isDraggingSelection, dragStartIndex])
 
   // 处理图片点击（预览或选择）
   const handleImageClick = (e, img, images, idx) => {
@@ -748,7 +751,9 @@ export default function TaskCard({ task, isCompleted, isShelved = false, taskTyp
                   }}
                   onMouseEnter={() => {
                     handleMouseEnter(idx)
+                    setHoveredImageIndex(idx)
                   }}
+                  onMouseLeave={() => setHoveredImageIndex(null)}
                   onMouseUp={() => handleMouseUp(idx)}
                   onDoubleClick={(e) => {
                     if (selectedImages.size > 0) {
@@ -779,8 +784,8 @@ export default function TaskCard({ task, isCompleted, isShelved = false, taskTyp
                       onClick={(e) => toggleImageSelection(e, idx)}
                       style={{ 
                         position: 'static',
-                        opacity: selectedImages.has(idx) ? 1 : 0,
-                        pointerEvents: selectedImages.has(idx) ? 'auto' : 'none'
+                        opacity: selectedImages.has(idx) || (selectedImages.size > 0 && hoveredImageIndex === idx) ? 1 : 0,
+                        pointerEvents: selectedImages.has(idx) || (selectedImages.size > 0 && hoveredImageIndex === idx) ? 'auto' : 'none'
                       }} 
                     />
                   </div>
