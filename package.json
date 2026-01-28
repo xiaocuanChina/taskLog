@@ -1,6 +1,6 @@
 {
   "name": "task-log",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "一个现代化的任务管理桌面应用",
   "private": true,
   "main": "electron/main.js",
