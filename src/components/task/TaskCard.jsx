@@ -32,7 +32,6 @@ export default function TaskCard({ task, isCompleted, isShelved = false, taskTyp
   const isDraggingRef = useRef(false) // 用于在 Click 事件中同步获取拖拽状态
   const [dragStartIndex, setDragStartIndex] = useState(null)
   const [clickTimeout, setClickTimeout] = useState(null)
-  const [hoveredImageIndex, setHoveredImageIndex] = useState(null)
   const showToast = useToast()
 
   // 同步 ref
@@ -91,71 +90,43 @@ export default function TaskCard({ task, isCompleted, isShelved = false, taskTyp
   // 结束拖拽（或完成单击）
   const handleMouseUp = (index) => {
     if (isDraggingSelection) {
-      // 如果是拖拽结束，什么都不做，保留当前选中状态
-      setIsDraggingSelection(false)
-    } else {
-      // 如果没有发生拖拽（即单纯的点击）
-      if (dragStartIndex !== null && index !== undefined) {
-         // 只有当点击的是未选中的图片时，才清除其他并选中当前
-         if (!selectedImages.has(index)) {
-              // 延时处理单击选中，以便检测是否为双击
-              if (clickTimeout) {
-                  clearTimeout(clickTimeout)
-              }
-              
-              const timeoutId = setTimeout(() => {
-                  // 单击选中一张
-                  setSelectedImages(new Set([index]))
-                  setClickTimeout(null)
-              }, 200) // 200ms 延时，通常足够区分双击
-              
-              setClickTimeout(timeoutId)
-          } else {
-              // 用户反馈：拖动选中a,b,c后又拖回a，图片a会展示大图，不需要这样
-              // 这里的逻辑是处理 MouseUp，如果发生了拖动（isDraggingSelection=true），则进不到这里。
-              // 如果用户只是点了一下已选中的图片，这里会触发。
-              // 但用户说的是“拖动...又拖回a”，这时候 isDraggingSelection 应该是 true。
-              // 如果 isDraggingSelection 是 false，说明用户没有拖动到别的图片上。
-              // 可能是 dragStartIndex === index，所以 mouseEnter 没有触发 isDraggingSelection=true？
-              // 让我们检查 handleMouseEnter。
-              // 如果 start === end，mouseenter 也会触发。
-              // 但如果用户只是在当前图片内微小移动，算不算拖拽？
-              // 关键是：如果用户拖出去了又拖回来，isDraggingSelection 应该是 true。
-              // 那么在 handleMouseUp 中应该走 if (isDraggingSelection) 分支。
-              // 在那个分支里，我们只 setIsDraggingSelection(false)，不触发预览。
-              
-              // 那么为什么会展示大图？
-              // 预览逻辑在 onClick (handleImageClick) 或 onDoubleClick 中。
-              // 我们之前的修改中，onDoubleClick 负责预览。
-              // handleImageClick 中也保留了双击预览（通过延时清除）。
-              // 问题可能出在：拖动操作结束后，是否触发了 onClick？
-              // 浏览器的 Click 事件是在 MouseDown + MouseUp 后触发的。
-              // 如果我们在同一个元素上 MouseDown 然后 MouseUp，就会触发 Click。
-              // 即使中间鼠标跑出去过又回来了。
-              // 所以我们需要在 Click 处理中判断是否刚刚发生了拖拽。
-          }
-       }
-     }
-     setDragStartIndex(null)
-     // 注意：这里没有清除 isDraggingSelection，因为它在 Click 中可能用到
-     // 但为了状态安全，我们在 Click 中判断，或者延迟清除？
-     // 实际上 handleMouseUp 执行完，React 状态更新可能是异步的。
-     // 更好的方式是用 useRef 记录 isDragging 状态，供 Click 判断。
+      // 如果是拖拽结束，且最终只选中了1个或更少（例如拖回原点），则清空选中
+      // 避免出现"不可见的选中状态"导致后续操作困惑
+      if (selectedImages.size <= 1) {
+        setSelectedImages(new Set())
+      }
+
+      // 延迟清除，确保 Click 事件能读到 isDraggingRef 为 true
+      setTimeout(() => {
+        setIsDraggingSelection(false)
+      }, 0)
+    }
+    setDragStartIndex(null)
   }
 
   // 全局鼠标释放，防止拖拽到外部未释放状态
   useEffect(() => {
     const handleGlobalMouseUp = () => {
+        if (isDraggingSelection) {
+            // 同样处理全局松开的情况
+            if (selectedImages.size <= 1) {
+                setSelectedImages(new Set())
+            }
+        }
+
         if (isDraggingSelection || dragStartIndex !== null) {
-            setIsDraggingSelection(false)
-            setDragStartIndex(null)
+            // 延迟清除，确保 Click 事件能读到 isDraggingRef 为 true
+            setTimeout(() => {
+                setIsDraggingSelection(false)
+                setDragStartIndex(null)
+            }, 0)
         }
     }
     window.addEventListener('mouseup', handleGlobalMouseUp)
     return () => {
         window.removeEventListener('mouseup', handleGlobalMouseUp)
     }
-  }, [isDraggingSelection, dragStartIndex])
+  }, [isDraggingSelection, dragStartIndex, selectedImages])
 
   // 处理图片点击（预览或选择）
   const handleImageClick = (e, img, images, idx) => {
@@ -167,13 +138,13 @@ export default function TaskCard({ task, isCompleted, isShelved = false, taskTyp
         return
     }
 
-    // 如果发生了双击，清除之前的单击延时选中
-    if (clickTimeout) {
-        clearTimeout(clickTimeout)
-        setClickTimeout(null)
+    // 如果处于选择模式（已有图片被选中），则单击触发选中/取消选中
+    if (selectedImages.size > 0) {
+      toggleImageSelection(e, idx)
+    } else {
+      // 否则直接触发预览
+      onImageClick(img, images, idx)
     }
-    
-    // 单击不再触发预览，只在 DoubleClick 中触发
   }
 
   // 处理完成任务
@@ -765,11 +736,14 @@ export default function TaskCard({ task, isCompleted, isShelved = false, taskTyp
                   }}
                   onMouseEnter={() => {
                     handleMouseEnter(idx)
-                    setHoveredImageIndex(idx)
                   }}
-                  onMouseLeave={() => setHoveredImageIndex(null)}
                   onMouseUp={() => handleMouseUp(idx)}
-                  onDoubleClick={() => onImageClick(img, task.images, idx)}
+                  onDoubleClick={(e) => {
+                    if (selectedImages.size > 0) {
+                      e.stopPropagation()
+                      onImageClick(img, task.images, idx)
+                    }
+                  }}
                   style={{
                     width: 100,
                     height: 100,
@@ -788,8 +762,8 @@ export default function TaskCard({ task, isCompleted, isShelved = false, taskTyp
                       onClick={(e) => toggleImageSelection(e, idx)}
                       style={{ 
                         position: 'static',
-                        opacity: selectedImages.size > 1 && (selectedImages.has(idx) || hoveredImageIndex === idx) ? 1 : 0,
-                        pointerEvents: selectedImages.size > 1 && (selectedImages.has(idx) || hoveredImageIndex === idx) ? 'auto' : 'none'
+                        opacity: selectedImages.has(idx) && selectedImages.size > 1 ? 1 : 0,
+                        pointerEvents: selectedImages.has(idx) && selectedImages.size > 1 ? 'auto' : 'none'
                       }} 
                     />
                   </div>
