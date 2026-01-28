@@ -16,7 +16,7 @@
  */
 import React, { useState, useEffect, useRef } from 'react'
 import { Card, Button, Tag, Space, Tooltip, Checkbox, Radio, Progress, Dropdown } from 'antd'
-import { CheckOutlined, RollbackOutlined, DeleteOutlined, EditOutlined, ClockCircleOutlined, LoadingOutlined, FolderOutlined, CopyOutlined, PauseCircleOutlined, QuestionCircleOutlined } from '@ant-design/icons'
+import { CheckOutlined, RollbackOutlined, DeleteOutlined, EditOutlined, ClockCircleOutlined, LoadingOutlined, FolderOutlined, CopyOutlined, PauseCircleOutlined } from '@ant-design/icons'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import TaskImage from '../common/TaskImage'
@@ -723,14 +723,9 @@ export default function TaskCard({ task, isCompleted, isShelved = false, taskTyp
                     {
                       key: 'copy',
                       label: (
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
                           <span>复制图片</span>
-                          <Tooltip title="图片可拖动多选复制">
-                            <QuestionCircleOutlined 
-                              style={{ marginLeft: 8, color: '#999', fontSize: '12px' }} 
-                              onClick={(e) => e.stopPropagation()}
-                            />
-                          </Tooltip>
+                          <span style={{ fontSize: '10px', color: '#999' }}>图片可拖动多选复制</span>
                         </div>
                       ),
                       icon: <CopyOutlined />,
