@@ -150,7 +150,7 @@ TASK_TYPES_CONFIG={"taskTypes":[{"name":"BUG","color":"#ff4d4f"}]}
 npm run config:migrate
 ```
 
-详细配置说明请参考 [CONFIG_GUIDE.md](./CONFIG_GUIDE.md)
+详细配置说明请参考 [CONFIG_GUIDE.md](./docs/CONFIG_GUIDE.md)
 
 ## 🛠️ 技术栈
 
@@ -200,18 +200,26 @@ TaskLog/
 │   └── images/                # 图片附件
 ├── scripts/                    # 脚本工具
 │   └── migrate-config.js      # 配置迁移脚本
+├── docs/                       # 项目文档
+│   ├── README.md              # 文档索引
+│   ├── QUICK_START.md         # 快速启动指南
+│   ├── CONFIG_GUIDE.md        # 配置指南
+│   └── project-docs/          # 项目开发文档
+│       ├── README.md          # 开发文档索引
+│       ├── DATABASE_MIGRATION.md      # 数据库迁移说明
+│       ├── MIGRATION_SUMMARY.md       # 迁移完成总结
+│       ├── 数据库迁移完成报告.md       # 迁移完成报告
+│       ├── 导出功能优化说明.md         # 导出功能说明
+│       ├── REFACTOR_SUMMARY.md        # 重构总结
+│       ├── ANTD_MIGRATION.md          # Ant Design 迁移说明
+│       └── CHANGELOG.md               # 更新日志
 ├── build/                      # 构建资源
 ├── dist/                       # Vite 构建输出
 ├── release/                    # 应用打包输出
 ├── index.html                  # HTML 入口
 ├── vite.config.mjs            # Vite 配置
 ├── package.json               # 项目配置
-├── test-database.js           # 数据库测试脚本（新增）
-├── CONFIG_GUIDE.md            # 配置指南
-├── DATABASE_MIGRATION.md      # 数据库迁移说明（新增）
-├── MIGRATION_SUMMARY.md       # 迁移完成总结（新增）
-├── QUICK_START.md             # 快速启动指南（新增）
-├── REFACTOR_SUMMARY.md        # 重构总结
+├── test-database.js           # 数据库测试脚本
 └── README.md                  # 项目说明
 ```
 
@@ -237,10 +245,7 @@ TaskLog/
 2. **数据备份** - 旧的 JSON 文件会被重命名为 `.backup` 后缀
 3. **无缝切换** - 无需手动操作，数据完整性得到保证
 
-详细说明请参考：
-- [数据库迁移说明](./DATABASE_MIGRATION.md) - 完整的迁移文档
-- [快速启动指南](./QUICK_START.md) - 快速上手指南
-- [迁移完成总结](./MIGRATION_SUMMARY.md) - 迁移详情
+详细说明请参考 [项目开发文档](./docs/project-docs/)
 
 ## 数据管理
 
@@ -316,12 +321,9 @@ TaskLog/
 
 ## 📚 相关文档
 
-- [快速启动指南](./QUICK_START.md) - 快速上手指南
-- [数据库迁移说明](./DATABASE_MIGRATION.md) - 详细的数据库迁移文档
-- [迁移完成总结](./MIGRATION_SUMMARY.md) - 数据库迁移完成情况
-- [配置指南](./CONFIG_GUIDE.md) - 详细的配置说明
-- [重构总结](./REFACTOR_SUMMARY.md) - 代码重构记录
-- [Ant Design 迁移](./ANTD_MIGRATION.md) - UI 库迁移说明
+- [快速启动指南](./docs/QUICK_START.md) - 快速上手指南
+- [配置指南](./docs/CONFIG_GUIDE.md) - 详细的配置说明
+- [项目开发文档](./docs/project-docs/) - 数据库迁移、代码重构等技术文档
 
 ## 🐛 问题反馈
 
@@ -342,7 +344,7 @@ TaskLog/
 - 🔄 自动数据迁移，无缝升级
 - 📊 更好的数据完整性保证
 
-详细更新日志请查看 [CHANGELOG.md](./CHANGELOG.md)
+详细更新日志请查看 [CHANGELOG.md](./docs/project-docs/CHANGELOG.md)
 
 ## 📜 许可证
 

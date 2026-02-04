@@ -57,9 +57,9 @@ node test-database.js
 
 ## 📖 更多文档
 
-- [数据库迁移说明](DATABASE_MIGRATION.md) - 详细的迁移文档
-- [迁移完成总结](MIGRATION_SUMMARY.md) - 迁移完成情况
-- [配置指南](CONFIG_GUIDE.md) - 应用配置说明
+- [配置指南](./CONFIG_GUIDE.md) - 应用配置说明
+- [项目开发文档](./project-docs/) - 数据库迁移、代码重构等技术文档
+- [返回项目主页](../README.md)
 
 ## ❓ 常见问题
 
@@ -79,7 +79,7 @@ A: 可以，但不建议。推荐使用应用内的功能进行数据管理。
 
 如果遇到问题：
 1. 查看控制台错误日志
-2. 阅读 [DATABASE_MIGRATION.md](DATABASE_MIGRATION.md) 的故障排查部分
+2. 阅读 [DATABASE_MIGRATION.md](./project-docs/DATABASE_MIGRATION.md) 的故障排查部分
 3. 提交 Issue 到项目仓库
 
 ---

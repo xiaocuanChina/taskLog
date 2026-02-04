@@ -9,19 +9,35 @@
 ```
 src/
 ├── styles/
-│   └── common.module.css          # 公共样式(全局重置、通用按钮、表单、空状态等)
-└── components/
-    ├── WindowControls.module.css   # 窗口控制栏样式
-    ├── Toast.module.css            # 提示消息样式
-    ├── ProjectCard.module.css      # 项目卡片样式
-    ├── Modal.module.css            # 模态框通用样式
-    ├── ProjectMemoView.module.css  # 项目备忘查看样式
-    ├── TaskCard.module.css         # 任务卡片样式
-    ├── ModuleGroup.module.css      # 模块分组样式
-    ├── ImagePreview.module.css     # 图片预览样式
-    ├── TaskModal.module.css        # 任务模态框样式
-    ├── ProjectSelectView.module.css # 项目选择视图样式
-    └── TaskManageView.module.css   # 任务管理视图样式
+│   ├── common.module.css          # 公共样式(全局重置、通用按钮、表单、空状态等)
+│   └── README.md                  # 样式说明文档
+├── components/
+│   ├── common/
+│   │   ├── WindowControls.module.css   # 窗口控制栏样式
+│   │   ├── ImagePreview.module.css     # 图片预览样式
+│   │   └── Modal.module.css            # 模态框通用样式
+│   ├── project/
+│   │   ├── ProjectCard.module.css      # 项目卡片样式
+│   │   ├── ProjectMemoView.module.css  # 项目备忘查看样式
+│   │   └── ProjectSelectView.module.css # 项目选择视图样式
+│   ├── task/
+│   │   ├── TaskCard.module.css         # 任务卡片样式
+│   │   ├── TaskModal.module.css        # 任务模态框样式
+│   │   ├── TaskManageView.module.css   # 任务管理视图样式
+│   │   ├── ModuleGroup.module.css      # 模块分组样式
+│   │   ├── StatsModal.module.css       # 统计模态框样式
+│   │   ├── CompletionStatsModal.module.css  # 完成统计模态框样式
+│   │   ├── ModuleStatsModal.module.css      # 模块统计模态框样式
+│   │   └── ExportPendingTasksModal.module.css # 导出待办任务模态框样式
+│   └── settings/
+│       └── SettingsModal.module.css    # 设置模态框样式
+├── context/
+│   └── ToastContext.jsx           # Toast 上下文(包含样式)
+├── hooks/
+│   ├── useTaskManager.js
+│   └── useTaskModal.js
+└── utils/
+    └── configManager.js
 ```
 
 ## 公共样式 (common.module.css)
@@ -39,8 +55,8 @@ src/
 ### 1. WindowControls.module.css
 窗口控制栏相关样式,包括标题栏、按钮等。
 
-### 2. Toast.module.css
-Toast 提示消息样式,包括成功、错误、信息三种类型。
+### 2. ToastContext.jsx
+Toast 提示消息样式已集成在 ToastContext 组件中,包括成功、错误、信息三种类型。
 
 ### 3. ProjectCard.module.css
 项目卡片样式,包括卡片布局、操作按钮、图标等。
@@ -63,23 +79,23 @@ Toast 提示消息样式,包括成功、错误、信息三种类型。
 - 代码块显示
 - 编辑按钮
 
-### 7. ModuleGroup.module.css
+### 6. ModuleGroup.module.css
 模块分组样式,包括模块标题、折叠图标、任务计数、模块名编辑等。
 
-### 8. ImagePreview.module.css
+### 7. ImagePreview.module.css
 图片预览模态框样式,包括导航按钮、关闭按钮、计数器等。
 
-### 9. TaskModal.module.css
+### 8. TaskModal.module.css
 任务模态框样式,包括:
 - 表单行布局
 - 下拉选择框
 - 图片上传区域
 - 代码块编辑器
 
-### 10. ProjectSelectView.module.css
+### 9. ProjectSelectView.module.css
 项目选择视图样式,包括项目列表网格布局。
 
-### 11. TaskManageView.module.css
+### 10. TaskManageView.module.css
 任务管理视图样式,包括:
 - 头部区域
 - 项目备忘显示
@@ -87,6 +103,21 @@ Toast 提示消息样式,包括成功、错误、信息三种类型。
 - 统计卡片
 - 任务列表
 - 搜索框
+
+### 11. SettingsModal.module.css
+设置模态框样式,包括设置面板布局、标签页等。
+
+### 12. StatsModal.module.css
+统计模态框样式,包括统计数据展示布局。
+
+### 13. CompletionStatsModal.module.css
+完成统计模态框样式,包括完成率图表和数据展示。
+
+### 14. ModuleStatsModal.module.css
+模块统计模态框样式,包括模块维度的统计数据展示。
+
+### 15. ExportPendingTasksModal.module.css
+导出待办任务模态框样式,包括导出选项和预览布局。
 
 ## 使用方式
 
