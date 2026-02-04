@@ -22,7 +22,7 @@ export default function PrivacySettings({
       <Divider />
       
       <Alert
-        message="数据说明：导出的数据包含配置信息、所有项目、模块、任务数据以及用户图片。导入数据将覆盖当前所有数据，请谨慎操作。"
+        title="数据说明：导出的数据包含数据库文件、JSON 格式数据、所有图片附件和恢复说明。导入时会自动选择最优恢复方式。导入数据将覆盖当前所有数据，请谨慎操作。"
         type="info"
         showIcon
         style={{ marginBottom: 24 }}
@@ -33,7 +33,7 @@ export default function PrivacySettings({
           <div className={styles.privacyAction}>
             <div>
               <h4>导出数据</h4>
-              <p className={styles.actionDesc}>将所有数据（含图片）导出为 ZIP 压缩包</p>
+              <p className={styles.actionDesc}>导出数据库文件、JSON 数据和图片为 ZIP 压缩包</p>
             </div>
             <Button
               type="primary"
@@ -50,7 +50,7 @@ export default function PrivacySettings({
           <div className={styles.privacyAction}>
             <div>
               <h4>导入数据</h4>
-              <p className={styles.actionDesc}>从 ZIP 压缩包导入数据（将覆盖当前数据）</p>
+              <p className={styles.actionDesc}>从 ZIP 压缩包导入（自动识别数据库或 JSON 格式）</p>
             </div>
             <Popconfirm
               title="确定要导入数据吗？"

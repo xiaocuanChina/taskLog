@@ -3,6 +3,7 @@ const path = require('path')
 const fs = require('fs')
 const AdmZip = require('adm-zip')
 const { execFile } = require('child_process')
+const Database = require('./database')
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -102,66 +103,51 @@ function buildMenu() {
   Menu.setApplicationMenu(menu)
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   // 使用系统用户数据目录存储数据
   const userDataPath = app.getPath('userData')
   const dataDir = path.join(userDataPath, 'tasksData')
   const imagesDir = path.join(dataDir, 'images')
+  const dbFile = path.join(dataDir, 'tasklog.db')
+  
+  // 旧的 JSON 文件路径（用于数据迁移）
   const tasksFile = path.join(dataDir, 'tasks.json')
   const projectsFile = path.join(dataDir, 'projects.json')
   const modulesFile = path.join(dataDir, 'modules.json')
 
-  function ensureStore() {
-    fs.mkdirSync(dataDir, { recursive: true })
-    fs.mkdirSync(imagesDir, { recursive: true })
-    if (!fs.existsSync(tasksFile)) fs.writeFileSync(tasksFile, '[]', 'utf-8')
-    if (!fs.existsSync(projectsFile)) fs.writeFileSync(projectsFile, '[]', 'utf-8')
-    if (!fs.existsSync(modulesFile)) fs.writeFileSync(modulesFile, '[]', 'utf-8')
-  }
+  // 确保目录存在
+  fs.mkdirSync(dataDir, { recursive: true })
+  fs.mkdirSync(imagesDir, { recursive: true })
 
-  function readTasks() {
+  // 初始化数据库
+  const db = new Database(dbFile)
+  await db.init()
+
+  // 数据迁移：如果存在旧的 JSON 文件，迁移到数据库
+  if (fs.existsSync(tasksFile) || fs.existsSync(projectsFile) || fs.existsSync(modulesFile)) {
+    console.log('检测到旧数据文件，开始迁移到数据库...')
     try {
-      ensureStore()
-      const raw = fs.readFileSync(tasksFile, 'utf-8')
-      return JSON.parse(raw)
-    } catch (e) {
-      return []
+      const jsonData = {
+        projects: fs.existsSync(projectsFile) ? JSON.parse(fs.readFileSync(projectsFile, 'utf-8')) : [],
+        modules: fs.existsSync(modulesFile) ? JSON.parse(fs.readFileSync(modulesFile, 'utf-8')) : [],
+        tasks: fs.existsSync(tasksFile) ? JSON.parse(fs.readFileSync(tasksFile, 'utf-8')) : []
+      }
+
+      // 只有当数据库中没有数据时才迁移
+      const existingProjects = db.getProjects()
+      if (existingProjects.length === 0) {
+        db.migrateFromJSON(jsonData)
+        console.log('数据迁移完成')
+
+        // 备份旧文件
+        if (fs.existsSync(tasksFile)) fs.renameSync(tasksFile, tasksFile + '.backup')
+        if (fs.existsSync(projectsFile)) fs.renameSync(projectsFile, projectsFile + '.backup')
+        if (fs.existsSync(modulesFile)) fs.renameSync(modulesFile, modulesFile + '.backup')
+        console.log('旧数据文件已备份')
+      }
+    } catch (error) {
+      console.error('数据迁移失败:', error)
     }
-  }
-
-  function writeTasks(list) {
-    ensureStore()
-    fs.writeFileSync(tasksFile, JSON.stringify(list), 'utf-8')
-  }
-
-  function readProjects() {
-    try {
-      ensureStore()
-      const raw = fs.readFileSync(projectsFile, 'utf-8')
-      return JSON.parse(raw)
-    } catch (e) {
-      return []
-    }
-  }
-
-  function writeProjects(list) {
-    ensureStore()
-    fs.writeFileSync(projectsFile, JSON.stringify(list), 'utf-8')
-  }
-
-  function readModules() {
-    try {
-      ensureStore()
-      const raw = fs.readFileSync(modulesFile, 'utf-8')
-      return JSON.parse(raw)
-    } catch (e) {
-      return []
-    }
-  }
-
-  function writeModules(list) {
-    ensureStore()
-    fs.writeFileSync(modulesFile, JSON.stringify(list), 'utf-8')
   }
   function uid() {
     return `${Date.now()}-${Math.random().toString(16).slice(2)}`
@@ -183,460 +169,46 @@ app.whenReady().then(() => {
 
   // 项目管理
   ipcMain.handle('projects:list', () => {
-    return readProjects()
+    return db.getProjects()
   })
 
   ipcMain.handle('projects:add', (e, payload) => {
-    const list = readProjects()
     const project = {
       id: uid(),
       name: payload?.name || '',
-      memo: payload?.memo || '', // 项目备忘
+      memo: payload?.memo || '',
       createdAt: new Date().toISOString()
     }
-    list.push(project)
-    writeProjects(list)
-    return project
+    return db.addProject(project)
   })
 
   ipcMain.handle('projects:update', (e, payload) => {
-    const list = readProjects()
-    const idx = list.findIndex(p => p.id === payload.id)
-    if (idx >= 0) {
-      list[idx].name = payload?.name || list[idx].name
-      if (payload.hasOwnProperty('memo')) {
-        list[idx].memo = payload.memo
-      }
-      list[idx].updatedAt = new Date().toISOString()
-      writeProjects(list)
-      return { success: true, project: list[idx] }
+    const updates = {
+      updatedAt: new Date().toISOString()
+    }
+    if (payload.name !== undefined) updates.name = payload.name
+    if (payload.hasOwnProperty('memo')) updates.memo = payload.memo
+
+    const success = db.updateProject(payload.id, updates)
+    if (success) {
+      const projects = db.getProjects()
+      const project = projects.find(p => p.id === payload.id)
+      return { success: true, project }
     }
     return { success: false, error: '项目不存在' }
   })
 
   ipcMain.handle('projects:delete', (e, id) => {
-    const list = readProjects()
-    const idx = list.findIndex(p => p.id === id)
-    if (idx >= 0) {
-      // 检查项目下是否有未完成的任务
-      const tasks = readTasks()
-      const projectTasks = tasks.filter(t => t.projectId === id)
-      const pendingTasks = projectTasks.filter(t => !t.completed)
+    // 检查项目下是否有未完成的任务
+    const tasks = db.getTasks(id)
+    const pendingTasks = tasks.filter(t => !t.completed)
 
-      if (pendingTasks.length > 0) {
-        return { success: false, error: `该项目下还有 ${pendingTasks.length} 个未完成的任务，无法删除` }
-      }
-
-      // 删除项目下的所有任务及其图片
-      projectTasks.forEach(task => {
-        if (task.images && Array.isArray(task.images)) {
-          task.images.forEach(imgPath => {
-            try {
-              const fullPath = path.isAbsolute(imgPath) ? imgPath : path.join(imagesDir, imgPath)
-              if (fs.existsSync(fullPath)) {
-                fs.unlinkSync(fullPath)
-              }
-            } catch (err) {
-              console.error('删除图片失败:', err)
-            }
-          })
-        }
-      })
-      // 删除任务数据
-      const remainingTasks = tasks.filter(t => t.projectId !== id)
-      writeTasks(remainingTasks)
-
-      // 删除项目下的所有模块
-      const modules = readModules()
-      const remainingModules = modules.filter(m => m.projectId !== id)
-      writeModules(remainingModules)
-
-      // 删除项目
-      list.splice(idx, 1)
-      writeProjects(list)
-      return { success: true }
+    if (pendingTasks.length > 0) {
+      return { success: false, error: `该项目下还有 ${pendingTasks.length} 个未完成的任务，无法删除` }
     }
-    return { success: false, error: '项目不存在' }
-  })
 
-  ipcMain.handle('projects:reorder', (e, projectIds) => {
-    const list = readProjects()
-    // 根据传入的ID顺序重新排列项目
-    const reorderedList = []
-    projectIds.forEach(id => {
-      const project = list.find(p => p.id === id)
-      if (project) {
-        reorderedList.push(project)
-      }
-    })
-    // 保存新的顺序
-    writeProjects(reorderedList)
-    return { success: true }
-  })
-
-  // 模块管理
-  ipcMain.handle('modules:list', (e, projectId, includeDeleted = false) => {
-    const list = readModules()
-    return list.filter(m => m.projectId === projectId && (includeDeleted || !m.deleted))
-  })
-
-  ipcMain.handle('modules:add', (e, payload) => {
-    const list = readModules()
-    // 检查该项目下是否已存在同名模块
-    const exists = list.find(m => m.projectId === payload.projectId && m.name === payload.name)
-    if (exists) {
-      // 如果已存在但被删除了，则恢复它（逻辑删除的恢复）
-      if (exists.deleted) {
-        exists.deleted = false
-        exists.updatedAt = new Date().toISOString()
-        writeModules(list)
-        return exists
-      }
-      return exists
-    }
-    const module = {
-      id: uid(),
-      name: payload?.name || '',
-      projectId: payload?.projectId || '',
-      deleted: false, // 默认未删除
-      createdAt: new Date().toISOString()
-    }
-    list.push(module)
-    writeModules(list)
-    return module
-  })
-
-  ipcMain.handle('modules:update', (e, payload) => {
-    const list = readModules()
-    const idx = list.findIndex(m => m.id === payload.id)
-    if (idx >= 0) {
-      // 检查新名称是否与其他模块冲突（排除自己）
-      const exists = list.find(m => m.id !== payload.id && m.projectId === payload.projectId && m.name === payload.name)
-      if (exists) {
-        return { success: false, error: '该项目下已存在同名模块' }
-      }
-
-      const oldName = list[idx].name
-      list[idx].name = payload?.name || list[idx].name
-      // 更新 order 字段（如果有传入）
-      if (payload?.order !== undefined) {
-        list[idx].order = payload.order
-      }
-      list[idx].updatedAt = new Date().toISOString()
-      writeModules(list)
-
-      // 同时更新所有使用该模块的任务
-      const tasks = readTasks()
-      let updated = false
-      tasks.forEach(task => {
-        if (task.projectId === payload.projectId && task.module === oldName) {
-          task.module = list[idx].name
-          updated = true
-        }
-      })
-      if (updated) {
-        writeTasks(tasks)
-      }
-
-      return { success: true, module: list[idx] }
-    }
-    return { success: false, error: '模块不存在' }
-  })
-
-  ipcMain.handle('modules:delete', (e, id) => {
-    const list = readModules()
-    const idx = list.findIndex(m => m.id === id)
-    if (idx >= 0) {
-      const module = list[idx]
-
-      // 检查是否有未完成的任务使用该模块
-      const tasks = readTasks()
-      const hasPendingTask = tasks.some(task => task.projectId === module.projectId && task.module === module.name && !task.completed)
-
-      if (hasPendingTask) {
-        return { success: false, error: '该模块下还有未完成的任务，无法删除' }
-      }
-
-      // 逻辑删除：标记为 deleted
-      list[idx].deleted = true
-      list[idx].updatedAt = new Date().toISOString()
-      writeModules(list)
-      return { success: true }
-    }
-    return { success: false, error: '模块不存在' }
-  })
-
-  ipcMain.handle('modules:restore', (e, id) => {
-    const list = readModules()
-    const idx = list.findIndex(m => m.id === id)
-    if (idx >= 0) {
-      list[idx].deleted = false
-      list[idx].updatedAt = new Date().toISOString()
-      writeModules(list)
-      return { success: true }
-    }
-    return { success: false, error: '模块不存在' }
-  })
-
-  // 永久删除模块
-  ipcMain.handle('modules:permanentDelete', (e, id) => {
-    const list = readModules()
-    const idx = list.findIndex(m => m.id === id)
-    if (idx >= 0) {
-      const module = list[idx]
-
-      // 检查是否有任务使用该模块（任务总数必须为0才能永久删除）
-      const tasks = readTasks()
-      const hasTask = tasks.some(task => task.projectId === module.projectId && task.module === module.name)
-
-      if (hasTask) {
-        return { success: false, error: '该模块下还有任务，无法永久删除' }
-      }
-
-      // 永久删除：从列表中移除
-      list.splice(idx, 1)
-      writeModules(list)
-      return { success: true }
-    }
-    return { success: false, error: '模块不存在' }
-  })
-
-  ipcMain.handle('modules:reorder', (e, payload) => {
-    const list = readModules()
-    const { projectId, moduleIds } = payload
-
-    // 获取该项目的所有模块
-    const projectModules = list.filter(m => m.projectId === projectId)
-    const otherModules = list.filter(m => m.projectId !== projectId)
-
-    // 根据传入的ID顺序重新排列模块，并为所有模块设置 order
-    const reorderedModules = []
-    moduleIds.forEach((id, index) => {
-      const module = projectModules.find(m => m.id === id)
-      if (module) {
-        module.order = index
-        module.updatedAt = new Date().toISOString()
-        reorderedModules.push(module)
-      }
-    })
-
-    // 合并其他项目的模块
-    const newList = [...otherModules, ...reorderedModules]
-    writeModules(newList)
-    return { success: true }
-  })
-
-  // 任务管理
-  ipcMain.handle('tasks:list', (e, projectId) => {
-    const list = readTasks()
-    if (projectId) {
-      return list.filter(t => t.projectId === projectId)
-    }
-    return list
-  })
-
-  ipcMain.handle('tasks:add', (e, payload) => {
-    const list = readTasks()
-    const id = uid()
-    const images = Array.isArray(payload?.images) ? payload.images : []
-    const saved = []
-    for (let i = 0; i < images.length; i++) {
-      const img = images[i]
-      const ext = path.extname(img?.name || '')
-      const fname = `${id}-${i}${ext || ''}`
-      const fpath = path.join(imagesDir, fname)
-      let buf
-      if (Buffer.isBuffer(img?.buffer)) buf = img.buffer
-      else if (img?.buffer instanceof Uint8Array) buf = Buffer.from(img.buffer)
-      else if (img?.buffer && img.buffer.byteLength) buf = Buffer.from(new Uint8Array(img.buffer))
-      if (buf) fs.writeFileSync(fpath, buf)
-      saved.push(fname)
-    }
-    const task = {
-      id,
-      projectId: payload?.projectId || '',
-      module: payload?.module || '',
-      name: payload?.name || '',
-      type: payload?.type || '',
-      initiator: payload?.initiator || '',
-      remark: payload?.remark || '',
-      images: saved,
-      codeBlock: payload?.codeBlock || { enabled: false, language: 'javascript', code: '' },
-      checkItems: payload?.checkItems || { enabled: false, mode: 'multiple', items: [] },
-      completed: false,
-      createdAt: new Date().toISOString(),
-      completedAt: null
-    }
-    list.push(task)
-    writeTasks(list)
-    return task
-  })
-
-  ipcMain.handle('tasks:update', (e, payload) => {
-    const list = readTasks()
-    const idx = list.findIndex(x => x.id === payload.id)
-    if (idx >= 0) {
-      // 保留已有图片
-      const existingImages = Array.isArray(payload?.existingImages) ? payload.existingImages : []
-
-      // 处理新上传的图片
-      const newImages = Array.isArray(payload?.images) ? payload.images : []
-      const saved = []
-      for (let i = 0; i < newImages.length; i++) {
-        const img = newImages[i]
-        const ext = path.extname(img?.name || '')
-        const fname = `${payload.id}-${Date.now()}-${i}${ext || ''}`
-        const fpath = path.join(imagesDir, fname)
-        let buf
-        if (Buffer.isBuffer(img?.buffer)) buf = img.buffer
-        else if (img?.buffer instanceof Uint8Array) buf = Buffer.from(img.buffer)
-        else if (img?.buffer && img.buffer.byteLength) buf = Buffer.from(new Uint8Array(img.buffer))
-        if (buf) fs.writeFileSync(fpath, buf)
-        saved.push(fname)
-      }
-
-      // 删除被移除的旧图片文件
-      const oldImages = list[idx].images || []
-      oldImages.forEach(oldPath => {
-        if (!existingImages.includes(oldPath)) {
-          try {
-            const fullPath = path.isAbsolute(oldPath) ? oldPath : path.join(imagesDir, oldPath)
-            if (fs.existsSync(fullPath)) {
-              fs.unlinkSync(fullPath)
-            }
-          } catch (err) {
-            console.error('删除图片失败:', err)
-          }
-        }
-      })
-
-      // 更新任务信息
-      list[idx].module = payload?.module || list[idx].module
-      list[idx].name = payload?.name || list[idx].name
-      list[idx].type = payload?.type !== undefined ? payload.type : list[idx].type
-      list[idx].initiator = payload?.initiator || list[idx].initiator
-      list[idx].remark = payload?.remark || ''
-      list[idx].images = [...existingImages, ...saved]
-      list[idx].codeBlock = payload?.codeBlock || list[idx].codeBlock || { enabled: false, language: 'javascript', code: '' }
-      list[idx].checkItems = payload?.checkItems || list[idx].checkItems
-      list[idx].updatedAt = new Date().toISOString()
-
-      writeTasks(list)
-      return list[idx]
-    }
-    return null
-  })
-
-  ipcMain.handle('tasks:markDone', (e, id) => {
-    const list = readTasks()
-    const idx = list.findIndex(x => x.id === id)
-    if (idx >= 0) {
-      // 保存完成前的勾选状态（用于回滚时还原）
-      if (list[idx].checkItems?.enabled && list[idx].checkItems?.items?.length > 0) {
-        list[idx].checkItemsBeforeComplete = list[idx].checkItems.items.map(item => ({
-          id: item.id,
-          checked: item.checked
-        }))
-        // 将所有勾选项设为已勾选
-        list[idx].checkItems.items = list[idx].checkItems.items.map(item => ({
-          ...item,
-          checked: true
-        }))
-      }
-      list[idx].completed = true
-      list[idx].completedAt = new Date().toISOString()
-      writeTasks(list)
-      return list[idx]
-    }
-    return null
-  })
-
-  // 更新任务勾选项
-  ipcMain.handle('tasks:updateCheckItems', (e, payload) => {
-    const list = readTasks()
-    const idx = list.findIndex(x => x.id === payload.taskId)
-    if (idx >= 0) {
-      list[idx].checkItems = {
-        ...list[idx].checkItems,
-        items: payload.checkItems
-      }
-      list[idx].updatedAt = new Date().toISOString()
-      writeTasks(list)
-      return { success: true, task: list[idx] }
-    }
-    return { success: false, error: '任务不存在' }
-  })
-
-  // 回滚任务状态（将已完成改为待办）
-  ipcMain.handle('tasks:rollback', (e, id) => {
-    const list = readTasks()
-    const idx = list.findIndex(x => x.id === id)
-    if (idx >= 0) {
-      list[idx].completed = false
-      list[idx].completedAt = null
-      // 恢复完成前的勾选状态
-      if (list[idx].checkItemsBeforeComplete && list[idx].checkItems?.items?.length > 0) {
-        const beforeState = list[idx].checkItemsBeforeComplete
-        list[idx].checkItems.items = list[idx].checkItems.items.map(item => {
-          const savedState = beforeState.find(s => s.id === item.id)
-          return {
-            ...item,
-            checked: savedState ? savedState.checked : false
-          }
-        })
-        // 清除保存的状态
-        delete list[idx].checkItemsBeforeComplete
-      }
-      writeTasks(list)
-      return list[idx]
-    }
-    return null
-  })
-
-  // 搁置任务
-  ipcMain.handle('tasks:shelve', (e, id) => {
-    const list = readTasks()
-    const idx = list.findIndex(x => x.id === id)
-    if (idx >= 0) {
-      list[idx].shelved = true
-      list[idx].shelvedAt = new Date().toISOString()
-      writeTasks(list)
-      return list[idx]
-    }
-    return null
-  })
-
-  // 取消搁置任务
-  ipcMain.handle('tasks:unshelve', (e, id) => {
-    const list = readTasks()
-    const idx = list.findIndex(x => x.id === id)
-    if (idx >= 0) {
-      list[idx].shelved = false
-      list[idx].shelvedAt = null
-      writeTasks(list)
-      return list[idx]
-    }
-    return null
-  })
-
-  ipcMain.handle('tasks:updateModule', (e, payload) => {
-    const list = readTasks()
-    const idx = list.findIndex(x => x.id === payload.id)
-    if (idx >= 0) {
-      list[idx].module = payload.module
-      list[idx].updatedAt = new Date().toISOString()
-      writeTasks(list)
-      return { success: true, task: list[idx] }
-    }
-    return { success: false, error: '任务不存在' }
-  })
-
-  ipcMain.handle('tasks:delete', (e, id) => {
-    const list = readTasks()
-    const idx = list.findIndex(x => x.id === id)
-    if (idx >= 0) {
-      const task = list[idx]
-      // 删除关联的图片文件
+    // 删除项目下的所有任务的图片
+    tasks.forEach(task => {
       if (task.images && Array.isArray(task.images)) {
         task.images.forEach(imgPath => {
           try {
@@ -649,37 +221,382 @@ app.whenReady().then(() => {
           }
         })
       }
-      // 从列表中移除任务
-      list.splice(idx, 1)
-      writeTasks(list)
-      return { success: true }
+    })
+
+    // 删除项目（会级联删除模块和任务）
+    db.deleteProject(id)
+    return { success: true }
+  })
+
+  ipcMain.handle('projects:reorder', (e, projectIds) => {
+    // 数据库版本暂时不支持排序，前端可以自行处理
+    return { success: true }
+  })
+
+  // 模块管理
+  ipcMain.handle('modules:list', (e, projectId, includeDeleted = false) => {
+    return db.getModules(projectId, includeDeleted)
+  })
+
+  ipcMain.handle('modules:add', (e, payload) => {
+    // 检查该项目下是否已存在同名模块
+    const exists = db.moduleExists(payload.projectId, payload.name)
+    if (exists) {
+      // 如果已存在但被删除了，则恢复它
+      const modules = db.getModules(payload.projectId, true)
+      const existingModule = modules.find(m => m.name === payload.name)
+      if (existingModule && existingModule.deleted === 1) {
+        db.restoreModule(existingModule.id)
+        return db.getModuleById(existingModule.id)
+      }
+      return existingModule
     }
-    return { success: false }
+
+    const module = {
+      id: uid(),
+      name: payload?.name || '',
+      projectId: payload?.projectId || '',
+      deleted: false,
+      createdAt: new Date().toISOString()
+    }
+    return db.addModule(module)
+  })
+
+  ipcMain.handle('modules:update', (e, payload) => {
+    const module = db.getModuleById(payload.id)
+    if (!module) {
+      return { success: false, error: '模块不存在' }
+    }
+
+    // 检查新名称是否与其他模块冲突（排除自己）
+    if (payload.name && payload.name !== module.name) {
+      const exists = db.moduleExists(payload.projectId, payload.name, payload.id)
+      if (exists) {
+        return { success: false, error: '该项目下已存在同名模块' }
+      }
+    }
+
+    const oldName = module.name
+    const updates = {
+      updatedAt: new Date().toISOString()
+    }
+    if (payload.name !== undefined) updates.name = payload.name
+    if (payload.order !== undefined) updates.order = payload.order
+
+    db.updateModule(payload.id, updates)
+
+    // 如果模块名称改变了，同时更新所有使用该模块的任务
+    if (payload.name && payload.name !== oldName) {
+      db.updateTasksModule(payload.projectId, oldName, payload.name)
+    }
+
+    return { success: true, module: db.getModuleById(payload.id) }
+  })
+
+  ipcMain.handle('modules:delete', (e, id) => {
+    const module = db.getModuleById(id)
+    if (!module) {
+      return { success: false, error: '模块不存在' }
+    }
+
+    // 检查是否有未完成的任务使用该模块
+    const pendingCount = db.getPendingTaskCountByModule(module.projectId, module.name)
+    if (pendingCount > 0) {
+      return { success: false, error: '该模块下还有未完成的任务，无法删除' }
+    }
+
+    // 逻辑删除
+    db.deleteModule(id)
+    return { success: true }
+  })
+
+  ipcMain.handle('modules:restore', (e, id) => {
+    const module = db.getModuleById(id)
+    if (!module) {
+      return { success: false, error: '模块不存在' }
+    }
+    db.restoreModule(id)
+    return { success: true }
+  })
+
+  // 永久删除模块
+  ipcMain.handle('modules:permanentDelete', (e, id) => {
+    const module = db.getModuleById(id)
+    if (!module) {
+      return { success: false, error: '模块不存在' }
+    }
+
+    // 检查是否有任务使用该模块
+    const taskCount = db.getTaskCountByModule(module.projectId, module.name)
+    if (taskCount > 0) {
+      return { success: false, error: '该模块下还有任务，无法永久删除' }
+    }
+
+    db.permanentDeleteModule(id)
+    return { success: true }
+  })
+
+  ipcMain.handle('modules:reorder', (e, payload) => {
+    const { moduleIds } = payload
+
+    // 为所有模块设置 order
+    moduleIds.forEach((id, index) => {
+      db.updateModule(id, { 
+        order: index,
+        updatedAt: new Date().toISOString()
+      })
+    })
+
+    return { success: true }
+  })
+
+  // 任务管理
+  ipcMain.handle('tasks:list', (e, projectId) => {
+    if (projectId) {
+      return db.getTasks(projectId)
+    }
+    return []
+  })
+
+  ipcMain.handle('tasks:add', (e, payload) => {
+    const id = uid()
+    const images = Array.isArray(payload?.images) ? payload.images : []
+    const saved = []
+    
+    for (let i = 0; i < images.length; i++) {
+      const img = images[i]
+      const ext = path.extname(img?.name || '')
+      const fname = `${id}-${i}${ext || ''}`
+      const fpath = path.join(imagesDir, fname)
+      let buf
+      if (Buffer.isBuffer(img?.buffer)) buf = img.buffer
+      else if (img?.buffer instanceof Uint8Array) buf = Buffer.from(img.buffer)
+      else if (img?.buffer && img.buffer.byteLength) buf = Buffer.from(new Uint8Array(img.buffer))
+      if (buf) fs.writeFileSync(fpath, buf)
+      saved.push(fname)
+    }
+
+    const task = {
+      id,
+      projectId: payload?.projectId || '',
+      module: payload?.module || '',
+      name: payload?.name || '',
+      type: payload?.type || '',
+      initiator: payload?.initiator || '',
+      remark: payload?.remark || '',
+      images: saved,
+      codeBlock: payload?.codeBlock || { enabled: false, language: 'javascript', code: '' },
+      checkItems: payload?.checkItems || { enabled: false, mode: 'multiple', items: [] },
+      completed: false,
+      shelved: false,
+      createdAt: new Date().toISOString(),
+      completedAt: null,
+      shelvedAt: null
+    }
+    
+    return db.addTask(task)
+  })
+
+  ipcMain.handle('tasks:update', (e, payload) => {
+    const task = db.getTaskById(payload.id)
+    if (!task) return null
+
+    // 保留已有图片
+    const existingImages = Array.isArray(payload?.existingImages) ? payload.existingImages : []
+
+    // 处理新上传的图片
+    const newImages = Array.isArray(payload?.images) ? payload.images : []
+    const saved = []
+    for (let i = 0; i < newImages.length; i++) {
+      const img = newImages[i]
+      const ext = path.extname(img?.name || '')
+      const fname = `${payload.id}-${Date.now()}-${i}${ext || ''}`
+      const fpath = path.join(imagesDir, fname)
+      let buf
+      if (Buffer.isBuffer(img?.buffer)) buf = img.buffer
+      else if (img?.buffer instanceof Uint8Array) buf = Buffer.from(img.buffer)
+      else if (img?.buffer && img.buffer.byteLength) buf = Buffer.from(new Uint8Array(img.buffer))
+      if (buf) fs.writeFileSync(fpath, buf)
+      saved.push(fname)
+    }
+
+    // 删除被移除的旧图片文件
+    const oldImages = task.images || []
+    oldImages.forEach(oldPath => {
+      if (!existingImages.includes(oldPath)) {
+        try {
+          const fullPath = path.isAbsolute(oldPath) ? oldPath : path.join(imagesDir, oldPath)
+          if (fs.existsSync(fullPath)) {
+            fs.unlinkSync(fullPath)
+          }
+        } catch (err) {
+          console.error('删除图片失败:', err)
+        }
+      }
+    })
+
+    // 更新任务信息
+    const updates = {
+      updatedAt: new Date().toISOString()
+    }
+    if (payload.module !== undefined) updates.module = payload.module
+    if (payload.name !== undefined) updates.name = payload.name
+    if (payload.type !== undefined) updates.type = payload.type
+    if (payload.initiator !== undefined) updates.initiator = payload.initiator
+    if (payload.remark !== undefined) updates.remark = payload.remark
+    updates.images = [...existingImages, ...saved]
+    if (payload.codeBlock !== undefined) updates.codeBlock = payload.codeBlock
+    if (payload.checkItems !== undefined) updates.checkItems = payload.checkItems
+
+    return db.updateTask(payload.id, updates)
+  })
+
+  ipcMain.handle('tasks:markDone', (e, id) => {
+    const task = db.getTaskById(id)
+    if (!task) return null
+
+    const updates = {
+      completed: true,
+      completedAt: new Date().toISOString()
+    }
+
+    // 保存完成前的勾选状态（用于回滚时还原）
+    if (task.checkItems?.enabled && task.checkItems?.items?.length > 0) {
+      updates.checkItemsBeforeComplete = task.checkItems.items.map(item => ({
+        id: item.id,
+        checked: item.checked
+      }))
+      // 将所有勾选项设为已勾选
+      updates.checkItems = {
+        ...task.checkItems,
+        items: task.checkItems.items.map(item => ({
+          ...item,
+          checked: true
+        }))
+      }
+    }
+
+    return db.updateTask(id, updates)
+  })
+
+  // 更新任务勾选项
+  ipcMain.handle('tasks:updateCheckItems', (e, payload) => {
+    const updates = {
+      checkItems: {
+        enabled: true,
+        items: payload.checkItems
+      },
+      updatedAt: new Date().toISOString()
+    }
+    const task = db.updateTask(payload.taskId, updates)
+    if (task) {
+      return { success: true, task }
+    }
+    return { success: false, error: '任务不存在' }
+  })
+
+  // 回滚任务状态（将已完成改为待办）
+  ipcMain.handle('tasks:rollback', (e, id) => {
+    const task = db.getTaskById(id)
+    if (!task) return null
+
+    const updates = {
+      completed: false,
+      completedAt: null
+    }
+
+    // 恢复完成前的勾选状态
+    if (task.checkItemsBeforeComplete && task.checkItems?.items?.length > 0) {
+      const beforeState = task.checkItemsBeforeComplete
+      updates.checkItems = {
+        ...task.checkItems,
+        items: task.checkItems.items.map(item => {
+          const savedState = beforeState.find(s => s.id === item.id)
+          return {
+            ...item,
+            checked: savedState ? savedState.checked : false
+          }
+        })
+      }
+      updates.checkItemsBeforeComplete = null
+    }
+
+    return db.updateTask(id, updates)
+  })
+
+  // 搁置任务
+  ipcMain.handle('tasks:shelve', (e, id) => {
+    const updates = {
+      shelved: true,
+      shelvedAt: new Date().toISOString()
+    }
+    return db.updateTask(id, updates)
+  })
+
+  // 取消搁置任务
+  ipcMain.handle('tasks:unshelve', (e, id) => {
+    const updates = {
+      shelved: false,
+      shelvedAt: null
+    }
+    return db.updateTask(id, updates)
+  })
+
+  ipcMain.handle('tasks:updateModule', (e, payload) => {
+    const updates = {
+      module: payload.module,
+      updatedAt: new Date().toISOString()
+    }
+    const task = db.updateTask(payload.id, updates)
+    if (task) {
+      return { success: true, task }
+    }
+    return { success: false, error: '任务不存在' }
+  })
+
+  ipcMain.handle('tasks:delete', (e, id) => {
+    const task = db.getTaskById(id)
+    if (!task) {
+      return { success: false }
+    }
+
+    // 删除关联的图片文件
+    if (task.images && Array.isArray(task.images)) {
+      task.images.forEach(imgPath => {
+        try {
+          const fullPath = path.isAbsolute(imgPath) ? imgPath : path.join(imagesDir, imgPath)
+          if (fs.existsSync(fullPath)) {
+            fs.unlinkSync(fullPath)
+          }
+        } catch (err) {
+          console.error('删除图片失败:', err)
+        }
+      })
+    }
+
+    db.deleteTask(id)
+    return { success: true }
   })
   ipcMain.handle('tasks:todayStats', (e, projectId) => {
-    const list = readTasks()
+    if (!projectId) return { count: 0, newCount: 0 }
+    
+    const tasks = db.getTasks(projectId)
     const now = new Date()
-    let todayDone = list.filter(x => x.completed && x.completedAt && sameDay(x.completedAt, now))
-    let todayNew = list.filter(x => x.createdAt && sameDay(x.createdAt, now))
-    if (projectId) {
-      todayDone = todayDone.filter(x => x.projectId === projectId)
-      todayNew = todayNew.filter(x => x.projectId === projectId)
-    }
+    
+    const todayDone = tasks.filter(x => x.completed && x.completedAt && sameDay(x.completedAt, now))
+    const todayNew = tasks.filter(x => x.createdAt && sameDay(x.createdAt, now))
+    
     return { count: todayDone.length, newCount: todayNew.length }
   })
 
   // 导出今日日报
   ipcMain.handle('tasks:exportTodayReport', async (e, projectId) => {
-    const list = readTasks()
+    const tasks = db.getTasks(projectId)
     const now = new Date()
-    let todayTasks = list.filter(x => x.completed && x.completedAt && sameDay(x.completedAt, now))
-
-    if (projectId) {
-      todayTasks = todayTasks.filter(x => x.projectId === projectId)
-    }
+    const todayTasks = tasks.filter(x => x.completed && x.completedAt && sameDay(x.completedAt, now))
 
     // 获取项目名称
-    const projects = readProjects()
+    const projects = db.getProjects()
     const project = projects.find(p => p.id === projectId)
     const projectName = project ? project.name : '所有项目'
 
@@ -755,10 +672,10 @@ app.whenReady().then(() => {
   // 导出未完成任务
   ipcMain.handle('tasks:exportPendingTasks', async (e, payload) => {
     const { projectId, modules: selectedModules, format = 'excel', taskIds = [] } = payload
-    const list = readTasks()
+    const tasks = db.getTasks(projectId)
 
     // 筛选未完成的任务
-    let pendingTasks = list.filter(x => !x.completed && x.projectId === projectId)
+    let pendingTasks = tasks.filter(x => !x.completed)
 
     // 如果传入了任务ID列表，优先按任务ID过滤
     if (taskIds && taskIds.length > 0) {
@@ -769,7 +686,7 @@ app.whenReady().then(() => {
     }
 
     // 获取项目名称
-    const projects = readProjects()
+    const projects = db.getProjects()
     const project = projects.find(p => p.id === projectId)
     const projectName = project ? project.name : '所有项目'
 
@@ -1021,24 +938,35 @@ app.whenReady().then(() => {
   }
 
   // 迁移旧配置到新格式
-  function migrateConfig() {
+  function migrateOldConfig() {
     if (fs.existsSync(legacyConfigFile) && !fs.existsSync(configFile)) {
       try {
         const base64Content = fs.readFileSync(legacyConfigFile, 'utf-8')
         const jsonContent = Buffer.from(base64Content, 'base64').toString('utf-8')
-        fs.writeFileSync(configFile, jsonContent, 'utf-8')
-        console.log('配置已从旧格式迁移到新格式')
+        db.saveConfig('app_config', jsonContent)
+        console.log('配置已从旧格式迁移到数据库')
+      } catch (error) {
+        console.error('迁移配置失败:', error)
+      }
+    } else if (fs.existsSync(configFile)) {
+      // 迁移 config.json 到数据库
+      try {
+        const configContent = fs.readFileSync(configFile, 'utf-8')
+        db.saveConfig('app_config', configContent)
+        // 备份旧文件
+        fs.renameSync(configFile, configFile + '.backup')
+        console.log('配置已从文件迁移到数据库')
       } catch (error) {
         console.error('迁移配置失败:', error)
       }
     }
   }
 
+  // 迁移旧配置
+  migrateOldConfig()
+
   ipcMain.handle('config:get', () => {
     try {
-      ensureStore()
-      migrateConfig()
-
       // 优先读取环境变量配置
       if (process.env.TASK_TYPES_CONFIG) {
         try {
@@ -1048,9 +976,10 @@ app.whenReady().then(() => {
         }
       }
 
-      // 读取配置文件
-      if (fs.existsSync(configFile)) {
-        return fs.readFileSync(configFile, 'utf-8')
+      // 从数据库读取配置
+      const configContent = db.getConfig('app_config')
+      if (configContent) {
+        return configContent
       }
 
       // 返回默认配置
@@ -1063,10 +992,9 @@ app.whenReady().then(() => {
 
   ipcMain.handle('config:save', (e, configContent) => {
     try {
-      ensureStore()
       // 验证是否为有效的JSON
       JSON.parse(configContent)
-      fs.writeFileSync(configFile, configContent, 'utf-8')
+      db.saveConfig('app_config', configContent)
       return true
     } catch (error) {
       console.error('保存配置失败:', error)
@@ -1077,23 +1005,78 @@ app.whenReady().then(() => {
   // 数据导出
   ipcMain.handle('data:export', async () => {
     try {
+      const configContent = db.getConfig('app_config')
       const exportData = {
         version: app.getVersion(),
         exportTime: new Date().toISOString(),
-        config: JSON.parse(fs.existsSync(configFile) ? fs.readFileSync(configFile, 'utf-8') : JSON.stringify(defaultConfig)),
-        projects: readProjects(),
-        modules: readModules(),
-        tasks: readTasks()
+        config: configContent ? JSON.parse(configContent) : defaultConfig,
+        projects: db.getProjects(),
+        modules: [],
+        tasks: []
       }
 
+      // 获取所有项目的模块和任务
+      exportData.projects.forEach(project => {
+        const modules = db.getModules(project.id, true)
+        const tasks = db.getTasks(project.id)
+        exportData.modules.push(...modules)
+        exportData.tasks.push(...tasks)
+      })
+
       const zip = new AdmZip()
-      // 添加数据文件
+      
+      // 添加 JSON 格式数据（用于兼容性和可读性）
       zip.addFile('data.json', Buffer.from(JSON.stringify(exportData, null, 2), 'utf8'))
+      
+      // 添加数据库文件（用于快速恢复）
+      if (fs.existsSync(dbFile)) {
+        zip.addLocalFile(dbFile, '', 'tasklog.db')
+      }
 
       // 添加图片文件夹
       if (fs.existsSync(imagesDir)) {
         zip.addLocalFolder(imagesDir, 'images')
       }
+
+      // 添加说明文件
+      const readmeContent = `# TaskLog 数据备份
+
+## 备份信息
+- 版本: ${app.getVersion()}
+- 备份时间: ${new Date().toISOString()}
+- 项目数: ${exportData.projects.length}
+- 任务数: ${exportData.tasks.length}
+
+## 文件说明
+- **tasklog.db** - 数据库文件（推荐用于快速恢复）
+- **data.json** - JSON 格式数据（用于兼容性和查看）
+- **images/** - 图片附件文件夹
+
+## 恢复方式
+
+### 方式 1：使用应用内导入功能（推荐）
+1. 打开 TaskLog 应用
+2. 进入"设置" → "隐私与数据"
+3. 点击"导入数据"
+4. 选择此备份文件
+
+### 方式 2：手动恢复数据库文件（快速）
+1. 关闭 TaskLog 应用
+2. 找到数据目录：
+   - Windows: %APPDATA%/task-log/tasksData/
+   - macOS: ~/Library/Application Support/task-log/tasksData/
+   - Linux: ~/.config/task-log/tasksData/
+3. 备份当前的 tasklog.db 文件
+4. 将此备份中的 tasklog.db 复制到数据目录
+5. 将 images 文件夹也复制过去
+6. 重新启动应用
+
+## 注意事项
+- 手动恢复前请先备份当前数据
+- 确保应用已完全关闭再进行手动恢复
+- 建议定期备份数据
+`
+      zip.addFile('README.txt', Buffer.from(readmeContent, 'utf8'))
 
       const { filePath } = await dialog.showSaveDialog({
         title: '导出数据',
@@ -1131,42 +1114,91 @@ app.whenReady().then(() => {
         const filePath = filePaths[0]
         const ext = path.extname(filePath).toLowerCase()
         let importData
+        let hasDbFile = false
 
         if (ext === '.zip') {
           const zip = new AdmZip(filePath)
           const zipEntries = zip.getEntries()
 
-          // 读取 data.json
-          const dataEntry = zipEntries.find(entry => entry.entryName === 'data.json')
-          if (!dataEntry) {
-            return { success: false, error: '无效的备份文件：找不到 data.json' }
-          }
-          importData = JSON.parse(dataEntry.getData().toString('utf8'))
+          // 检查是否包含数据库文件
+          const dbEntry = zipEntries.find(entry => entry.entryName === 'tasklog.db')
+          
+          if (dbEntry) {
+            // 优先使用数据库文件恢复（更快更可靠）
+            console.log('检测到数据库文件，使用数据库文件恢复...')
+            
+            // 关闭当前数据库
+            db.close()
+            
+            // 备份当前数据库
+            if (fs.existsSync(dbFile)) {
+              const backupPath = dbFile + '.before-import-' + Date.now()
+              fs.copyFileSync(dbFile, backupPath)
+              console.log('当前数据库已备份到:', backupPath)
+            }
+            
+            // 解压数据库文件
+            zip.extractEntryTo(dbEntry, dataDir, false, true)
+            console.log('数据库文件已恢复')
+            
+            // 恢复图片文件
+            const imageEntries = zipEntries.filter(entry => entry.entryName.startsWith('images/'))
+            if (imageEntries.length > 0) {
+              zip.extractAllTo(dataDir, true)
+              console.log('图片文件已恢复')
+            }
+            
+            // 重新初始化数据库
+            await db.init()
+            console.log('数据库重新初始化完成')
+            
+            hasDbFile = true
+          } else {
+            // 使用 JSON 文件导入（兼容旧版本）
+            console.log('未检测到数据库文件，使用 JSON 文件导入...')
+            
+            const dataEntry = zipEntries.find(entry => entry.entryName === 'data.json')
+            if (!dataEntry) {
+              return { success: false, error: '无效的备份文件：找不到 data.json 或 tasklog.db' }
+            }
+            importData = JSON.parse(dataEntry.getData().toString('utf8'))
 
-          // 恢复图片
-          // 解压 images 文件夹到 tasksData 目录
-          zip.extractAllTo(dataDir, true)
+            // 恢复图片
+            zip.extractAllTo(dataDir, true)
+          }
         } else {
           // 兼容旧版 JSON 导入
+          console.log('导入 JSON 文件...')
           importData = JSON.parse(fs.readFileSync(filePath, 'utf-8'))
         }
 
-        // 验证数据格式
-        if (!importData.version || !importData.config || !importData.projects || !importData.modules || !importData.tasks) {
-          return { success: false, error: '数据格式不正确' }
+        // 如果使用 JSON 导入，需要清空数据库并导入
+        if (!hasDbFile) {
+          // 验证数据格式
+          if (!importData.version || !importData.config || !importData.projects || !importData.modules || !importData.tasks) {
+            return { success: false, error: '数据格式不正确' }
+          }
+
+          // 备份当前数据库
+          if (fs.existsSync(dbFile)) {
+            const backupPath = dbFile + '.before-import-' + Date.now()
+            fs.copyFileSync(dbFile, backupPath)
+            console.log('当前数据库已备份到:', backupPath)
+          }
+
+          // 关闭并删除当前数据库
+          db.close()
+          if (fs.existsSync(dbFile)) {
+            fs.unlinkSync(dbFile)
+          }
+
+          // 重新初始化数据库
+          await db.init()
+
+          // 使用数据库的迁移方法导入数据
+          db.migrateFromJSON(importData)
+          console.log('JSON 数据导入完成')
         }
-
-        // 保存配置
-        fs.writeFileSync(configFile, JSON.stringify(importData.config), 'utf-8')
-
-        // 保存项目
-        writeProjects(importData.projects)
-
-        // 保存模块
-        writeModules(importData.modules)
-
-        // 保存任务
-        writeTasks(importData.tasks)
 
         return { success: true }
       }
@@ -1207,5 +1239,16 @@ app.whenReady().then(() => {
 })
 
 app.on('window-all-closed', () => {
+  // 关闭数据库
+  if (db) {
+    db.close()
+  }
   if (process.platform !== 'darwin') app.quit()
+})
+
+app.on('before-quit', () => {
+  // 确保数据库被正确关闭
+  if (db) {
+    db.close()
+  }
 })

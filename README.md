@@ -170,6 +170,7 @@ npm run config:migrate
 - **react-syntax-highlighter** - 语法高亮
 - **prismjs** - 代码高亮引擎
 - **xlsx** - Excel 导出
+- **sql.js** - SQLite 数据库（纯 JavaScript 实现）
 
 ## 📂 项目结构
 
@@ -177,7 +178,8 @@ npm run config:migrate
 TaskLog/
 ├── electron/                    # Electron 主进程
 │   ├── main.js                 # 主进程入口
-│   └── preload.js              # 预加载脚本
+│   ├── preload.js              # 预加载脚本
+│   └── database.js             # 数据库管理模块（新增）
 ├── src/                        # React 源代码
 │   ├── components/             # 组件目录
 │   │   ├── common/            # 通用组件（Toast、Modal、图片预览等）
@@ -194,10 +196,7 @@ TaskLog/
 │   ├── App.jsx                # 主应用组件
 │   └── main.jsx               # React 入口
 ├── tasksData/                  # 数据目录
-│   ├── config.json            # 配置文件
-│   ├── projects.json          # 项目数据
-│   ├── tasks.json             # 任务数据
-│   ├── modules.json           # 模块数据
+│   ├── tasklog.db             # SQLite 数据库（新）
 │   └── images/                # 图片附件
 ├── scripts/                    # 脚本工具
 │   └── migrate-config.js      # 配置迁移脚本
@@ -207,25 +206,60 @@ TaskLog/
 ├── index.html                  # HTML 入口
 ├── vite.config.mjs            # Vite 配置
 ├── package.json               # 项目配置
+├── test-database.js           # 数据库测试脚本（新增）
 ├── CONFIG_GUIDE.md            # 配置指南
+├── DATABASE_MIGRATION.md      # 数据库迁移说明（新增）
+├── MIGRATION_SUMMARY.md       # 迁移完成总结（新增）
+├── QUICK_START.md             # 快速启动指南（新增）
 ├── REFACTOR_SUMMARY.md        # 重构总结
 └── README.md                  # 项目说明
 ```
 
 ## 📝 数据存储
 
-应用数据存储在系统用户数据目录：
+应用现在使用 **SQLite 数据库** 存储数据，性能更好、更可靠！
+
+### 数据位置
 
 - **Windows**: `%APPDATA%/task-log/tasksData/`
 - **macOS**: `~/Library/Application Support/task-log/tasksData/`
 - **Linux**: `~/.config/task-log/tasksData/`
 
-包含文件：
-- `projects.json` - 项目列表
-- `tasks.json` - 任务数据
-- `modules.json` - 模块数据
-- `config.json` - 配置信息
+### 存储文件
+- `tasklog.db` - SQLite 数据库文件（包含所有数据）
 - `images/` - 图片附件目录
+
+### 🔄 从旧版本升级
+
+如果你之前使用的是 JSON 文件存储版本（v0.1.2 及更早版本）：
+
+1. **自动迁移** - 应用启动时会自动检测并迁移数据
+2. **数据备份** - 旧的 JSON 文件会被重命名为 `.backup` 后缀
+3. **无缝切换** - 无需手动操作，数据完整性得到保证
+
+详细说明请参考：
+- [数据库迁移说明](./DATABASE_MIGRATION.md) - 完整的迁移文档
+- [快速启动指南](./QUICK_START.md) - 快速上手指南
+- [迁移完成总结](./MIGRATION_SUMMARY.md) - 迁移详情
+
+## 数据管理
+
+**导出数据**：设置 → 隐私与数据 → 导出数据（.zip 格式）  
+**导入数据**：设置 → 隐私与数据 → 导入数据（支持 .zip 和 .json）
+
+### 导出内容说明
+
+导出的 ZIP 文件包含：
+- **tasklog.db** - 数据库文件（用于快速恢复）
+- **data.json** - JSON 格式数据（用于兼容性和查看）
+- **images/** - 图片附件文件夹
+- **README.txt** - 恢复说明文档
+
+### 导入优先级
+
+导入时会自动识别备份类型：
+1. **优先使用数据库文件** - 如果备份中包含 `tasklog.db`，直接恢复（快速）
+2. **使用 JSON 文件** - 如果只有 `data.json`，通过导入方式恢复（兼容旧版本）
 
 ## 🎯 功能详解
 
@@ -282,6 +316,9 @@ TaskLog/
 
 ## 📚 相关文档
 
+- [快速启动指南](./QUICK_START.md) - 快速上手指南
+- [数据库迁移说明](./DATABASE_MIGRATION.md) - 详细的数据库迁移文档
+- [迁移完成总结](./MIGRATION_SUMMARY.md) - 数据库迁移完成情况
 - [配置指南](./CONFIG_GUIDE.md) - 详细的配置说明
 - [重构总结](./REFACTOR_SUMMARY.md) - 代码重构记录
 - [Ant Design 迁移](./ANTD_MIGRATION.md) - UI 库迁移说明
@@ -296,7 +333,16 @@ TaskLog/
 
 ## 📄 版本
 
-当前版本：**v0.0.4**
+当前版本：**v0.2.0**
+
+### 最新更新（v0.2.0）
+
+- ✨ 迁移到 SQLite 数据库存储
+- 🚀 性能和可靠性大幅提升
+- 🔄 自动数据迁移，无缝升级
+- 📊 更好的数据完整性保证
+
+详细更新日志请查看 [CHANGELOG.md](./CHANGELOG.md)
 
 ## 📜 许可证
 
