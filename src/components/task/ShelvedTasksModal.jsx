@@ -5,10 +5,11 @@
  * - 以弹框形式展示搁置的任务列表
  * - 支持取消搁置操作
  * - 支持查看任务详情
+ * - 支持按标题和备注搜索任务
  */
-import React from 'react'
-import { Modal, Empty, Badge } from 'antd'
-import { PauseCircleOutlined } from '@ant-design/icons'
+import React, { useState, useMemo } from 'react'
+import { Modal, Empty, Badge, Input } from 'antd'
+import { PauseCircleOutlined, SearchOutlined } from '@ant-design/icons'
 import TaskCard from './TaskCard'
 
 // 滚动条样式
@@ -42,10 +43,33 @@ export default function ShelvedTasksModal({
     onCheckItemChange,
     onClose
 }) {
+    // 搜索关键词状态
+    const [searchKeyword, setSearchKeyword] = useState('')
+
+    // 根据搜索关键词过滤任务
+    const filteredTasks = useMemo(() => {
+        if (!searchKeyword.trim()) {
+            return shelvedTasks
+        }
+        
+        const keyword = searchKeyword.toLowerCase()
+        return shelvedTasks.filter(task => {
+            const titleMatch = task.name?.toLowerCase().includes(keyword)
+            const remarkMatch = task.remark?.toLowerCase().includes(keyword)
+            return titleMatch || remarkMatch
+        })
+    }, [shelvedTasks, searchKeyword])
+
+    // 关闭模态框时重置搜索条件
+    const handleClose = () => {
+        setSearchKeyword('')
+        onClose()
+    }
+
     return (
         <Modal
             open={show}
-            onCancel={onClose}
+            onCancel={handleClose}
             footer={null}
             width={700}
             title={
@@ -65,10 +89,21 @@ export default function ShelvedTasksModal({
             }}
         >
             <style>{scrollbarStyles}</style>
-            {shelvedTasks.length === 0 ? (
+            
+            {/* 搜索框 */}
+            <Input
+                placeholder="搜索标题或备注..."
+                prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
+                value={searchKeyword}
+                onChange={(e) => setSearchKeyword(e.target.value)}
+                allowClear
+                style={{ marginBottom: 16 }}
+            />
+
+            {filteredTasks.length === 0 ? (
                 <Empty
                     image={Empty.PRESENTED_IMAGE_SIMPLE}
-                    description="暂无搁置的任务"
+                    description={searchKeyword ? "未找到匹配的任务" : "暂无搁置的任务"}
                 />
             ) : (
                 <div
@@ -82,7 +117,7 @@ export default function ShelvedTasksModal({
                         paddingRight: 8
                     }}
                 >
-                    {shelvedTasks.map(task => (
+                    {filteredTasks.map(task => (
                         <TaskCard
                             key={task.id}
                             task={task}
