@@ -5,6 +5,9 @@ const AdmZip = require('adm-zip')
 const { execFile } = require('child_process')
 const Database = require('./database')
 
+// 将 db 定义为全局变量，以便在应用关闭时访问
+let db = null
+
 function createWindow() {
   const win = new BrowserWindow({
     width: 1400,
@@ -120,7 +123,7 @@ app.whenReady().then(async () => {
   fs.mkdirSync(imagesDir, { recursive: true })
 
   // 初始化数据库
-  const db = new Database(dbFile)
+  db = new Database(dbFile)
   await db.init()
 
   // 数据迁移：如果存在旧的 JSON 文件，迁移到数据库
