@@ -1,0 +1,201 @@
+/* 回收站组件样式 */
+
+/* ==================== 回收站容器 ==================== */
+.recycleBin {
+  width: 100%;
+}
+
+.recycleBinList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ==================== 回收站项目 ==================== */
+.recycleItem {
+  background: linear-gradient(135deg, rgba(255, 77, 79, 0.05) 0%, rgba(255, 77, 79, 0.02) 100%);
+  border: 1px solid rgba(255, 77, 79, 0.2);
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.recycleItem:hover {
+  background: linear-gradient(135deg, rgba(255, 77, 79, 0.08) 0%, rgba(255, 77, 79, 0.04) 100%);
+  border-color: rgba(255, 77, 79, 0.3);
+  box-shadow: 0 2px 8px rgba(255, 77, 79, 0.15);
+  transform: translateX(2px);
+}
+
+.recycleItemContent {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+}
+
+/* ==================== 回收站图标 ==================== */
+.recycleIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, rgba(255, 77, 79, 0.15) 0%, rgba(255, 77, 79, 0.1) 100%);
+  border-radius: 10px;
+  color: #ff4d4f;
+  font-size: 18px;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 77, 79, 0.2);
+  transition: all 0.2s ease;
+}
+
+.recycleItem:hover .recycleIcon {
+  background: linear-gradient(135deg, rgba(255, 77, 79, 0.2) 0%, rgba(255, 77, 79, 0.15) 100%);
+  border-color: rgba(255, 77, 79, 0.3);
+  transform: scale(1.05);
+}
+
+/* ==================== 回收站信息 ==================== */
+.recycleInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.recycleName {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-decoration: line-through;
+  text-decoration-color: #ff4d4f;
+  text-decoration-thickness: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.recycleItem:hover .recycleName {
+  opacity: 0.9;
+}
+
+.recycleHint {
+  font-size: 12px;
+  color: #ff4d4f;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.recycleHint::before {
+  content: '🗑️';
+  font-size: 11px;
+}
+
+/* ==================== 回收站操作 ==================== */
+.recycleActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.restoreBtn {
+  border-radius: 8px;
+  font-weight: 500;
+  height: 32px;
+  padding: 0 16px;
+  background: linear-gradient(135deg, #52c41a 0%, #389e0d 100%);
+  border: none;
+  box-shadow: 0 2px 6px rgba(82, 196, 26, 0.3);
+  transition: all 0.2s ease;
+}
+
+.restoreBtn:hover {
+  background: linear-gradient(135deg, #73d13d 0%, #52c41a 100%) !important;
+  box-shadow: 0 4px 12px rgba(82, 196, 26, 0.4) !important;
+  transform: translateY(-2px) scale(1.05);
+}
+
+.restoreBtn:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* ==================== 响应式设计 ==================== */
+@media (max-width: 768px) {
+  .recycleItemContent {
+    flex-wrap: wrap;
+  }
+
+  .recycleActions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+/* ==================== 主题适配 ==================== */
+[data-theme="dark"] .recycleItem {
+  background: linear-gradient(135deg, rgba(255, 77, 79, 0.08) 0%, rgba(255, 77, 79, 0.04) 100%);
+  border-color: rgba(255, 77, 79, 0.25);
+}
+
+[data-theme="dark"] .recycleItem:hover {
+  background: linear-gradient(135deg, rgba(255, 77, 79, 0.12) 0%, rgba(255, 77, 79, 0.06) 100%);
+  border-color: rgba(255, 77, 79, 0.35);
+}
+
+[data-theme="dark"] .recycleIcon {
+  background: linear-gradient(135deg, rgba(255, 77, 79, 0.2) 0%, rgba(255, 77, 79, 0.15) 100%);
+  border-color: rgba(255, 77, 79, 0.3);
+}
+
+[data-theme="dark"] .recycleItem:hover .recycleIcon {
+  background: linear-gradient(135deg, rgba(255, 77, 79, 0.25) 0%, rgba(255, 77, 79, 0.2) 100%);
+  border-color: rgba(255, 77, 79, 0.4);
+}
+
+[data-theme="light"] .recycleItem {
+  background: #fff1f0;
+  border-color: #ffa39e;
+}
+
+[data-theme="light"] .recycleItem:hover {
+  background: #ffe7e6;
+  border-color: #ff7875;
+}
+
+[data-theme="light"] .recycleIcon {
+  background: #ffccc7;
+  border-color: #ffa39e;
+}
+
+[data-theme="light"] .recycleItem:hover .recycleIcon {
+  background: #ffa39e;
+  border-color: #ff7875;
+}
+
+/* ==================== 空状态优化 ==================== */
+.recycleBinList:empty::after {
+  content: '回收站为空';
+  display: block;
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-tertiary);
+  font-size: 14px;
+}

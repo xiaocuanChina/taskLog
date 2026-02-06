@@ -52,9 +52,8 @@ import ModuleGroup from './ModuleGroup'
 import TaskCard from './TaskCard'
 import TaskModal from './TaskModal'
 import ImagePreview from '../common/ImagePreview'
-import ConfirmModal from '../common/ConfirmModal'
-import ProjectMemoView from '../project/ProjectMemoView'
-import ProjectMemoModal from '../project/ProjectMemoModal'
+import DeleteTaskModal from './DeleteTaskModal'
+import ProjectMemo from '../project/ProjectMemo'
 import EditTaskModuleModal from './EditTaskModuleModal'
 import EditModuleListModal from './EditModuleListModal'
 import ExportPendingTasksModal from './ExportPendingTasksModal'
@@ -69,7 +68,6 @@ export default function TaskManageView({
     pendingTasks,
     completedTasks,
     searchKeyword,
-    searchScope = 'all',
     selectedModuleFilter,
     completedSearchKeyword,
     completedModuleFilter,
@@ -78,8 +76,8 @@ export default function TaskManageView({
     showAddTaskModal,
     showEditTaskModal,
     showDeleteConfirm,
-    showProjectMemoView,
-    showProjectMemoModal,
+    showProjectMemo,
+    projectMemoMode,
     showEditTaskModuleModal,
     showEditModuleListModal,
     newTask,
@@ -152,12 +150,10 @@ export default function TaskManageView({
     onConfirmDelete,
     onCancelDelete,
     onOpenProjectMemoView,
-    onOpenProjectMemoEdit,
-    onCloseProjectMemoView,
+    onSwitchToEditMode,
+    onCloseProjectMemo,
     onProjectMemoChange,
     onUpdateProjectMemo,
-    onCloseProjectMemoModal,
-    onOpenAddProjectMemo,
     onCloseImagePreview,
     onPrevImage,
     onNextImage,
@@ -217,17 +213,9 @@ export default function TaskManageView({
         pendingTasksByModuleObj[group.moduleName] = group.tasks
     })
 
-    // 根据搜索范围生成提示文字
+    // 生成搜索提示文字
     const getSearchPlaceholder = () => {
-        switch (searchScope) {
-            case 'module':
-                return '搜索模块名称...'
-            case 'description':
-                return '搜索任务描述...'
-            case 'all':
-            default:
-                return '搜索任务...'
-        }
+        return '搜索任务...'
     }
 
     // 生成任务列表的 Tooltip 内容
@@ -378,51 +366,86 @@ export default function TaskManageView({
             height: '100vh',
             display: 'flex',
             flexDirection: 'column',
-            background: 'linear-gradient(135deg, var(--theme-start-color) 0%, var(--theme-end-color) 100%)'
+            background: '#f8fafc'
         }}>
 
             <WindowControls title={`任务日志 - ${currentProject?.name}`} onConfigChange={onConfigChange} />
 
             {/* 头部区域 */}
             <header style={{
-                background: 'rgba(255, 255, 255, 0.1)',
-                backdropFilter: 'blur(10px)',
+                background: '#ffffff',
                 padding: '16px 32px',
                 paddingTop: '52px',
-                borderBottom: '1px solid rgba(255, 255, 255, 0.2)'
+                borderBottom: '1px solid #e2e8f0',
+                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                     <Button
                         icon={<LeftOutlined />}
                         onClick={onBack}
-                        style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: '#fff' }}
+                        style={{
+                            background: '#f1f5f9',
+                            border: '1px solid #e2e8f0',
+                            color: '#475569',
+                            fontWeight: 500,
+                            transition: 'all 0.2s'
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.background = '#e2e8f0'
+                            e.currentTarget.style.borderColor = '#cbd5e1'
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.background = '#f1f5f9'
+                            e.currentTarget.style.borderColor = '#e2e8f0'
+                        }}
                     >
                         返回
                     </Button>
-                    <h1 style={{ fontSize: 24, fontWeight: 700, color: '#fff', margin: 0, flex: 1 }}>
-                        📋 {currentProject?.name}
+                    <h1 style={{
+                        fontSize: 24,
+                        fontWeight: 700,
+                        color: '#0f172a',
+                        margin: 0,
+                        flex: 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 12
+                    }}>
+                        <FileTextOutlined style={{ fontSize: 28, color: '#3b82f6' }} />
+                        {currentProject?.name}
                     </h1>
                     {currentProject?.memo ? (
                         <div
                             onClick={onOpenProjectMemoView}
                             style={{
                                 cursor: 'pointer',
-                                background: 'rgba(255,255,255,0.2)',
-                                padding: '8px 16px',
+                                background: '#eff6ff',
+                                padding: '10px 16px',
                                 borderRadius: 8,
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: 8,
-                                maxWidth: 300
+                                maxWidth: 300,
+                                border: '1px solid #dbeafe',
+                                transition: 'all 0.2s'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.background = '#dbeafe'
+                                e.currentTarget.style.borderColor = '#bfdbfe'
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.background = '#eff6ff'
+                                e.currentTarget.style.borderColor = '#dbeafe'
                             }}
                         >
-                            <FileTextOutlined style={{ color: '#fff' }} />
+                            <FileTextOutlined style={{ color: '#3b82f6', fontSize: 16 }} />
                             <span style={{
-                                color: '#fff',
+                                color: '#1e40af',
                                 fontSize: 13,
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap'
+                                whiteSpace: 'nowrap',
+                                fontWeight: 500
                             }}>
                                 {currentProject.memo}
                             </span>
@@ -430,8 +453,13 @@ export default function TaskManageView({
                     ) : (
                         <Button
                             icon={<EditOutlined />}
-                            onClick={onOpenAddProjectMemo}
-                            style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: '#fff' }}
+                            onClick={onOpenProjectMemoView}
+                            style={{
+                                background: '#eff6ff',
+                                border: '1px solid #dbeafe',
+                                color: '#1e40af',
+                                fontWeight: 500
+                            }}
                         >
                             添加备忘
                         </Button>
@@ -448,7 +476,7 @@ export default function TaskManageView({
                 flexDirection: 'column'
             }}>
                 {/* 操作栏和统计 */}
-                <div style={{ marginBottom: 24, display: 'flex', alignItems: 'center', gap: 16 }}>
+                <div style={{ marginBottom: 24, display: 'flex', alignItems: 'center', gap: 12 }}>
                     <Tooltip
                         title="Ctrl + N"
                         styles={{ body: { padding: '4px 8px', fontSize: '12px' } }}
@@ -458,6 +486,13 @@ export default function TaskManageView({
                             size="large"
                             icon={<PlusOutlined />}
                             onClick={onOpenAddTaskModal}
+                            style={{
+                                background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                                borderColor: '#3b82f6',
+                                fontWeight: 600,
+                                boxShadow: '0 2px 8px rgba(59, 130, 246, 0.25)',
+                                height: 40
+                            }}
                         >
                             添加新任务
                         </Button>
@@ -485,7 +520,13 @@ export default function TaskManageView({
                             type="primary"
                             size="large"
                             icon={<FileExcelOutlined />}
-                            style={{ background: '#52c41a', borderColor: '#52c41a' }}
+                            style={{
+                                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                                borderColor: '#10b981',
+                                fontWeight: 600,
+                                boxShadow: '0 2px 8px rgba(16, 185, 129, 0.25)',
+                                height: 40
+                            }}
                         >
                             导出 <DownOutlined />
                         </Button>
@@ -495,7 +536,13 @@ export default function TaskManageView({
                         size="large"
                         icon={<EditOutlined />}
                         onClick={onOpenEditModuleList}
-                        style={{ background: 'rgba(255,255,255,0.95)', borderColor: '#d9d9d9' }}
+                        style={{
+                            background: '#ffffff',
+                            borderColor: '#e2e8f0',
+                            color: '#475569',
+                            fontWeight: 500,
+                            height: 40
+                        }}
                     >
                         编辑模块
                     </Button>
@@ -504,27 +551,61 @@ export default function TaskManageView({
                         size="large"
                         icon={<BarChartOutlined />}
                         onClick={onOpenStats}
-                        style={{ background: 'rgba(255,255,255,0.95)', borderColor: '#d9d9d9' }}
+                        style={{
+                            background: '#ffffff',
+                            borderColor: '#e2e8f0',
+                            color: '#475569',
+                            fontWeight: 500,
+                            height: 40
+                        }}
                     >
                         统计报表
                     </Button>
 
-                    <div style={{ flex: 1, display: 'flex', gap: 16, justifyContent: 'flex-end' }}>
+                    <div style={{ flex: 1, display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
                         <Tooltip
                             title={generateTaskTooltip(getTodayNewTasks())}
                             placement="bottom"
                             styles={{ root: { maxWidth: 400 } }}
                         >
                             <Card size="small"
-                                style={{ background: 'rgba(255,255,255,0.95)', minWidth: 120, cursor: 'pointer' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                    <PlusOutlined style={{ fontSize: 18, color: '#1890ff' }} />
+                                style={{
+                                    background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
+                                    minWidth: 120,
+                                    cursor: 'pointer',
+                                    border: '1px solid #bfdbfe',
+                                    borderRadius: 12,
+                                    boxShadow: '0 1px 3px rgba(59, 130, 246, 0.1)',
+                                    transition: 'all 0.2s'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(-2px)'
+                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.15)'
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(0)'
+                                    e.currentTarget.style.boxShadow = '0 1px 3px rgba(59, 130, 246, 0.1)'
+                                }}
+                            >
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                    <div style={{
+                                        width: 40,
+                                        height: 40,
+                                        borderRadius: 10,
+                                        background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        boxShadow: '0 2px 8px rgba(59, 130, 246, 0.25)'
+                                    }}>
+                                        <PlusOutlined style={{ fontSize: 18, color: '#ffffff' }} />
+                                    </div>
                                     <div>
-                                        <div style={{ color: '#8c8c8c', fontSize: 12 }}>今日新增</div>
+                                        <div style={{ color: '#64748b', fontSize: 12, fontWeight: 500 }}>今日新增</div>
                                         <div style={{
-                                            fontSize: 18,
+                                            fontSize: 20,
                                             fontWeight: 700,
-                                            color: '#1890ff'
+                                            color: '#1e40af'
                                         }}>{todayStats.newCount || 0}</div>
                                     </div>
                                 </div>
@@ -536,15 +617,43 @@ export default function TaskManageView({
                             styles={{ root: { maxWidth: 400 } }}
                         >
                             <Card size="small"
-                                style={{ background: 'rgba(255,255,255,0.95)', minWidth: 120, cursor: 'pointer' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                    <CheckCircleOutlined style={{ fontSize: 18, color: '#52c41a' }} />
+                                style={{
+                                    background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
+                                    minWidth: 120,
+                                    cursor: 'pointer',
+                                    border: '1px solid #bbf7d0',
+                                    borderRadius: 12,
+                                    boxShadow: '0 1px 3px rgba(16, 185, 129, 0.1)',
+                                    transition: 'all 0.2s'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(-2px)'
+                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.15)'
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(0)'
+                                    e.currentTarget.style.boxShadow = '0 1px 3px rgba(16, 185, 129, 0.1)'
+                                }}
+                            >
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                    <div style={{
+                                        width: 40,
+                                        height: 40,
+                                        borderRadius: 10,
+                                        background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        boxShadow: '0 2px 8px rgba(16, 185, 129, 0.25)'
+                                    }}>
+                                        <CheckCircleOutlined style={{ fontSize: 18, color: '#ffffff' }} />
+                                    </div>
                                     <div>
-                                        <div style={{ color: '#8c8c8c', fontSize: 12 }}>今日完成</div>
+                                        <div style={{ color: '#64748b', fontSize: 12, fontWeight: 500 }}>今日完成</div>
                                         <div style={{
-                                            fontSize: 18,
+                                            fontSize: 20,
                                             fontWeight: 700,
-                                            color: '#52c41a'
+                                            color: '#047857'
                                         }}>{todayStats.count}</div>
                                     </div>
                                 </div>
@@ -556,15 +665,43 @@ export default function TaskManageView({
                             styles={{ root: { maxWidth: 400 } }}
                         >
                             <Card size="small"
-                                style={{ background: 'rgba(255,255,255,0.95)', minWidth: 120, cursor: 'pointer' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                    <FileTextOutlined style={{ fontSize: 18, color: '#faad14' }} />
+                                style={{
+                                    background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
+                                    minWidth: 120,
+                                    cursor: 'pointer',
+                                    border: '1px solid #fcd34d',
+                                    borderRadius: 12,
+                                    boxShadow: '0 1px 3px rgba(245, 158, 11, 0.1)',
+                                    transition: 'all 0.2s'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(-2px)'
+                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(245, 158, 11, 0.15)'
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(0)'
+                                    e.currentTarget.style.boxShadow = '0 1px 3px rgba(245, 158, 11, 0.1)'
+                                }}
+                            >
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                    <div style={{
+                                        width: 40,
+                                        height: 40,
+                                        borderRadius: 10,
+                                        background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        boxShadow: '0 2px 8px rgba(245, 158, 11, 0.25)'
+                                    }}>
+                                        <FileTextOutlined style={{ fontSize: 18, color: '#ffffff' }} />
+                                    </div>
                                     <div>
-                                        <div style={{ color: '#8c8c8c', fontSize: 12 }}>待办任务</div>
+                                        <div style={{ color: '#64748b', fontSize: 12, fontWeight: 500 }}>待办任务</div>
                                         <div style={{
-                                            fontSize: 18,
+                                            fontSize: 20,
                                             fontWeight: 700,
-                                            color: '#faad14'
+                                            color: '#b45309'
                                         }}>{pendingTasks.length}</div>
                                     </div>
                                 </div>
@@ -576,15 +713,43 @@ export default function TaskManageView({
                             styles={{ root: { maxWidth: 400 } }}
                         >
                             <Card size="small"
-                                style={{ background: 'rgba(255,255,255,0.95)', minWidth: 120, cursor: 'pointer' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                    <TrophyOutlined style={{ fontSize: 18, color: '#722ed1' }} />
+                                style={{
+                                    background: 'linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%)',
+                                    minWidth: 120,
+                                    cursor: 'pointer',
+                                    border: '1px solid #d8b4fe',
+                                    borderRadius: 12,
+                                    boxShadow: '0 1px 3px rgba(168, 85, 247, 0.1)',
+                                    transition: 'all 0.2s'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(-2px)'
+                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(168, 85, 247, 0.15)'
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(0)'
+                                    e.currentTarget.style.boxShadow = '0 1px 3px rgba(168, 85, 247, 0.1)'
+                                }}
+                            >
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                    <div style={{
+                                        width: 40,
+                                        height: 40,
+                                        borderRadius: 10,
+                                        background: 'linear-gradient(135deg, #a855f7 0%, #9333ea 100%)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        boxShadow: '0 2px 8px rgba(168, 85, 247, 0.25)'
+                                    }}>
+                                        <TrophyOutlined style={{ fontSize: 18, color: '#ffffff' }} />
+                                    </div>
                                     <div>
-                                        <div style={{ color: '#8c8c8c', fontSize: 12 }}>总任务数</div>
+                                        <div style={{ color: '#64748b', fontSize: 12, fontWeight: 500 }}>总任务数</div>
                                         <div style={{
-                                            fontSize: 18,
+                                            fontSize: 20,
                                             fontWeight: 700,
-                                            color: '#722ed1'
+                                            color: '#7e22ce'
                                         }}>{pendingTasks.length + completedTasks.length}</div>
                                     </div>
                                 </div>
@@ -599,19 +764,50 @@ export default function TaskManageView({
                                 <Card size="small"
                                     onClick={onToggleShelvedTasks}
                                     style={{
-                                        background: showShelvedTasks ? 'rgba(250, 173, 20, 0.15)' : 'rgba(255,255,255,0.95)',
+                                        background: showShelvedTasks
+                                            ? 'linear-gradient(135deg, #fed7aa 0%, #fdba74 100%)'
+                                            : 'linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%)',
                                         minWidth: 120,
                                         cursor: 'pointer',
-                                        border: showShelvedTasks ? '1px solid #faad14' : '1px solid transparent'
-                                    }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                        <PauseCircleOutlined style={{ fontSize: 18, color: '#faad14' }} />
+                                        border: showShelvedTasks ? '2px solid #fb923c' : '1px solid #fed7aa',
+                                        borderRadius: 12,
+                                        boxShadow: showShelvedTasks
+                                            ? '0 4px 12px rgba(251, 146, 60, 0.2)'
+                                            : '0 1px 3px rgba(251, 146, 60, 0.1)',
+                                        transition: 'all 0.2s'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        if (!showShelvedTasks) {
+                                            e.currentTarget.style.transform = 'translateY(-2px)'
+                                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(251, 146, 60, 0.15)'
+                                        }
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        if (!showShelvedTasks) {
+                                            e.currentTarget.style.transform = 'translateY(0)'
+                                            e.currentTarget.style.boxShadow = '0 1px 3px rgba(251, 146, 60, 0.1)'
+                                        }
+                                    }}
+                                >
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                        <div style={{
+                                            width: 40,
+                                            height: 40,
+                                            borderRadius: 10,
+                                            background: 'linear-gradient(135deg, #fb923c 0%, #f97316 100%)',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            boxShadow: '0 2px 8px rgba(251, 146, 60, 0.25)'
+                                        }}>
+                                            <PauseCircleOutlined style={{ fontSize: 18, color: '#ffffff' }} />
+                                        </div>
                                         <div>
-                                            <div style={{ color: '#8c8c8c', fontSize: 12 }}>搁置任务</div>
+                                            <div style={{ color: '#64748b', fontSize: 12, fontWeight: 500 }}>搁置任务</div>
                                             <div style={{
-                                                fontSize: 18,
+                                                fontSize: 20,
                                                 fontWeight: 700,
-                                                color: '#faad14'
+                                                color: '#c2410c'
                                             }}>{shelvedTasks.length}</div>
                                         </div>
                                     </div>
@@ -621,96 +817,166 @@ export default function TaskManageView({
                     </div>
                 </div>
 
-                {/* 任务列表 */}
-                <Row gutter={24} style={{ flex: 1, overflow: 'hidden' }}>
-                    {/* 待办任务 */}
-                    <Col span={12} style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                        <Card
-                            title={
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                        <span>📌 待办任务 ({pendingTasks.length})</span>
-                                        {pendingTasksByModule.length > 0 && (
-                                            <span
-                                                onClick={handleToggleAllPending}
-                                                style={{
-                                                    cursor: 'pointer',
-                                                    color: '#8c8c8c',
-                                                    fontSize: 12,
-                                                    padding: '2px 8px',
-                                                    borderRadius: 4,
-                                                    transition: 'all 0.2s',
-                                                    display: 'inline-flex',
-                                                    alignItems: 'center',
-                                                    gap: 4,
-                                                    userSelect: 'none'
-                                                }}
-                                                onMouseEnter={(e) => {
-                                                    e.currentTarget.style.color = '#1890ff'
-                                                    e.currentTarget.style.background = 'rgba(24, 144, 255, 0.08)'
-                                                }}
-                                                onMouseLeave={(e) => {
-                                                    e.currentTarget.style.color = '#8c8c8c'
-                                                    e.currentTarget.style.background = 'transparent'
-                                                }}
-                                            >
-                                                {allPendingExpanded ? <UpOutlined style={{ fontSize: 10 }} /> :
-                                                    <DownOutlined style={{ fontSize: 10 }} />}
-                                                {allPendingExpanded ? '收起' : '展开'}
-                                            </span>
-                                        )}
+                {/* 任务列表 - 重构版 */}
+                <div style={{ 
+                    flex: 1, 
+                    display: 'grid', 
+                    gridTemplateColumns: 'repeat(2, 1fr)', 
+                    gap: 24,
+                    overflow: 'hidden'
+                }}>
+                    {/* 待办任务区域 */}
+                    <div style={{ 
+                        display: 'flex', 
+                        flexDirection: 'column',
+                        background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
+                        borderRadius: 16,
+                        padding: 20,
+                        boxShadow: '0 4px 20px rgba(245, 158, 11, 0.15)',
+                        border: '2px solid #fcd34d',
+                        overflow: 'hidden'
+                    }}>
+                        {/* 待办任务头部 */}
+                        <div style={{ 
+                            display: 'flex', 
+                            flexDirection: 'column',
+                            gap: 16,
+                            marginBottom: 20
+                        }}>
+                            {/* 标题行 */}
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                    <div style={{
+                                        width: 48,
+                                        height: 48,
+                                        borderRadius: 12,
+                                        background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)'
+                                    }}>
+                                        <FileTextOutlined style={{ fontSize: 24, color: '#ffffff' }} />
                                     </div>
-                                    <div style={{ display: 'flex', gap: 8 }}>
-                                        <Select
-                                            style={{ width: 120 }}
-                                            placeholder="筛选模块"
-                                            allowClear
-                                            value={selectedModuleFilter}
-                                            onChange={onModuleFilterChange}
-                                            options={modules.map(m => ({ label: m.name, value: m.name }))}
-                                        />
-                                        <Input
-                                            placeholder={getSearchPlaceholder()}
-                                            value={searchKeyword}
-                                            onChange={(e) => onSearchChange(e.target.value)}
-                                            prefix={<SearchOutlined style={{ fontSize: 16, color: '#8c8c8c' }} />}
-                                            suffix={searchKeyword &&
-                                                <CloseCircleOutlined onClick={() => onSearchChange('')} style={{
-                                                    cursor: 'pointer',
-                                                    fontSize: 14,
-                                                    color: '#8c8c8c'
-                                                }} />}
-                                            style={{
-                                                width: 200,
-                                                borderRadius: 20,
-                                                paddingLeft: 16,
-                                                paddingRight: 16
-                                            }}
-                                            size="middle"
-                                        />
+                                    <div>
+                                        <h3 style={{ 
+                                            margin: 0, 
+                                            fontSize: 18, 
+                                            fontWeight: 700, 
+                                            color: '#78350f',
+                                            lineHeight: 1.2
+                                        }}>
+                                            待办任务
+                                        </h3>
+                                        <p style={{ 
+                                            margin: 0, 
+                                            fontSize: 13, 
+                                            color: '#92400e',
+                                            fontWeight: 500
+                                        }}>
+                                            {pendingTasks.length} 个任务待处理
+                                        </p>
                                     </div>
                                 </div>
-                            }
-                            style={{
-                                background: 'rgba(255,255,255,0.95)',
-                                height: '100%',
-                                display: 'flex',
-                                flexDirection: 'column'
-                            }}
-                            styles={{ body: { flex: 1, overflowY: 'auto', padding: '16px' } }}
-                            classNames={{ body: styles.taskCardBody }}
+                                {pendingTasksByModule.length > 0 && (
+                                    <div
+                                        onClick={handleToggleAllPending}
+                                        style={{
+                                            cursor: 'pointer',
+                                            background: 'rgba(255, 255, 255, 0.8)',
+                                            border: '1px solid rgba(245, 158, 11, 0.4)',
+                                            borderRadius: 10,
+                                            padding: '8px 14px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 6,
+                                            transition: 'all 0.2s',
+                                            boxShadow: '0 2px 6px rgba(245, 158, 11, 0.1)'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.95)'
+                                            e.currentTarget.style.borderColor = 'rgba(245, 158, 11, 0.6)'
+                                            e.currentTarget.style.transform = 'translateY(-1px)'
+                                            e.currentTarget.style.boxShadow = '0 4px 10px rgba(245, 158, 11, 0.15)'
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.8)'
+                                            e.currentTarget.style.borderColor = 'rgba(245, 158, 11, 0.4)'
+                                            e.currentTarget.style.transform = 'translateY(0)'
+                                            e.currentTarget.style.boxShadow = '0 2px 6px rgba(245, 158, 11, 0.1)'
+                                        }}
+                                    >
+                                        {allPendingExpanded ? <UpOutlined style={{ fontSize: 12, color: '#92400e' }} /> : <DownOutlined style={{ fontSize: 12, color: '#92400e' }} />}
+                                        <span style={{ fontSize: 13, fontWeight: 600, color: '#92400e' }}>
+                                            {allPendingExpanded ? '全部收起' : '全部展开'}
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* 搜索和筛选行 */}
+                            <div style={{ display: 'flex', gap: 8 }}>
+                                <Select
+                                    style={{ width: 140 }}
+                                    placeholder="筛选模块"
+                                    allowClear
+                                    showSearch
+                                    filterOption={(input, option) =>
+                                        (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                                    }
+                                    value={selectedModuleFilter}
+                                    onChange={onModuleFilterChange}
+                                    options={modules.map(m => ({ label: m.name, value: m.name }))}
+                                    size="middle"
+                                />
+                                <Input
+                                    placeholder={getSearchPlaceholder()}
+                                    value={searchKeyword}
+                                    onChange={(e) => onSearchChange(e.target.value)}
+                                    prefix={<SearchOutlined style={{ fontSize: 14, color: '#92400e' }} />}
+                                    suffix={searchKeyword && (
+                                        <CloseCircleOutlined 
+                                            onClick={() => onSearchChange('')} 
+                                            style={{
+                                                cursor: 'pointer',
+                                                fontSize: 14,
+                                                color: '#92400e'
+                                            }} 
+                                        />
+                                    )}
+                                    style={{ flex: 1 }}
+                                    size="middle"
+                                />
+                            </div>
+                        </div>
+
+                        {/* 待办任务列表 */}
+                        <div style={{
+                            flex: 1,
+                            overflowY: 'auto',
+                            overflowX: 'hidden',
+                            background: 'rgba(255, 255, 255, 0.5)',
+                            borderRadius: 12,
+                            padding: 16,
+                            border: '1px solid rgba(245, 158, 11, 0.2)'
+                        }}
+                        className={styles.taskCardBody}
                         >
                             {pendingTasks.length === 0 ? (
                                 <div style={{
                                     display: 'flex',
                                     justifyContent: 'center',
                                     alignItems: 'center',
-                                    height: '100%'
+                                    height: '100%',
+                                    minHeight: 200
                                 }}>
                                     <Empty
-                                        image={searchKeyword ? <SearchOutlined
-                                            style={{ fontSize: 60, color: '#d9d9d9' }} /> : Empty.PRESENTED_IMAGE_SIMPLE}
-                                        description={searchKeyword ? `未找到包含"${searchKeyword}"的任务` : '暂无待办任务'}
+                                        image={searchKeyword ? <SearchOutlined style={{ fontSize: 60, color: '#d9d9d9' }} /> : Empty.PRESENTED_IMAGE_SIMPLE}
+                                        description={
+                                            <span style={{ color: '#92400e' }}>
+                                                {searchKeyword ? `未找到包含"${searchKeyword}"的任务` : '暂无待办任务'}
+                                            </span>
+                                        }
                                     />
                                 </div>
                             ) : (
@@ -759,98 +1025,161 @@ export default function TaskManageView({
                                     </SortableContext>
                                 </DndContext>
                             )}
-                        </Card>
-                    </Col>
+                        </div>
+                    </div>
 
-                    {/* 已完成任务 */}
-                    <Col span={12} style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                        <Card
-                            title={
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                        <span>✅ 已完成 ({completedTasks.length})</span>
-                                        {completedTasksByModule.length > 0 && (
-                                            <span
-                                                onClick={handleToggleAllCompleted}
-                                                style={{
-                                                    cursor: 'pointer',
-                                                    color: '#8c8c8c',
-                                                    fontSize: 12,
-                                                    padding: '2px 8px',
-                                                    borderRadius: 4,
-                                                    transition: 'all 0.2s',
-                                                    display: 'inline-flex',
-                                                    alignItems: 'center',
-                                                    gap: 4,
-                                                    userSelect: 'none'
-                                                }}
-                                                onMouseEnter={(e) => {
-                                                    e.currentTarget.style.color = '#1890ff'
-                                                    e.currentTarget.style.background = 'rgba(24, 144, 255, 0.08)'
-                                                }}
-                                                onMouseLeave={(e) => {
-                                                    e.currentTarget.style.color = '#8c8c8c'
-                                                    e.currentTarget.style.background = 'transparent'
-                                                }}
-                                            >
-                                                {allCompletedExpanded ? <UpOutlined style={{ fontSize: 10 }} /> :
-                                                    <DownOutlined style={{ fontSize: 10 }} />}
-                                                {allCompletedExpanded ? '收起' : '展开'}
-                                            </span>
-                                        )}
+                    {/* 已完成任务区域 */}
+                    <div style={{ 
+                        display: 'flex', 
+                        flexDirection: 'column',
+                        background: 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)',
+                        borderRadius: 16,
+                        padding: 20,
+                        boxShadow: '0 4px 20px rgba(16, 185, 129, 0.15)',
+                        border: '2px solid #6ee7b7',
+                        overflow: 'hidden'
+                    }}>
+                        {/* 已完成任务头部 */}
+                        <div style={{ 
+                            display: 'flex', 
+                            flexDirection: 'column',
+                            gap: 16,
+                            marginBottom: 20
+                        }}>
+                            {/* 标题行 */}
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                    <div style={{
+                                        width: 48,
+                                        height: 48,
+                                        borderRadius: 12,
+                                        background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
+                                    }}>
+                                        <CheckCircleOutlined style={{ fontSize: 24, color: '#ffffff' }} />
                                     </div>
-                                    <div style={{ display: 'flex', gap: 8 }}>
-                                        <Select
-                                            style={{ width: 120 }}
-                                            placeholder="筛选模块"
-                                            allowClear
-                                            value={completedModuleFilter}
-                                            onChange={onCompletedModuleFilterChange}
-                                            options={modules.map(m => ({ label: m.name, value: m.name }))}
-                                        />
-                                        <Input
-                                            placeholder={getSearchPlaceholder()}
-                                            value={completedSearchKeyword}
-                                            onChange={(e) => onCompletedSearchChange(e.target.value)}
-                                            prefix={<SearchOutlined style={{ fontSize: 16, color: '#8c8c8c' }} />}
-                                            suffix={completedSearchKeyword &&
-                                                <CloseCircleOutlined onClick={() => onCompletedSearchChange('')}
-                                                    style={{
-                                                        cursor: 'pointer',
-                                                        fontSize: 14,
-                                                        color: '#8c8c8c'
-                                                    }} />}
-                                            style={{
-                                                width: 200,
-                                                borderRadius: 20,
-                                                paddingLeft: 16,
-                                                paddingRight: 16
-                                            }}
-                                            size="middle"
-                                        />
+                                    <div>
+                                        <h3 style={{ 
+                                            margin: 0, 
+                                            fontSize: 18, 
+                                            fontWeight: 700, 
+                                            color: '#064e3b',
+                                            lineHeight: 1.2
+                                        }}>
+                                            已完成
+                                        </h3>
+                                        <p style={{ 
+                                            margin: 0, 
+                                            fontSize: 13, 
+                                            color: '#065f46',
+                                            fontWeight: 500
+                                        }}>
+                                            {completedTasks.length} 个任务已完成
+                                        </p>
                                     </div>
                                 </div>
-                            }
-                            style={{
-                                background: 'rgba(255,255,255,0.95)',
-                                height: '100%',
-                                display: 'flex',
-                                flexDirection: 'column'
-                            }}
-                            styles={{ body: { flex: 1, overflowY: 'auto', padding: '16px' } }}
-                            classNames={{ body: styles.taskCardBody }}
+                                {completedTasksByModule.length > 0 && (
+                                    <div
+                                        onClick={handleToggleAllCompleted}
+                                        style={{
+                                            cursor: 'pointer',
+                                            background: 'rgba(255, 255, 255, 0.8)',
+                                            border: '1px solid rgba(16, 185, 129, 0.4)',
+                                            borderRadius: 10,
+                                            padding: '8px 14px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 6,
+                                            transition: 'all 0.2s',
+                                            boxShadow: '0 2px 6px rgba(16, 185, 129, 0.1)'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.95)'
+                                            e.currentTarget.style.borderColor = 'rgba(16, 185, 129, 0.6)'
+                                            e.currentTarget.style.transform = 'translateY(-1px)'
+                                            e.currentTarget.style.boxShadow = '0 4px 10px rgba(16, 185, 129, 0.15)'
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.8)'
+                                            e.currentTarget.style.borderColor = 'rgba(16, 185, 129, 0.4)'
+                                            e.currentTarget.style.transform = 'translateY(0)'
+                                            e.currentTarget.style.boxShadow = '0 2px 6px rgba(16, 185, 129, 0.1)'
+                                        }}
+                                    >
+                                        {allCompletedExpanded ? <UpOutlined style={{ fontSize: 12, color: '#065f46' }} /> : <DownOutlined style={{ fontSize: 12, color: '#065f46' }} />}
+                                        <span style={{ fontSize: 13, fontWeight: 600, color: '#065f46' }}>
+                                            {allCompletedExpanded ? '全部收起' : '全部展开'}
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* 搜索和筛选行 */}
+                            <div style={{ display: 'flex', gap: 8 }}>
+                                <Select
+                                    style={{ width: 140 }}
+                                    placeholder="筛选模块"
+                                    allowClear
+                                    showSearch
+                                    filterOption={(input, option) =>
+                                        (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                                    }
+                                    value={completedModuleFilter}
+                                    onChange={onCompletedModuleFilterChange}
+                                    options={modules.map(m => ({ label: m.name, value: m.name }))}
+                                    size="middle"
+                                />
+                                <Input
+                                    placeholder={getSearchPlaceholder()}
+                                    value={completedSearchKeyword}
+                                    onChange={(e) => onCompletedSearchChange(e.target.value)}
+                                    prefix={<SearchOutlined style={{ fontSize: 14, color: '#065f46' }} />}
+                                    suffix={completedSearchKeyword && (
+                                        <CloseCircleOutlined 
+                                            onClick={() => onCompletedSearchChange('')}
+                                            style={{
+                                                cursor: 'pointer',
+                                                fontSize: 14,
+                                                color: '#065f46'
+                                            }} 
+                                        />
+                                    )}
+                                    style={{ flex: 1 }}
+                                    size="middle"
+                                />
+                            </div>
+                        </div>
+
+                        {/* 已完成任务列表 */}
+                        <div style={{
+                            flex: 1,
+                            overflowY: 'auto',
+                            overflowX: 'hidden',
+                            background: 'rgba(255, 255, 255, 0.5)',
+                            borderRadius: 12,
+                            padding: 16,
+                            border: '1px solid rgba(16, 185, 129, 0.2)'
+                        }}
+                        className={styles.taskCardBody}
                         >
                             {completedTasks.length === 0 ? (
                                 <div style={{
                                     display: 'flex',
                                     justifyContent: 'center',
                                     alignItems: 'center',
-                                    height: '100%'
+                                    height: '100%',
+                                    minHeight: 200
                                 }}>
                                     <Empty
-                                        image={completedSearchKeyword ? <SearchOutlined
-                                            style={{ fontSize: 60, color: '#d9d9d9' }} /> : Empty.PRESENTED_IMAGE_SIMPLE}
-                                        description={completedSearchKeyword ? `未找到包含"${completedSearchKeyword}"的任务` : '还没有完成的任务'}
+                                        image={completedSearchKeyword ? <SearchOutlined style={{ fontSize: 60, color: '#d9d9d9' }} /> : Empty.PRESENTED_IMAGE_SIMPLE}
+                                        description={
+                                            <span style={{ color: '#065f46' }}>
+                                                {completedSearchKeyword ? `未找到包含"${completedSearchKeyword}"的任务` : '还没有完成的任务'}
+                                            </span>
+                                        }
                                     />
                                 </div>
                             ) : (
@@ -868,14 +1197,10 @@ export default function TaskManageView({
                                             editingName=""
                                             taskTypeColors={taskTypeColors}
                                             onToggleCollapse={() => onToggleModuleCollapse(group.moduleName, 'completed')}
-                                            onStartEdit={() => {
-                                            }}
-                                            onEditNameChange={() => {
-                                            }}
-                                            onSaveEdit={() => {
-                                            }}
-                                            onCancelEdit={() => {
-                                            }}
+                                            onStartEdit={() => {}}
+                                            onEditNameChange={() => {}}
+                                            onSaveEdit={() => {}}
+                                            onCancelEdit={() => {}}
                                             onTaskComplete={onTaskComplete}
                                             onTaskRollback={onTaskRollback}
                                             onTaskEdit={onTaskEdit}
@@ -885,9 +1210,9 @@ export default function TaskManageView({
                                     )
                                 })
                             )}
-                        </Card>
-                    </Col>
-                </Row>
+                        </div>
+                    </div>
+                </div>
             </main>
 
             {/* 添加任务模态框 */}
@@ -948,11 +1273,10 @@ export default function TaskManageView({
             />
 
             {/* 删除确认模态框 */}
-            <ConfirmModal
+            <DeleteTaskModal
                 show={showDeleteConfirm}
-                title="⚠️ 确认删除"
-                message={`确定要删除任务「${taskToDelete?.name}」吗？`}
-                warning="此操作无法撤销,相关图片也会被删除。"
+                task={taskToDelete}
+                taskTypeColor={taskToDelete?.type ? taskTypeColors[taskToDelete.type] : null}
                 onConfirm={onConfirmDelete}
                 onCancel={onCancelDelete}
             />
@@ -967,22 +1291,16 @@ export default function TaskManageView({
             />
 
             {/* 项目备忘便签查看 */}
-            <ProjectMemoView
-                show={showProjectMemoView}
-                memo={editingProjectMemo?.memo || ''}
-                projectName={editingProjectMemo?.name || ''}
-                onEdit={onOpenProjectMemoEdit}
-                onClose={onCloseProjectMemoView}
-            />
-
-            {/* 项目备忘编辑模态框 */}
-            <ProjectMemoModal
-                show={showProjectMemoModal}
+            {/* 项目备忘组件（查看/编辑合一） */}
+            <ProjectMemo
+                show={showProjectMemo}
+                mode={projectMemoMode}
                 memo={editingProjectMemo?.memo || ''}
                 projectName={editingProjectMemo?.name || ''}
                 onMemoChange={onProjectMemoChange}
                 onConfirm={onUpdateProjectMemo}
-                onCancel={onCloseProjectMemoModal}
+                onCancel={onCloseProjectMemo}
+                onEdit={onSwitchToEditMode}
             />
 
             {/* 编辑任务模块模态框 */}

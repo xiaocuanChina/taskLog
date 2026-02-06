@@ -1,0 +1,328 @@
+/* 项目备忘组件样式（查看/编辑合一） */
+
+/* Modal 样式覆盖 */
+.projectMemoModal :global(.ant-modal-content) {
+  background-color: var(--ant-modal-bg) !important;
+  border: 1px solid var(--border-primary);
+  box-shadow: var(--shadow-lg);
+  padding: 0 !important;
+  border-radius: 16px !important;
+  overflow: hidden;
+}
+
+.projectMemoModal :global(.ant-modal-body) {
+  background-color: var(--ant-modal-bg) !important;
+  padding: 0 !important;
+}
+
+/* 整体容器 */
+.container {
+  padding: 32px;
+}
+
+/* 头部区域 */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border-primary);
+}
+
+/* 模态框标题 */
+.modalTitle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.modalTitle svg {
+  font-size: 20px;
+  color: var(--theme-start-color);
+}
+
+.projectName {
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--text-tertiary);
+}
+
+/* 关闭按钮 */
+.closeBtn {
+  cursor: pointer;
+  color: var(--text-tertiary);
+  transition: all 0.3s;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.closeBtn:hover {
+  color: var(--text-primary);
+  background: var(--bg-card-hover);
+}
+
+/* 模态框内容 */
+.modalContent {
+  padding: 0;
+  min-height: 280px;
+}
+
+/* ========== 编辑模式样式 ========== */
+
+/* 文本域包装器 */
+.textareaWrapper {
+  position: relative;
+}
+
+/* 文本域样式 */
+.textarea {
+  font-size: 15px !important;
+  line-height: 1.6 !important;
+  border-radius: 8px !important;
+  background: var(--bg-input) !important;
+  border-color: var(--border-secondary) !important;
+  color: var(--text-primary) !important;
+  padding: 16px !important;
+  resize: vertical !important;
+  min-height: 280px !important;
+}
+
+.textarea:hover {
+  border-color: var(--border-hover) !important;
+  background: var(--bg-input-hover) !important;
+}
+
+.textarea:focus {
+  border-color: var(--theme-start-color) !important;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1) !important;
+  background: var(--bg-input-hover) !important;
+}
+
+.textarea::placeholder {
+  color: var(--text-quaternary) !important;
+  opacity: 1 !important;
+}
+
+/* 字数统计 */
+.projectMemoModal :global(.ant-input-textarea-show-count::after) {
+  color: var(--text-quaternary) !important;
+  font-size: 12px !important;
+  bottom: 8px !important;
+  right: 12px !important;
+}
+
+.projectMemoModal :global(.ant-input-data-count) {
+  color: var(--text-quaternary) !important;
+  font-size: 12px !important;
+}
+
+/* 编辑模式图钉装饰图标 */
+.textareaWrapper .pinIcon {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  font-size: 18px;
+  color: var(--theme-start-color);
+  opacity: 0.3;
+  transform: rotate(45deg);
+  pointer-events: none;
+  transition: all 0.3s;
+}
+
+.textareaWrapper:hover .pinIcon {
+  opacity: 0.5;
+  transform: rotate(45deg) scale(1.1);
+}
+
+.textarea:focus ~ .pinIcon {
+  opacity: 0.6;
+  color: var(--theme-end-color);
+}
+
+/* 提示信息 */
+.tips {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.tipText {
+  font-size: 12px;
+  color: var(--text-quaternary);
+}
+
+/* ========== 查看模式样式 ========== */
+
+/* 备忘内容区域 */
+.memoContent {
+  position: relative;
+  padding: 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-primary);
+  border-radius: 12px;
+  min-height: 280px;
+  transition: all 0.3s;
+}
+
+.memoContent:hover {
+  border-color: var(--border-secondary);
+  background: var(--bg-card-hover);
+}
+
+/* 备忘文本 */
+.memoText {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  line-height: 1.8;
+  font-size: 15px;
+  color: var(--text-primary);
+  padding-right: 40px;
+  padding-bottom: 20px;
+}
+
+/* 查看模式图钉装饰图标 */
+.memoContent .pinIcon {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  font-size: 22px;
+  color: var(--theme-start-color);
+  opacity: 0.25;
+  transform: rotate(45deg);
+  transition: all 0.3s;
+}
+
+.memoContent:hover .pinIcon {
+  opacity: 0.4;
+  transform: rotate(45deg) scale(1.1);
+}
+
+/* 空状态 */
+.emptyState {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 280px;
+  padding: 40px 20px;
+}
+
+.emptyIcon {
+  font-size: 64px !important;
+  color: var(--text-disabled) !important;
+}
+
+.emptyDesc {
+  color: var(--text-tertiary) !important;
+  font-size: 14px;
+}
+
+.projectMemoModal :global(.ant-empty-description) {
+  color: var(--text-tertiary) !important;
+}
+
+/* ========== 底部按钮区域 ========== */
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-primary);
+}
+
+/* 按钮样式覆盖 */
+.projectMemoModal :global(.ant-btn) {
+  height: 40px !important;
+  padding: 0 20px !important;
+  font-size: 14px !important;
+  border-radius: 6px !important;
+}
+
+.projectMemoModal :global(.ant-btn-default) {
+  background: var(--bg-card) !important;
+  border-color: var(--border-secondary) !important;
+  color: var(--text-secondary) !important;
+}
+
+.projectMemoModal :global(.ant-btn-default:hover) {
+  background: var(--bg-card-hover) !important;
+  border-color: var(--border-hover) !important;
+  color: var(--text-primary) !important;
+}
+
+.projectMemoModal :global(.ant-btn-primary) {
+  background: linear-gradient(135deg, var(--theme-start-color), var(--theme-end-color)) !important;
+  border: none !important;
+  color: #ffffff !important;
+  font-weight: 500 !important;
+}
+
+.projectMemoModal :global(.ant-btn-primary:hover) {
+  opacity: 0.9;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3) !important;
+  transform: translateY(-1px);
+}
+
+/* Empty 组件按钮样式 */
+.emptyState :global(.ant-btn-primary) {
+  background: linear-gradient(135deg, var(--theme-start-color), var(--theme-end-color)) !important;
+  border: none !important;
+  color: #ffffff !important;
+  font-weight: 500 !important;
+  height: 40px !important;
+  padding: 0 24px !important;
+  font-size: 14px !important;
+  border-radius: 6px !important;
+}
+
+.emptyState :global(.ant-btn-primary:hover) {
+  opacity: 0.9;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3) !important;
+  transform: translateY(-1px);
+}
+
+/* ========== 响应式 ========== */
+
+@media (max-width: 768px) {
+  .container {
+    padding: 24px;
+  }
+
+  .modalTitle {
+    font-size: 16px;
+  }
+
+  .projectName {
+    font-size: 14px;
+  }
+
+  .textarea {
+    min-height: 200px !important;
+  }
+
+  .memoContent {
+    min-height: 200px;
+  }
+
+  .modalContent {
+    min-height: 200px;
+  }
+
+  .emptyState {
+    min-height: 200px;
+    padding: 30px 20px;
+  }
+
+  .memoText {
+    font-size: 14px;
+    line-height: 1.7;
+  }
+}

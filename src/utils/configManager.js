@@ -11,7 +11,7 @@
 // 默认配置
 const DEFAULT_CONFIG = {
   general: {
-    searchScope: 'all', // 'module' | 'description' | 'all'
+    theme: 'light', // 'dark' | 'light'
     themeColors: {
       startColor: '#667eea',  // 渐变起始色
       endColor: '#764ba2'     // 渐变结束色
@@ -48,6 +48,11 @@ export async function getConfig() {
       config.general = DEFAULT_CONFIG.general
     }
 
+    // 确保主题设置存在
+    if (!config.general.theme) {
+      config.general.theme = DEFAULT_CONFIG.general.theme
+    }
+
     // 确保 themeColors 存在
     if (!config.general.themeColors) {
       config.general.themeColors = DEFAULT_CONFIG.general.themeColors
@@ -73,6 +78,11 @@ export async function saveConfig(config) {
     // 确保通用设置存在
     if (!config.general) {
       config.general = DEFAULT_CONFIG.general
+    }
+
+    // 确保主题设置存在
+    if (!config.general.theme) {
+      config.general.theme = DEFAULT_CONFIG.general.theme
     }
 
     // 确保 themeColors 存在

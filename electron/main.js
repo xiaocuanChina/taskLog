@@ -172,7 +172,15 @@ app.whenReady().then(async () => {
 
   // 项目管理
   ipcMain.handle('projects:list', () => {
-    return db.getProjects()
+    const projects = db.getProjects()
+    // 为每个项目添加任务统计信息
+    return projects.map(project => {
+      const tasks = db.getTasks(project.id)
+      return {
+        ...project,
+        tasks: tasks // 添加任务列表，用于前端统计
+      }
+    })
   })
 
   ipcMain.handle('projects:add', (e, payload) => {
@@ -484,8 +492,15 @@ app.whenReady().then(async () => {
 
   // 更新任务勾选项
   ipcMain.handle('tasks:updateCheckItems', (e, payload) => {
+    // 先获取当前任务，保留原有的 checkItems 配置
+    const currentTask = db.getTaskById(payload.taskId)
+    if (!currentTask) {
+      return { success: false, error: '任务不存在' }
+    }
+
     const updates = {
       checkItems: {
+        ...currentTask.checkItems, // 保留原有配置（mode, linkage 等）
         enabled: true,
         items: payload.checkItems
       },
@@ -495,7 +510,7 @@ app.whenReady().then(async () => {
     if (task) {
       return { success: true, task }
     }
-    return { success: false, error: '任务不存在' }
+    return { success: false, error: '更新失败' }
   })
 
   // 回滚任务状态（将已完成改为待办）
@@ -926,7 +941,7 @@ app.whenReady().then(async () => {
   // 默认配置
   const defaultConfig = {
     general: {
-      searchScope: 'all',
+      theme: 'light',
       themeColors: {
         startColor: '#667eea',
         endColor: '#764ba2'

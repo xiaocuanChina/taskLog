@@ -1,0 +1,426 @@
+/* ==================== 勾选项管理器容器 ==================== */
+
+.container {
+  border: 1px solid var(--border-primary);
+  border-radius: 12px;
+  padding: 16px;
+  background: var(--bg-card);
+  transition: all 0.3s ease;
+}
+
+/* ==================== 头部控制区 ==================== */
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.toggleSection {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-secondary);
+  transition: all 0.3s ease;
+}
+
+.toggleSection:hover {
+  background: var(--bg-input-hover);
+  border-color: var(--border-hover);
+}
+
+/* 开关开启状态的样式增强 */
+.container:has(.toggleSection :global(.ant-switch-checked)) .toggleSection {
+  background: rgba(102, 126, 234, 0.08);
+  border-color: rgba(102, 126, 234, 0.3);
+}
+
+.container:has(.toggleSection :global(.ant-switch-checked)) .label {
+  color: var(--theme-start-color);
+  font-weight: 600;
+}
+
+.icon {
+  font-size: 16px;
+  color: var(--theme-start-color);
+  transition: transform 0.3s ease;
+}
+
+.container:has(.toggleSection :global(.ant-switch-checked)) .icon {
+  transform: scale(1.1);
+}
+
+.label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: color 0.3s ease;
+}
+
+.options {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.optionLabel {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+}
+
+/* ==================== 内容区域 ==================== */
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ==================== 树形列表区域 ==================== */
+
+.treeSection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  padding: 0 4px;
+}
+
+.tree :global(.ant-tree) {
+  background: transparent !important;
+  color: var(--text-primary) !important;
+}
+
+.tree :global(.ant-tree-treenode) {
+  padding: 0 !important;
+  width: 100%;
+  margin-bottom: 4px;
+  align-items: flex-start !important;
+}
+
+.tree :global(.ant-tree-treenode:last-child) {
+  margin-bottom: 0;
+}
+
+.tree :global(.ant-tree-node-content-wrapper) {
+  width: 100% !important;
+  flex: 1 !important;
+  padding: 0 !important;
+  line-height: normal !important;
+  min-height: 0 !important;
+}
+
+.tree :global(.ant-tree-node-content-wrapper:hover) {
+  background: transparent !important;
+}
+
+.tree :global(.ant-tree-title) {
+  width: 100% !important;
+  padding: 0 !important;
+}
+
+.tree :global(.ant-tree-indent) {
+  align-self: stretch !important;
+}
+
+.tree :global(.ant-tree-switcher) {
+  align-self: flex-start !important;
+  height: 36px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: var(--text-tertiary) !important;
+  flex-shrink: 0 !important;
+}
+
+.tree :global(.ant-tree-switcher:hover) {
+  color: var(--text-primary) !important;
+}
+
+.tree :global(.ant-tree-indent-unit) {
+  width: 16px !important;
+}
+
+/* 隐藏左侧的拖动图标 */
+.tree :global(.ant-tree-draggable-icon) {
+  display: none !important;
+}
+
+/* ==================== 树节点样式 ==================== */
+
+.treeNode {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.nodeWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.nodeContent {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 6px 12px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  min-height: 36px;
+  background: var(--bg-input);
+  border: 1px solid transparent;
+}
+
+.nodeContent:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-hover);
+}
+
+.nodeInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.nodeName {
+  font-size: 14px;
+  color: var(--text-primary);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.remarkIcon {
+  font-size: 13px;
+  color: var(--theme-start-color);
+  flex-shrink: 0;
+  cursor: help;
+  opacity: 0.8;
+}
+
+/* ==================== 备注显示区域 ==================== */
+
+.remarkDisplay {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--bg-secondary);
+  border-radius: 6px;
+  border-left: 3px solid var(--theme-start-color);
+  margin-left: 0;
+}
+
+.remarkDisplayIcon {
+  font-size: 13px;
+  color: var(--theme-start-color);
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.remarkDisplayText {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.nodeActions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  flex-shrink: 0;
+}
+
+.nodeContent:hover .nodeActions {
+  opacity: 1;
+}
+
+.nodeActions :global(.ant-btn) {
+  color: var(--text-tertiary);
+  transition: all 0.2s ease;
+}
+
+.nodeActions :global(.ant-btn:hover) {
+  color: var(--text-primary);
+  background: var(--bg-input-hover);
+}
+
+.nodeActions :global(.ant-btn.ant-btn-dangerous:hover) {
+  color: var(--color-error);
+}
+
+.hasRemark {
+  color: var(--theme-start-color) !important;
+}
+
+.dragHandle {
+  cursor: grab;
+  color: var(--text-quaternary);
+  padding: 4px;
+  transition: color 0.2s ease;
+}
+
+.dragHandle:hover {
+  color: var(--text-secondary);
+}
+
+.dragHandle:active {
+  cursor: grabbing;
+}
+
+/* ==================== 备注编辑器 ==================== */
+
+.remarkEditor {
+  padding: 10px 12px;
+  background: var(--bg-secondary);
+  border-radius: 6px;
+  border: 1px solid var(--border-secondary);
+  animation: slideDown 0.2s ease-out;
+  margin-left: 0;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.remarkEditor :global(.ant-input-textarea) {
+  margin-bottom: 0;
+}
+
+.remarkActions {
+  margin-top: 8px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* ==================== 输入区域 ==================== */
+
+.inputSection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--bg-input);
+  border-radius: 8px;
+  border: 1px solid var(--border-secondary);
+}
+
+.parentHint,
+.editHint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.parentHint span:first-child {
+  color: var(--text-tertiary);
+}
+
+.editHint span:first-child {
+  color: var(--color-warning);
+}
+
+.inputGroup {
+  width: 100%;
+}
+
+.inputGroup :global(.ant-input) {
+  flex: 1;
+  height: 36px !important;
+  line-height: 36px !important;
+}
+
+.inputGroup :global(.ant-btn) {
+  height: 36px !important;
+  padding: 0 12px !important;
+}
+
+.errorText {
+  font-size: 12px;
+  color: var(--color-error);
+  margin-top: -4px;
+  padding-left: 4px;
+}
+
+/* ==================== 空状态 ==================== */
+
+.empty {
+  padding: 32px 16px;
+}
+
+.empty :global(.ant-empty-description) {
+  color: var(--text-tertiary);
+}
+
+/* ==================== 响应式设计 ==================== */
+
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .options {
+    width: 100%;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .option {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .nodeContent {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .nodeActions {
+    opacity: 1;
+    width: 100%;
+    justify-content: flex-end;
+  }
+}

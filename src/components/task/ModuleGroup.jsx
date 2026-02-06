@@ -93,6 +93,10 @@ export default function ModuleGroup({
                 size="middle"
                 icon={<CheckOutlined />}
                 onClick={onSaveEdit}
+                style={{
+                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                  borderColor: '#10b981'
+                }}
               >
                 确认
               </Button>
@@ -114,18 +118,22 @@ export default function ModuleGroup({
                   onClick={(e) => e.stopPropagation()}
                   style={{
                     fontSize: 16,
-                    color: '#8c8c8c',
+                    color: '#94a3b8',
                     cursor: 'move',
                     padding: '4px',
                     marginLeft: -4
                   }}
                 />
               )}
-              <span style={{ flex: 1 }}>
-                📦 {moduleName}
+              <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: '#0f172a' }}>
+                {moduleName}
                 <Badge
                   count={tasks.length}
-                  style={{ marginLeft: 8, backgroundColor: isCompleted ? '#52c41a' : '#1890ff' }}
+                  style={{
+                    marginLeft: 8,
+                    backgroundColor: isCompleted ? '#10b981' : '#f59e0b',
+                    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+                  }}
                 />
               </span>
               {!isCompleted && (
@@ -139,6 +147,7 @@ export default function ModuleGroup({
                       onQuickAddTask(moduleName)
                     }}
                     title="快速添加任务"
+                    style={{ color: '#3b82f6' }}
                   />
                   <Button
                     type="text"
@@ -149,6 +158,7 @@ export default function ModuleGroup({
                       onStartEdit()
                     }}
                     title="编辑模块名"
+                    style={{ color: '#64748b' }}
                   />
                 </>
               )}
@@ -185,7 +195,12 @@ export default function ModuleGroup({
         activeKey={isCollapsed ? [] : ['1']}
         onChange={onToggleCollapse}
         expandIcon={({ isActive }) => <CaretRightOutlined rotate={isActive ? 90 : 0} />}
-        style={{ background: isDragging ? '#e6f7ff' : '#fafafa' }}
+        style={{
+          background: '#ffffff',
+          border: '1px solid #e2e8f0',
+          borderRadius: 8,
+          boxShadow: isDragging ? '0 4px 12px rgba(59, 130, 246, 0.15)' : '0 1px 2px rgba(0, 0, 0, 0.05)'
+        }}
         items={items}
       />
     </div>

@@ -1,35 +1,54 @@
 import React from 'react'
-import { Divider, Button, Tooltip } from 'antd'
-import { LogoutOutlined } from '@ant-design/icons'
+import { Button, Tooltip, Popconfirm } from 'antd'
+import { LogoutOutlined, FolderOutlined, DeleteOutlined } from '@ant-design/icons'
+import styles from './RecycleBin.module.css'
 
 export default function RecycleBin({ modules, onRestore }) {
   if (!modules || modules.length === 0) return null
   
   return (
-    <div style={{ marginTop: 0 }}>
-      <div style={{ maxHeight: 400, overflowY: 'auto', paddingRight: 4 }}>
+    <div className={styles.recycleBin}>
+      <div className={styles.recycleBinList}>
         {modules.map(module => (
-          <div key={module.id} style={{
-            display: 'flex',
-            alignItems: 'center',
-            padding: '8px 12px',
-            marginBottom: 8,
-            background: '#fff1f0',
-            borderRadius: 4,
-            border: '1px solid #ffa39e'
-          }}>
-            <span style={{ flex: 1, color: '#cf1322', textDecoration: 'line-through' }}>
-              {module.name}
-            </span>
-            <Tooltip title="移出回收站">
-              <Button
-                type="text"
-                size="small"
-                icon={<LogoutOutlined />}
-                onClick={() => onRestore(module.id)}
-                style={{ color: '#1890ff' }}
-              />
-            </Tooltip>
+          <div key={module.id} className={styles.recycleItem}>
+            <div className={styles.recycleItemContent}>
+              {/* 模块图标 - 已删除状态 */}
+              <div className={styles.recycleIcon}>
+                <FolderOutlined />
+              </div>
+
+              {/* 模块信息 */}
+              <div className={styles.recycleInfo}>
+                <div className={styles.recycleName} title={module.name}>
+                  {module.name}
+                </div>
+                <div className={styles.recycleHint}>
+                  已移入回收站
+                </div>
+              </div>
+
+              {/* 操作按钮 */}
+              <div className={styles.recycleActions}>
+                <Popconfirm
+                  title="确认恢复"
+                  description={`确定要恢复模块 "${module.name}" 吗？`}
+                  onConfirm={() => onRestore(module.id)}
+                  okText="确认"
+                  cancelText="取消"
+                >
+                  <Tooltip title="恢复模块">
+                    <Button
+                      type="primary"
+                      size="small"
+                      icon={<LogoutOutlined />}
+                      className={styles.restoreBtn}
+                    >
+                      恢复
+                    </Button>
+                  </Tooltip>
+                </Popconfirm>
+              </div>
+            </div>
           </div>
         ))}
       </div>

@@ -135,7 +135,7 @@ async function testDatabase() {
     console.log('=== 测试配置管理 ===')
     const config = {
       general: {
-        searchScope: 'all',
+        theme: 'light',
         themeColors: {
           startColor: '#667eea',
           endColor: '#764ba2'

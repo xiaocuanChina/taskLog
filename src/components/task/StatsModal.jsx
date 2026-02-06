@@ -10,7 +10,8 @@ import React, { useState, useEffect } from 'react'
 import { Modal, Tabs } from 'antd'
 import { 
     BarChartOutlined, 
-    CalendarOutlined
+    CalendarOutlined,
+    PieChartOutlined
 } from '@ant-design/icons'
 import ModuleStats from './ModuleStats'
 import CompletionStats from './CompletionStats'
@@ -38,8 +39,8 @@ export default function StatsModal({
         {
             key: 'module',
             label: (
-                <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <BarChartOutlined />
+                <span className={styles.tabLabel}>
+                    <PieChartOutlined />
                     模块统计
                 </span>
             ),
@@ -53,7 +54,7 @@ export default function StatsModal({
         {
             key: 'completion',
             label: (
-                <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span className={styles.tabLabel}>
                     <CalendarOutlined />
                     完成统计
                 </span>
@@ -71,17 +72,20 @@ export default function StatsModal({
     return (
         <Modal
             title={
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <BarChartOutlined style={{ color: '#667eea', fontSize: 18 }} />
+                <div className={styles.modalTitle}>
+                    <div className={styles.titleIcon}>
+                        <BarChartOutlined />
+                    </div>
                     <span>统计报表</span>
                 </div>
             }
             open={show}
             onCancel={onClose}
             footer={null}
-            width={900}
+            width={920}
             centered
-            styles={{ body: { padding: '0 24px 16px' } }}
+            styles={{ body: { padding: '0 24px 20px' } }}
+            className={styles.statsModal}
         >
             <Tabs
                 activeKey={activeTab}

@@ -1,48 +1,724 @@
-/* 项目选择视图样式 */
-.projectSelectContainer {
-  flex: 1;
-  padding: 60px 32px 32px;
-  max-width: 1400px;
-  margin: 0 auto;
-  width: 100%;
+/* 容器 */
+.container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(135deg, var(--theme-start-color, #667eea) 0%, var(--theme-end-color, #764ba2) 100%);
+  color: var(--text-primary);
+  font-family: 'Fira Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
-.projectSelectHeader {
+/* 布局 */
+.layout {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  padding-top: 40px;
+}
+
+/* ========== 左侧边栏 ========== */
+.sidebar {
+  width: 280px;
+  background: rgba(255, 255, 255, 0.95);
+  border-right: 1px solid rgba(255, 255, 255, 0.3);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  backdrop-filter: blur(10px);
+}
+
+.sidebarHeader {
+  height: 89px; /* Match toolbar height: 24px*2 padding + 40px button + 1px border */
+  padding: 0 20px;
+  border-bottom: 1px solid var(--border-primary);
+  display: flex;
+  align-items: center;
+}
+
+.sidebarHeader h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 统计卡片 */
+.statsCards {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.statCard {
+  background: var(--bg-card);
+  border: 1px solid var(--border-primary);
+  border-radius: 8px;
+  padding: 16px;
+  transition: all 0.2s ease;
+}
+
+.statCard:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-secondary);
+}
+
+/* 筛选器 */
+.filters {
+  padding: 0 20px 20px;
+}
+
+.filters h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  margin: 0 0 12px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ========== 主内容区 ========== */
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* 顶部工具栏 */
+.toolbar {
+  height: 89px; /* Match sidebarHeader height */
+  padding: 0 32px;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border-primary);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 32px;
 }
 
-.projectSelectTitle {
-  font-size: 28px;
+.toolbarLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.toolbarLeft h1 {
+  margin: 0;
+  font-size: 24px;
   font-weight: 700;
-  color: #2d3748;
+  color: var(--text-primary);
 }
 
-.projectsGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 320px));
-  gap: 24px;
-  min-height: calc(100vh - 250px);
+.searchInput {
+  background: var(--bg-input) !important;
+  border-color: var(--border-secondary) !important;
+}
+
+.searchInput:hover,
+.searchInput:focus {
+  background: var(--bg-input-hover) !important;
+  border-color: var(--border-hover) !important;
+}
+
+/* 内容区域 */
+.content {
+  flex: 1;
+  padding: 32px;
+  overflow-y: auto;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%);
+  position: relative;
+}
+
+/* 使用伪元素实现动态主题色的半透明遮罩 */
+.content::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, var(--theme-start-color, #667eea) 0%, var(--theme-end-color, #764ba2) 100%);
+  opacity: 0.15;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.content > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ========== 空状态 ========== */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
+  padding: 80px 20px;
+  text-align: center;
 }
 
-/* 当项目列表为空时,让空状态居中 */
-.projectsGrid:has(.emptyState) {
+.emptyIcon {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: var(--bg-card);
+  border: 2px solid var(--border-primary);
   display: flex;
   align-items: center;
   justify-content: center;
+  margin-bottom: 24px;
+  font-size: 48px;
+  color: var(--text-quaternary);
+}
+
+.emptyTitle {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 12px 0;
+}
+
+.emptyDesc {
+  font-size: 15px;
+  color: var(--text-tertiary);
+  margin: 0 0 32px 0;
+  max-width: 400px;
+  line-height: 1.6;
+}
+
+.emptyButton {
+  height: 48px;
+  padding: 0 32px;
+  font-size: 16px;
+  border-radius: 24px;
+  background: linear-gradient(135deg, var(--theme-start-color), var(--theme-end-color)) !important;
+  border: none !important;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  transition: all 0.3s ease;
+}
+
+.emptyButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4) !important;
+}
+
+/* ========== 网格视图 ========== */
+.gridView {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 24px;
+}
+
+/* 项目卡片 */
+.projectCard {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+}
+
+.projectCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--theme-start-color, #667eea), var(--theme-end-color, #764ba2));
+  opacity: 0.6;
+  transition: opacity 0.25s ease;
+}
+
+.projectCard:hover {
+  background: rgba(255, 255, 255, 1);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(102, 126, 234, 0.3);
+}
+
+.projectCard:hover::before {
+  opacity: 1;
+}
+
+/* 卡片头部 */
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.cardIcon {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.projectCard:hover .cardIcon {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.cardMenu {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  color: var(--text-quaternary);
+}
+
+.projectCard:hover .cardMenu {
+  opacity: 1;
+}
+
+.cardMenu:hover {
+  color: var(--text-primary);
+  background: var(--bg-card-hover);
+}
+
+/* 拖拽手柄 */
+.dragHandle {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  color: var(--text-quaternary);
+  cursor: grab;
+}
+
+.dragHandle:active {
+  cursor: grabbing;
+}
+
+.projectCard:hover .dragHandle {
+  opacity: 1;
+}
+
+.dragHandle:hover {
+  color: var(--text-primary);
+  background: var(--bg-card-hover);
+}
+
+/* 拖拽状态样式 - 提升拖拽体验 */
+.projectCard[style*="opacity: 0.5"] {
+  opacity: 0.5 !important;
+  cursor: grabbing !important;
+  transform: scale(1.05) rotate(2deg);
+  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+  z-index: 1000;
+  transition: none;
+}
+
+/* 拖拽时禁用hover效果 */
+.projectCard[style*="opacity: 0.5"]:hover {
+  transform: scale(1.05) rotate(2deg);
+  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+}
+
+.projectCard[style*="opacity: 0.5"]::before {
+  opacity: 1;
+}
+
+/* 卡片标题 */
+.cardTitle {
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cardTitle h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.memoIcon {
+  color: var(--text-disabled);
+  font-size: 14px;
+  cursor: help;
+  transition: color 0.2s ease;
+}
+
+.memoIcon:hover {
+  color: var(--text-tertiary);
+}
+
+/* 卡片统计 */
+.cardStats {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.statItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-tertiary);
+}
+
+/* 卡片进度 */
+.cardProgress {
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cardProgress > div {
+  flex: 1;
+}
+
+.progressText {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  min-width: 40px;
+  text-align: right;
+}
+
+/* 卡片底部 */
+.cardFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-primary);
+}
+
+.dateText {
+  font-size: 12px;
+  color: var(--text-quaternary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ========== 列表视图 ========== */
+.listView {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.listItem {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+}
+
+.listItem::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(180deg, var(--theme-start-color, #667eea), var(--theme-end-color, #764ba2));
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+}
+
+.listItem:hover {
+  background: rgba(255, 255, 255, 1);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateX(4px);
+  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.25);
+}
+
+.listItem:hover::before {
+  opacity: 1;
+}
+
+.listIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
+
+.listItem:hover .listIcon {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: scale(1.05);
+}
+
+.listContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.listHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.listHeader h4 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.listMeta {
+  font-size: 13px;
+  color: var(--text-quaternary);
+}
+
+.listProgress {
+  flex-shrink: 0;
+}
+
+.listMenu {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  color: var(--text-quaternary);
+  flex-shrink: 0;
+}
+
+.listItem:hover .listMenu {
+  opacity: 1;
+}
+
+.listMenu:hover {
+  color: var(--text-primary);
+  background: var(--bg-card-hover);
+}
+
+/* ========== 响应式设计 ========== */
+@media (max-width: 1200px) {
+  .gridView {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+  }
+}
+
+@media (max-width: 992px) {
+  .sidebar {
+    width: 240px;
+  }
+
+  .gridView {
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  }
 }
 
 @media (max-width: 768px) {
-  .projectsGrid {
-    grid-template-columns: 1fr;
+  .layout {
+    flex-direction: column;
   }
 
-  .projectSelectHeader {
+  .sidebar {
+    width: 100%;
+    max-height: 300px;
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .toolbar {
     flex-direction: column;
-    align-items: flex-start;
+    gap: 16px;
+    align-items: stretch;
+  }
+
+  .toolbarLeft {
+    justify-content: space-between;
+  }
+
+  .content {
+    padding: 20px;
+  }
+
+  .gridView {
+    grid-template-columns: 1fr;
     gap: 16px;
   }
+
+  .listItem {
+    flex-wrap: wrap;
+  }
+
+  .listProgress {
+    order: -1;
+    margin-left: auto;
+  }
+}
+
+/* ========== 滚动条样式 ========== */
+.sidebar::-webkit-scrollbar,
+.content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar::-webkit-scrollbar-track,
+.content::-webkit-scrollbar-track {
+  background: var(--bg-card);
+}
+
+.sidebar::-webkit-scrollbar-thumb,
+.content::-webkit-scrollbar-thumb {
+  background: var(--border-secondary);
+  border-radius: 3px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover,
+.content::-webkit-scrollbar-thumb:hover {
+  background: var(--border-hover);
+}
+
+/* ========== 动画 ========== */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.projectCard,
+.listItem {
+  animation: fadeIn 0.3s ease;
+}
+
+/* ========== 深色主题优化 ========== */
+:global(.ant-select-dropdown) {
+  background: var(--ant-select-bg) !important;
+  border-color: var(--border-secondary) !important;
+}
+
+:global(.ant-select-item) {
+  color: var(--text-secondary) !important;
+}
+
+:global(.ant-select-item:hover) {
+  background: var(--ant-select-item-hover-bg) !important;
+}
+
+:global(.ant-select-item-option-selected) {
+  background: var(--ant-select-item-selected-bg) !important;
+}
+
+:global(.ant-statistic-title) {
+  color: var(--text-quaternary) !important;
+  font-size: 12px !important;
+  margin-bottom: 8px !important;
+}
+
+:global(.ant-statistic-content) {
+  color: var(--text-primary) !important;
+  font-size: 20px !important;
+  font-weight: 600 !important;
+}
+
+:global(.ant-badge-count) {
+  box-shadow: none !important;
+}
+
+:global(.ant-progress-inner) {
+  background: var(--border-primary) !important;
+}
+
+:global(.ant-btn-group .ant-btn-default) {
+  background: var(--ant-btn-default-bg) !important;
+  border-color: var(--ant-btn-default-border) !important;
+  color: var(--text-tertiary) !important;
+}
+
+:global(.ant-btn-group .ant-btn-default:hover) {
+  background: var(--ant-btn-default-hover-bg) !important;
+  border-color: var(--border-hover) !important;
+  color: var(--text-primary) !important;
+}
+
+:global(.ant-btn-group .ant-btn-primary) {
+  background: linear-gradient(135deg, var(--theme-start-color), var(--theme-end-color)) !important;
+  border-color: transparent !important;
+}
+
+/* ========== 亮色主题适配 ========== */
+[data-theme="light"] .container {
+  background: linear-gradient(135deg, var(--theme-start-color, #667eea) 0%, var(--theme-end-color, #764ba2) 100%);
+}
+
+[data-theme="light"] .content::before {
+  background: linear-gradient(135deg, var(--theme-start-color, #667eea) 0%, var(--theme-end-color, #764ba2) 100%);
+  opacity: 0.2;
+}
+
+[data-theme="light"] .projectCard {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .projectCard:hover {
+  background: rgba(255, 255, 255, 1);
+  border-color: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="light"] .listItem {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .listItem:hover {
+  background: rgba(255, 255, 255, 1);
+  border-color: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="light"] .cardIcon {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .projectCard:hover .cardIcon {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="light"] .listIcon {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .listItem:hover .listIcon {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }

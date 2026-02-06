@@ -1,0 +1,274 @@
+/**
+ * 主题样式定义
+ * 支持亮色和暗色两种主题
+ */
+
+/* ==================== 暗色主题（默认） ==================== */
+[data-theme="dark"] {
+  /* 主题色 */
+  --theme-start-color: #667eea;
+  --theme-end-color: #764ba2;
+  
+  /* 背景色 */
+  --bg-primary: #0a0e27;
+  --bg-secondary: #0f172a;
+  --bg-tertiary: #1e293b;
+  --bg-card: rgba(255, 255, 255, 0.03);
+  --bg-card-hover: rgba(255, 255, 255, 0.05);
+  --bg-input: rgba(255, 255, 255, 0.05);
+  --bg-input-hover: rgba(255, 255, 255, 0.08);
+  
+  /* 边框色 */
+  --border-primary: rgba(255, 255, 255, 0.05);
+  --border-secondary: rgba(255, 255, 255, 0.1);
+  --border-hover: rgba(255, 255, 255, 0.15);
+  
+  /* 文字色 */
+  --text-primary: #f8fafc;
+  --text-secondary: rgba(255, 255, 255, 0.85);
+  --text-tertiary: rgba(255, 255, 255, 0.7);
+  --text-quaternary: rgba(255, 255, 255, 0.6);
+  --text-disabled: rgba(255, 255, 255, 0.4);
+  
+  /* 状态色 */
+  --color-success: #52c41a;
+  --color-warning: #faad14;
+  --color-error: #ff4d4f;
+  --color-info: #1890ff;
+  
+  /* 阴影 */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.15);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.3);
+  
+  /* 遮罩 */
+  --overlay: rgba(0, 0, 0, 0.45);
+}
+
+/* ==================== 亮色主题 ==================== */
+[data-theme="light"] {
+  /* 主题色 */
+  --theme-start-color: #667eea;
+  --theme-end-color: #764ba2;
+  
+  /* 背景色 */
+  --bg-primary: #f5f5f5;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #fafafa;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f5f5f5;
+  --bg-input: #ffffff;
+  --bg-input-hover: #fafafa;
+  
+  /* 边框色 */
+  --border-primary: #e8e8e8;
+  --border-secondary: #d9d9d9;
+  --border-hover: #bfbfbf;
+  
+  /* 文字色 */
+  --text-primary: #000000;
+  --text-secondary: rgba(0, 0, 0, 0.88);
+  --text-tertiary: rgba(0, 0, 0, 0.65);
+  --text-quaternary: rgba(0, 0, 0, 0.45);
+  --text-disabled: rgba(0, 0, 0, 0.25);
+  
+  /* 状态色 */
+  --color-success: #52c41a;
+  --color-warning: #faad14;
+  --color-error: #ff4d4f;
+  --color-info: #1890ff;
+  
+  /* 阴影 */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.12);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.15);
+  
+  /* 遮罩 */
+  --overlay: rgba(0, 0, 0, 0.25);
+}
+
+/* ==================== 全局样式 ==================== */
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Ant Design 组件主题适配 */
+[data-theme="light"] {
+  /* Select 下拉框 */
+  --ant-select-bg: #ffffff;
+  --ant-select-item-hover-bg: #f5f5f5;
+  --ant-select-item-selected-bg: rgba(102, 126, 234, 0.1);
+  
+  /* Input 输入框 */
+  --ant-input-bg: #ffffff;
+  --ant-input-border: #d9d9d9;
+  --ant-input-hover-border: #4096ff;
+  
+  /* Button 按钮 */
+  --ant-btn-default-bg: #ffffff;
+  --ant-btn-default-border: #d9d9d9;
+  --ant-btn-default-hover-bg: #f5f5f5;
+  
+  /* Card 卡片 */
+  --ant-card-bg: #ffffff;
+  --ant-card-border: #e8e8e8;
+  
+  /* Modal 模态框 */
+  --ant-modal-bg: #ffffff;
+  --ant-modal-header-bg: #ffffff;
+}
+
+[data-theme="dark"] {
+  /* Select 下拉框 */
+  --ant-select-bg: #1e293b;
+  --ant-select-item-hover-bg: rgba(255, 255, 255, 0.1);
+  --ant-select-item-selected-bg: rgba(102, 126, 234, 0.2);
+  
+  /* Input 输入框 */
+  --ant-input-bg: rgba(255, 255, 255, 0.05);
+  --ant-input-border: rgba(255, 255, 255, 0.1);
+  --ant-input-hover-border: rgba(255, 255, 255, 0.2);
+  
+  /* Button 按钮 */
+  --ant-btn-default-bg: rgba(255, 255, 255, 0.05);
+  --ant-btn-default-border: rgba(255, 255, 255, 0.1);
+  --ant-btn-default-hover-bg: rgba(255, 255, 255, 0.1);
+  
+  /* Card 卡片 */
+  --ant-card-bg: rgba(255, 255, 255, 0.03);
+  --ant-card-border: rgba(255, 255, 255, 0.05);
+  
+  /* Modal 模态框 */
+  --ant-modal-bg: #1e293b;
+  --ant-modal-header-bg: #1e293b;
+}
+
+/* ==================== 平滑过渡 ==================== */
+* {
+  transition-property: background-color, border-color, color, fill, stroke;
+  transition-duration: 0.3s;
+  transition-timing-function: ease;
+}
+
+/* 排除某些不需要过渡的元素 */
+*:where(
+  [class*="progress"],
+  [class*="spin"],
+  [class*="loading"]
+) {
+  transition: none;
+}
+
+/* ==================== Ant Design Modal 全局样式覆盖 ==================== */
+
+/* Modal 遮罩层 */
+.ant-modal-wrap {
+  background: var(--overlay) !important;
+}
+
+/* Modal 容器 - 移除白色背景 */
+.ant-modal-root {
+  background: transparent !important;
+}
+
+/* Modal 内容 */
+.ant-modal-content {
+  background: var(--bg-secondary) !important;
+  border: 1px solid var(--border-primary) !important;
+  box-shadow: var(--shadow-lg) !important;
+}
+
+/* Modal 头部 */
+.ant-modal-header {
+  background: var(--bg-secondary) !important;
+  border-bottom: 1px solid var(--border-primary) !important;
+}
+
+/* Modal 标题 */
+.ant-modal-title {
+  color: var(--text-primary) !important;
+}
+
+/* Modal 主体 */
+.ant-modal-body {
+  background: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Modal 底部 */
+.ant-modal-footer {
+  background: var(--bg-secondary) !important;
+  border-top: 1px solid var(--border-primary) !important;
+}
+
+/* Modal 关闭按钮 */
+.ant-modal-close {
+  color: var(--text-tertiary) !important;
+}
+
+.ant-modal-close:hover {
+  color: var(--text-primary) !important;
+  background: var(--bg-card-hover) !important;
+}
+
+/* Form 表单项 - 移除白色背景和边框 */
+.ant-form-item {
+  border: none !important;
+  background: transparent !important;
+}
+
+.ant-form-item-row {
+  background: transparent !important;
+  border: none !important;
+}
+
+.ant-form-item-control-input {
+  background: transparent !important;
+}
+
+/* Form 标签 */
+.ant-form-item-label > label {
+  color: var(--text-secondary) !important;
+}
+
+/* Input 输入框 */
+.ant-input {
+  background: var(--bg-input) !important;
+  border-color: var(--border-secondary) !important;
+  color: var(--text-primary) !important;
+}
+
+.ant-input:hover {
+  border-color: var(--border-hover) !important;
+  background: var(--bg-input-hover) !important;
+}
+
+.ant-input:focus {
+  background: var(--bg-input-hover) !important;
+  border-color: var(--theme-start-color) !important;
+}
+
+.ant-input::placeholder {
+  color: var(--text-quaternary) !important;
+  opacity: 1 !important;
+}
+
+/* 暗色主题下增强 placeholder 可见性 */
+[data-theme="dark"] .ant-input::placeholder {
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
+/* Button 按钮 */
+.ant-btn-default {
+  background: var(--bg-card) !important;
+  border-color: var(--border-secondary) !important;
+  color: var(--text-secondary) !important;
+}
+
+.ant-btn-default:hover {
+  background: var(--bg-card-hover) !important;
+  border-color: var(--border-hover) !important;
+  color: var(--text-primary) !important;
+}

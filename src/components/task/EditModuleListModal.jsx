@@ -15,10 +15,11 @@
  * - 统一管理项目的模块结构
  */
 import React, { useState, useEffect, useRef } from 'react'
-import { Modal, Input, Button, Space, Tag, Empty, Popconfirm, Tooltip, Radio } from 'antd'
+import { Modal, Input, Button, Space, Tag, Empty, Popconfirm, Tooltip, Tabs } from 'antd'
 import { FolderOutlined, EditOutlined, DeleteOutlined, BorderOuterOutlined, LoginOutlined, CheckOutlined, CloseOutlined, HolderOutlined, UnorderedListOutlined, PlusOutlined } from '@ant-design/icons'
 import RecycleBin from './RecycleBin'
 import { useToast } from '../../context/ToastContext'
+import styles from './EditModuleListModal.module.css'
 import {
   DndContext,
   closestCenter,
@@ -62,32 +63,36 @@ function SortableModuleItem({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    padding: '12px 16px',
-    background: isDragging ? '#e6f7ff' : '#fafafa',
-    marginBottom: 8,
-    borderRadius: 8,
-    cursor: isEditing ? 'default' : 'move',
-    border: '1px solid #f0f0f0',
     opacity: isDragging ? 0.5 : 1,
   }
 
+  const completedCount = taskCount - pendingTaskCount
+
   return (
-    <div ref={setNodeRef} style={style}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%' }}>
+    <div 
+      ref={setNodeRef} 
+      style={style}
+      className={`${styles.moduleItem} ${isDragging ? styles.dragging : ''} ${isEditing ? styles.editing : ''}`}
+    >
+      <div className={styles.moduleItemContent}>
+        {/* 拖拽手柄 */}
         {!isEditing && (
-          <HolderOutlined
+          <div 
+            className={styles.dragHandle}
             {...attributes}
             {...listeners}
-            style={{
-              fontSize: 16,
-              color: '#8c8c8c',
-              cursor: 'move'
-            }}
-          />
+          >
+            <HolderOutlined />
+          </div>
         )}
-        <FolderOutlined style={{ fontSize: 18, color: '#1890ff' }} />
+
+        {/* 模块图标 */}
+        <div className={styles.moduleIcon}>
+          <FolderOutlined />
+        </div>
 
         {isEditing ? (
+          // 编辑模式
           <>
             <Input
               value={editingName}
@@ -100,60 +105,75 @@ function SortableModuleItem({
                 }
               }}
               autoFocus
-              style={{ flex: 1 }}
+              className={styles.editInput}
+              placeholder="输入模块名称"
             />
-            <Button
-              type="primary"
-              size="small"
-              icon={<CheckOutlined />}
-              onClick={() => onSaveEdit(module.id)}
-            >
-              保存
-            </Button>
-            <Button
-              size="small"
-              icon={<CloseOutlined />}
-              onClick={onCancelEdit}
-            >
-              取消
-            </Button>
+            <div className={styles.editActions}>
+              <Button
+                type="primary"
+                size="small"
+                icon={<CheckOutlined />}
+                onClick={() => onSaveEdit(module.id)}
+              >
+                保存
+              </Button>
+              <Button
+                size="small"
+                icon={<CloseOutlined />}
+                onClick={onCancelEdit}
+              >
+                取消
+              </Button>
+            </div>
           </>
         ) : (
+          // 查看模式
           <>
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-              <span
-                style={{
-                  fontSize: 15,
-                  fontWeight: 600,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap'
-                }}
-                title={module.name}
-              >
+            <div className={styles.moduleInfo}>
+              <div className={styles.moduleName} title={module.name}>
                 {module.name}
-              </span>
-              <Tag color={pendingTaskCount > 0 ? 'orange' : 'default'} style={{ flexShrink: 0 }}>
-                待办 {pendingTaskCount}
-              </Tag>
-              <Tag color={taskCount - pendingTaskCount > 0 ? 'green' : 'default'} style={{ flexShrink: 0 }}>
-                已完成 {taskCount - pendingTaskCount}
-              </Tag>
+              </div>
+              <div className={styles.moduleStats}>
+                <Tag 
+                  color={pendingTaskCount > 0 ? 'orange' : 'default'} 
+                  className={styles.statTag}
+                >
+                  待办 {pendingTaskCount}
+                </Tag>
+                <Tag 
+                  color={completedCount > 0 ? 'green' : 'default'}
+                  className={styles.statTag}
+                >
+                  已完成 {completedCount}
+                </Tag>
+              </div>
             </div>
-            <Space>
-              <Tooltip title="编辑">
+
+            <div className={styles.moduleActions}>
+              <Tooltip title="编辑模块名称">
                 <Button
                   type="text"
                   size="small"
                   icon={<EditOutlined />}
                   onClick={onStartEdit}
+                  className={styles.actionBtn}
                 />
               </Tooltip>
-              {/* 移入回收站：待办任务数为0时可用 */}
+
+              {/* 移入回收站 */}
               {pendingTaskCount === 0 ? (
                 <Popconfirm
                   title="确认移入回收站"
-                  description={`确定要将模块"${module.name}"移入回收站吗？`}
+                  description={
+                    <div>
+                      <p>确定要将模块 <strong>"{module.name}"</strong> 移入回收站吗？</p>
+                      {completedCount > 0 && (
+                        <p style={{ color: '#faad14', marginTop: 8 }}>
+                          该模块包含 {completedCount} 个已完成任务
+                        </p>
+                      )}
+                    </div>
+                  }
                   onConfirm={() => onDelete(module.id)}
                   okText="确认"
                   cancelText="取消"
@@ -162,8 +182,8 @@ function SortableModuleItem({
                     <Button
                       type="text"
                       size="small"
-                      style={{ color: '#d59310' }}
                       icon={<LoginOutlined />}
+                      className={`${styles.actionBtn} ${styles.recycleBtn}`}
                     />
                   </Tooltip>
                 </Popconfirm>
@@ -174,14 +194,23 @@ function SortableModuleItem({
                     size="small"
                     icon={<LoginOutlined />}
                     disabled
+                    className={styles.actionBtn}
                   />
                 </Tooltip>
               )}
-              {/* 永久删除：任务总数为0时可用 */}
+
+              {/* 永久删除 */}
               {taskCount === 0 ? (
                 <Popconfirm
                   title="确认永久删除"
-                  description={`确定要永久删除模块"${module.name}"吗？此操作不可恢复！`}
+                  description={
+                    <div>
+                      <p>确定要永久删除模块 <strong>"{module.name}"</strong> 吗？</p>
+                      <p style={{ color: '#ff4d4f', marginTop: 8 }}>
+                        ⚠️ 此操作不可恢复！
+                      </p>
+                    </div>
+                  }
                   onConfirm={() => onPermanentDelete(module.id)}
                   okText="确认删除"
                   cancelText="取消"
@@ -193,6 +222,7 @@ function SortableModuleItem({
                       size="small"
                       danger
                       icon={<DeleteOutlined />}
+                      className={`${styles.actionBtn} ${styles.deleteBtn}`}
                     />
                   </Tooltip>
                 </Popconfirm>
@@ -204,10 +234,11 @@ function SortableModuleItem({
                     danger
                     icon={<DeleteOutlined />}
                     disabled
+                    className={styles.actionBtn}
                   />
                 </Tooltip>
               )}
-            </Space>
+            </div>
           </>
         )}
       </div>
@@ -351,150 +382,178 @@ export default function EditModuleListModal({
   return (
     <Modal
       title={
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginRight: 32 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <FolderOutlined />
-            <span>{view === 'list' ? '编辑模块列表' : '模块回收站'}</span>
+        <div className={styles.modalHeader}>
+          <div className={styles.modalTitle}>
+            <FolderOutlined className={styles.titleIcon} />
+            <span>模块管理</span>
           </div>
-          <Space size={8}>
-            {view === 'list' && !showAddInput && (
-              <Button
-                type="primary"
-                size="small"
-                icon={<PlusOutlined />}
-                onClick={() => setShowAddInput(true)}
-              >
-                添加
-              </Button>
-            )}
-
-            <Radio.Group
-              value={view}
-              onChange={e => {
-                setView(e.target.value)
-                setShowAddInput(false)
-                setNewModuleName('')
-              }}
+          {view === 'list' && !showAddInput && (
+            <Button
+              type="primary"
               size="small"
-              buttonStyle="solid"
+              icon={<PlusOutlined />}
+              onClick={() => setShowAddInput(true)}
+              className={styles.addBtn}
             >
-              <Radio.Button value="list">
-                <Space size={4}>
-                  <UnorderedListOutlined />
-                  列表
-                  {localModules.length > 0 && <span style={{ fontSize: 12 }}>({localModules.length})</span>}
-                </Space>
-              </Radio.Button>
-              <Radio.Button value="recycle">
-                <Space size={4}>
-                  <DeleteOutlined />
-                  回收站
-                  {recycleModules.length > 0 && <span style={{ fontSize: 12 }}>({recycleModules.length})</span>}
-                </Space>
-              </Radio.Button>
-            </Radio.Group>
-          </Space>
+              新建模块
+            </Button>
+          )}
         </div>
       }
       open={show}
       onCancel={onClose}
-      footer={[
-        <Button key="close" type="primary" onClick={onClose}>
-          关闭
-        </Button>
-      ]}
-      width={600}
+      footer={null}
+      width={680}
+      className={styles.modal}
     >
-      <div style={{ padding: '16px 0' }}>
-        {view === 'list' ? (
-          <>
-            {/* 新增模块输入区域 - 点击添加按钮后显示 */}
-            {showAddInput && (
-              <div style={{
-                display: 'flex',
-                gap: 8,
-                marginBottom: 16,
-                padding: '12px 16px',
-                background: '#f5f5f5',
-                borderRadius: 8,
-                border: '1px dashed #1890ff'
-              }}>
-                <Input
-                  ref={newModuleInputRef}
-                  placeholder="输入新模块名称"
-                  value={newModuleName}
-                  onChange={(e) => setNewModuleName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      handleAddModule()
-                    } else if (e.key === 'Escape') {
-                      handleCancelAdd()
-                    }
-                  }}
-                  style={{ flex: 1 }}
-                />
-                <Button
-                  type="primary"
-                  icon={<CheckOutlined />}
-                  onClick={handleAddModule}
-                  loading={isAdding}
-                >
-                  确认
-                </Button>
-                <Button
-                  icon={<CloseOutlined />}
-                  onClick={handleCancelAdd}
-                >
-                  取消
-                </Button>
+      {/* 标签页切换 */}
+      <Tabs
+        activeKey={view}
+        onChange={(key) => {
+          setView(key)
+          setShowAddInput(false)
+          setNewModuleName('')
+        }}
+        className={styles.viewTabs}
+        items={[
+          {
+            key: 'list',
+            label: (
+              <div className={styles.tabLabel}>
+                <UnorderedListOutlined className={styles.tabIcon} />
+                <span>模块列表</span>
+                {localModules.length > 0 && (
+                  <span className={styles.tabBadge}>{localModules.length}</span>
+                )}
               </div>
-            )}
-
-            {localModules.length === 0 ? (
-              <Empty description="暂无模块" />
-            ) : (
-              <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={handleDragEnd}
-              >
-                <SortableContext
-                  items={localModules.map(m => m.id)}
-                  strategy={verticalListSortingStrategy}
-                >
-                  {localModules.map((module) => {
-                    const taskCount = getModuleTaskCount(module.name)
-                    const pendingTaskCount = getModulePendingTaskCount(module.name)
-                    const isEditing = editingModuleId === module.id
-
-                    return (
-                      <SortableModuleItem
-                        key={module.id}
-                        module={module}
-                        taskCount={taskCount}
-                        pendingTaskCount={pendingTaskCount}
-                        isEditing={isEditing}
-                        editingName={editingName}
-                        onStartEdit={() => handleStartEdit(module)}
-                        onCancelEdit={handleCancelEdit}
-                        onSaveEdit={handleSaveEdit}
-                        onEditNameChange={setEditingName}
-                        onDelete={handleDelete}
-                        onPermanentDelete={handlePermanentDelete}
+            ),
+            children: (
+              <div className={styles.modalBody}>
+                {/* 新增模块输入区域 */}
+                {showAddInput && (
+                  <div className={styles.addModuleSection}>
+                    <div className={styles.addModuleContent}>
+                      <div className={styles.addModuleIcon}>
+                        <PlusOutlined />
+                      </div>
+                      <Input
+                        ref={newModuleInputRef}
+                        placeholder="输入新模块名称，按 Enter 确认"
+                        value={newModuleName}
+                        onChange={(e) => setNewModuleName(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            handleAddModule()
+                          } else if (e.key === 'Escape') {
+                            handleCancelAdd()
+                          }
+                        }}
+                        className={styles.addModuleInput}
                       />
-                    )
-                  })}
-                </SortableContext>
-              </DndContext>
-            )}
-          </>
-        ) : (
-          recycleModules.length > 0 ? (
-            <RecycleBin modules={recycleModules} onRestore={onRestoreModule} />
-          ) : (
-            <Empty description="回收站为空" />
-          )
-        )}
+                      <div className={styles.addModuleActions}>
+                        <Button
+                          type="primary"
+                          icon={<CheckOutlined />}
+                          onClick={handleAddModule}
+                          loading={isAdding}
+                          size="small"
+                        >
+                          确认
+                        </Button>
+                        <Button
+                          icon={<CloseOutlined />}
+                          onClick={handleCancelAdd}
+                          size="small"
+                        >
+                          取消
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 模块列表 */}
+                {localModules.length === 0 ? (
+                  <Empty 
+                    description="暂无模块，点击上方按钮创建第一个模块"
+                    className={styles.emptyState}
+                  />
+                ) : (
+                  <div className={styles.moduleList}>
+                    <DndContext
+                      sensors={sensors}
+                      collisionDetection={closestCenter}
+                      onDragEnd={handleDragEnd}
+                    >
+                      <SortableContext
+                        items={localModules.map(m => m.id)}
+                        strategy={verticalListSortingStrategy}
+                      >
+                        {localModules.map((module) => {
+                          const taskCount = getModuleTaskCount(module.name)
+                          const pendingTaskCount = getModulePendingTaskCount(module.name)
+                          const isEditing = editingModuleId === module.id
+
+                          return (
+                            <SortableModuleItem
+                              key={module.id}
+                              module={module}
+                              taskCount={taskCount}
+                              pendingTaskCount={pendingTaskCount}
+                              isEditing={isEditing}
+                              editingName={editingName}
+                              onStartEdit={() => handleStartEdit(module)}
+                              onCancelEdit={handleCancelEdit}
+                              onSaveEdit={handleSaveEdit}
+                              onEditNameChange={setEditingName}
+                              onDelete={handleDelete}
+                              onPermanentDelete={handlePermanentDelete}
+                            />
+                          )
+                        })}
+                      </SortableContext>
+                    </DndContext>
+                  </div>
+                )}
+              </div>
+            ),
+          },
+          {
+            key: 'recycle',
+            label: (
+              <div className={styles.tabLabel}>
+                <DeleteOutlined className={styles.tabIcon} />
+                <span>回收站</span>
+                {recycleModules.length > 0 && (
+                  <span className={`${styles.tabBadge} ${styles.recycleBadge}`}>
+                    {recycleModules.length}
+                  </span>
+                )}
+              </div>
+            ),
+            children: (
+              <div className={styles.modalBody}>
+                <div className={styles.recycleBinView}>
+                  {recycleModules.length > 0 ? (
+                    <RecycleBin modules={recycleModules} onRestore={onRestoreModule} />
+                  ) : (
+                    <Empty 
+                      description="回收站为空"
+                      className={styles.emptyState}
+                    />
+                  )}
+                </div>
+              </div>
+            ),
+          },
+        ]}
+      />
+
+      {/* 底部操作栏 */}
+      <div className={styles.modalFooter}>
+        <Button type="primary" onClick={onClose} size="large">
+          完成
+        </Button>
       </div>
     </Modal>
   )

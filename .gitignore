@@ -9,6 +9,8 @@ release/
 # 开发工具
 .vscode/
 .idea/
+.trae/
+.cursor/
 
 # 日志
 *.log

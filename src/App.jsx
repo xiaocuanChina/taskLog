@@ -24,10 +24,9 @@ export default function App() {
   const [projectToDelete, setProjectToDelete] = useState(null)
 
   // 项目备忘相关状态
-  const [showProjectMemoModal, setShowProjectMemoModal] = useState(false)
-  const [showProjectMemoView, setShowProjectMemoView] = useState(false)
+  const [showProjectMemo, setShowProjectMemo] = useState(false)
+  const [projectMemoMode, setProjectMemoMode] = useState('view') // 'view' 或 'edit'
   const [editingProjectMemo, setEditingProjectMemo] = useState(null)
-  const [memoEditFromView, setMemoEditFromView] = useState(false) // 标记是否从查看页面进入编辑
 
   // Toast 提示
   const showToast = useToast()
@@ -74,6 +73,11 @@ export default function App() {
     })
     setTaskTypeColors({ ...colorMap })
 
+    // 应用主题模式
+    const theme = config.general?.theme || 'light'
+    document.documentElement.setAttribute('data-theme', theme)
+    console.log('应用主题模式:', theme)
+
     // 应用主题色到 CSS 变量
     const themeColors = config.general?.themeColors
     console.log('加载主题色配置:', themeColors)
@@ -94,10 +98,6 @@ export default function App() {
   // 配置变化时刷新
   const handleConfigChange = () => {
     loadConfig()
-    // 重新加载搜索范围配置
-    if (taskManagerHook.loadSearchScope) {
-      taskManagerHook.loadSearchScope()
-    }
   }
 
   useEffect(() => {
@@ -192,6 +192,17 @@ export default function App() {
     await window.electron?.projects?.reorder(newProjects.map(p => p.id))
   }
 
+  // 从项目选择页面打开项目备忘（编辑模式）
+  const handleOpenProjectMemoFromSelect = (project) => {
+    setEditingProjectMemo({
+      id: project.id,
+      name: project.name,
+      memo: project.memo || ''
+    })
+    setProjectMemoMode('edit')
+    setShowProjectMemo(true)
+  }
+
   // 打开项目备忘查看
   const handleOpenProjectMemoView = () => {
     setEditingProjectMemo({
@@ -199,38 +210,20 @@ export default function App() {
       name: currentProject.name,
       memo: currentProject.memo || ''
     })
-    setShowProjectMemoView(true)
+    setProjectMemoMode('view')
+    setShowProjectMemo(true)
   }
 
-  // 打开项目备忘编辑
-  const handleOpenProjectMemoEdit = () => {
-    setShowProjectMemoView(false)
-    setMemoEditFromView(true) // 标记从查看页面进入
-    setShowProjectMemoModal(true)
+  // 切换到编辑模式
+  const handleSwitchToEditMode = () => {
+    setProjectMemoMode('edit')
   }
 
-  // 打开添加项目备忘
-  const handleOpenAddProjectMemo = () => {
-    setEditingProjectMemo({
-      id: currentProject.id,
-      name: currentProject.name,
-      memo: ''
-    })
-    setMemoEditFromView(false) // 直接添加，不是从查看页面进入
-    setShowProjectMemoModal(true)
-  }
-
-  // 关闭项目备忘编辑模态框
-  const handleCloseProjectMemoModal = () => {
-    setShowProjectMemoModal(false)
-    if (memoEditFromView) {
-      // 从查看页面进入的，返回查看页面
-      setShowProjectMemoView(true)
-      setMemoEditFromView(false)
-    } else {
-      // 直接添加的，清空编辑数据
-      setEditingProjectMemo(null)
-    }
+  // 关闭项目备忘
+  const handleCloseProjectMemo = () => {
+    setShowProjectMemo(false)
+    setEditingProjectMemo(null)
+    setProjectMemoMode('view')
   }
 
   // 更新项目备忘
@@ -241,9 +234,9 @@ export default function App() {
     })
 
     if (result?.success) {
-      setShowProjectMemoModal(false)
-      setMemoEditFromView(false) // 重置标记
+      setShowProjectMemo(false)
       setEditingProjectMemo(null)
+      setProjectMemoMode('view')
       loadProjects()
       if (currentProject?.id === editingProjectMemo.id) {
         setCurrentProject({ ...currentProject, memo: editingProjectMemo.memo })
@@ -252,12 +245,6 @@ export default function App() {
     } else {
       showToast(result?.error || '更新失败', 'error')
     }
-  }
-
-  // 关闭项目备忘查看
-  const handleCloseProjectMemoView = () => {
-    setShowProjectMemoView(false)
-    setEditingProjectMemo(null)
   }
 
   // ========== 任务相关处理函数 ==========
@@ -723,7 +710,8 @@ export default function App() {
           projects={projects}
           showAddProjectModal={showAddProjectModal}
           showDeleteProjectConfirm={showDeleteProjectConfirm}
-          showProjectMemoModal={showProjectMemoModal}
+          showProjectMemo={showProjectMemo}
+          projectMemoMode={projectMemoMode}
           newProjectName={newProjectName}
           projectToDelete={projectToDelete}
           editingProjectMemo={editingProjectMemo}
@@ -737,9 +725,11 @@ export default function App() {
           onCancelDeleteProject={handleCancelDeleteProject}
           onProjectMemoChange={(memo) => setEditingProjectMemo({ ...editingProjectMemo, memo })}
           onUpdateProjectMemo={handleUpdateProjectMemo}
-          onCloseProjectMemoModal={handleCloseProjectMemoModal}
+          onCloseProjectMemo={handleCloseProjectMemo}
+          onSwitchToEditMode={handleSwitchToEditMode}
           onCloseAddProjectModal={() => setShowAddProjectModal(false)}
           onProjectsReorder={handleProjectsReorder}
+          onOpenProjectMemo={handleOpenProjectMemoFromSelect}
         />
       </>
     )
@@ -760,14 +750,13 @@ export default function App() {
       selectedModuleFilter={taskManagerHook.selectedModuleFilter}
       completedSearchKeyword={taskManagerHook.completedSearchKeyword}
       completedModuleFilter={taskManagerHook.completedModuleFilter}
-      searchScope={taskManagerHook.searchScope}
       collapsedModules={taskManagerHook.collapsedModules}
       editingModuleName={taskManagerHook.editingModuleName}
       showAddTaskModal={taskModalHook.showAddTaskModal}
       showEditTaskModal={taskModalHook.showEditTaskModal}
       showDeleteConfirm={showDeleteConfirm}
-      showProjectMemoView={showProjectMemoView}
-      showProjectMemoModal={showProjectMemoModal}
+      showProjectMemo={showProjectMemo}
+      projectMemoMode={projectMemoMode}
       showEditTaskModuleModal={showEditTaskModuleModal}
       showEditModuleListModal={showEditModuleListModal}
       newTask={taskModalHook.newTask}
@@ -872,12 +861,10 @@ export default function App() {
       onConfirmDelete={handleConfirmDelete}
       onCancelDelete={handleCancelDelete}
       onOpenProjectMemoView={handleOpenProjectMemoView}
-      onOpenProjectMemoEdit={handleOpenProjectMemoEdit}
-      onCloseProjectMemoView={handleCloseProjectMemoView}
+      onSwitchToEditMode={handleSwitchToEditMode}
+      onCloseProjectMemo={handleCloseProjectMemo}
       onProjectMemoChange={(memo) => setEditingProjectMemo({ ...editingProjectMemo, memo })}
       onUpdateProjectMemo={handleUpdateProjectMemo}
-      onCloseProjectMemoModal={handleCloseProjectMemoModal}
-      onOpenAddProjectMemo={handleOpenAddProjectMemo}
       onCloseImagePreview={handleCloseImagePreview}
       onPrevImage={handlePrevImage}
       onNextImage={handleNextImage}

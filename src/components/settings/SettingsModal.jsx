@@ -27,7 +27,7 @@ export default function SettingsModal({ visible, onClose }) {
   const [resetLoading, setResetLoading] = useState(false)
   const [taskTypes, setTaskTypes] = useState([])
   const [activeMenu, setActiveMenu] = useState('general')
-  const [formValues, setFormValues] = useState({ taskTypes: [], general: { searchScope: 'all' } })
+  const [formValues, setFormValues] = useState({ taskTypes: [], general: {} })
   const [draggedIndex, setDraggedIndex] = useState(null)
 
   // 加载配置
@@ -49,7 +49,7 @@ export default function SettingsModal({ visible, onClose }) {
 
     // 确保 general 配置完整
     const generalConfig = {
-      searchScope: config.general?.searchScope || 'all',
+      theme: config.general?.theme || 'dark',
       themeColors: {
         startColor: config.general?.themeColors?.startColor || '#667eea',
         endColor: config.general?.themeColors?.endColor || '#764ba2'
@@ -146,7 +146,7 @@ export default function SettingsModal({ visible, onClose }) {
 
       // 确保 general.themeColors 的颜色值是字符串
       const generalConfig = {
-        searchScope: values.general?.searchScope || config.general?.searchScope || 'all',
+        theme: values.general?.theme || config.general?.theme || 'dark',
         themeColors: {
           startColor: typeof values.general?.themeColors?.startColor === 'string'
             ? values.general.themeColors.startColor
@@ -163,6 +163,8 @@ export default function SettingsModal({ visible, onClose }) {
       })
 
       if (success) {
+        // 立即应用主题配置
+        document.documentElement.setAttribute('data-theme', generalConfig.theme)
         // 立即应用主题色到 CSS 变量
         document.documentElement.style.setProperty('--theme-start-color', generalConfig.themeColors.startColor)
         document.documentElement.style.setProperty('--theme-end-color', generalConfig.themeColors.endColor)
@@ -184,6 +186,8 @@ export default function SettingsModal({ visible, onClose }) {
     setResetLoading(true)
     const success = await resetConfig()
     if (success) {
+      // 重置后应用默认主题配置
+      document.documentElement.setAttribute('data-theme', 'light')
       // 重置后应用默认主题色
       document.documentElement.style.setProperty('--theme-start-color', '#667eea')
       document.documentElement.style.setProperty('--theme-end-color', '#764ba2')
@@ -264,32 +268,35 @@ export default function SettingsModal({ visible, onClose }) {
     <Modal
       title={
         <div className={styles.modalTitle}>
-          <SettingOutlined style={{ marginRight: 8 }} />
-          设置
+          <SettingOutlined style={{ marginRight: 10, fontSize: 18 }} />
+          <span style={{ fontSize: 17, fontWeight: 600 }}>设置</span>
         </div>
       }
       open={visible}
       onCancel={() => onClose(false)}
-      width={900}
+      width={920}
       className={styles.settingsModal}
-      footer={[
-        <Popconfirm
-          key="reset"
-          title="确定要重置为默认配置吗？"
-          description="此操作将清除所有自定义设置"
-          onConfirm={handleReset}
-          okText="确定"
-          cancelText="取消"
-        >
-          <Button danger>重置为默认</Button>
-        </Popconfirm>,
-        <Button key="cancel" onClick={() => onClose(false)}>
-          取消
-        </Button>,
-        <Button key="save" type="primary" loading={saveLoading} onClick={handleSave}>
-          保存设置
-        </Button>
-      ]}
+      footer={
+        // 关于页面不显示底部按钮
+        activeMenu === 'about' ? null : [
+          <Popconfirm
+            key="reset"
+            title="确定要重置为默认配置吗？"
+            description="此操作将清除所有自定义设置"
+            onConfirm={handleReset}
+            okText="确定"
+            cancelText="取消"
+          >
+            <Button danger loading={resetLoading}>重置为默认</Button>
+          </Popconfirm>,
+          <Button key="cancel" onClick={() => onClose(false)} size="large">
+            取消
+          </Button>,
+          <Button key="save" type="primary" loading={saveLoading} onClick={handleSave} size="large">
+            保存设置
+          </Button>
+        ]
+      }
     >
       <div className={styles.settingsContainer}>
         <div className={styles.settingsSidebar}>

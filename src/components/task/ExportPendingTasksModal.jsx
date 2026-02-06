@@ -6,10 +6,23 @@
  * - 支持模块级别全选和任务级别单选
  * - 选择导出格式（Excel或Markdown）
  * - 导出选中的未完成任务
+ * 
+ * 优化内容:
+ * - 改进视觉层次和布局结构
+ * - 增强交互反馈和动画效果
+ * - 优化暗色/亮色主题适配
+ * - 提升用户体验和可访问性
  */
-import React, { useState, useEffect } from 'react'
-import { Modal, Checkbox, Button, Empty, Radio, Space, Collapse } from 'antd'
-import { FileExcelOutlined, FileMarkdownOutlined, CaretRightOutlined } from '@ant-design/icons'
+import { useState, useEffect, useMemo } from 'react'
+import { Modal, Checkbox, Button, Empty, Radio, Collapse, Badge } from 'antd'
+import { 
+    FileExcelOutlined, 
+    FileMarkdownOutlined, 
+    CaretRightOutlined,
+    CheckCircleOutlined,
+    FolderOutlined,
+    FileTextOutlined
+} from '@ant-design/icons'
 import styles from './ExportPendingTasksModal.module.css'
 
 export default function ExportPendingTasksModal({
@@ -23,13 +36,15 @@ export default function ExportPendingTasksModal({
     const [selectedTaskIds, setSelectedTaskIds] = useState(new Set())
     const [exportFormat, setExportFormat] = useState('excel')
 
-    // 获取指定模块的未完成任务列表
-    const getModulePendingTasks = (moduleName) => {
-        return pendingTasks.filter(task => task.module === moduleName)
-    }
-
-    // 过滤出有未完成任务的模块
-    const modulesWithTasks = modules.filter(m => getModulePendingTasks(m.name).length > 0)
+    // 使用 useMemo 优化性能
+    const modulesWithTasks = useMemo(() => {
+        return modules
+            .map(module => ({
+                ...module,
+                tasks: pendingTasks.filter(task => task.module === module.name)
+            }))
+            .filter(module => module.tasks.length > 0)
+    }, [modules, pendingTasks])
 
     // 重置选择状态
     useEffect(() => {
@@ -52,8 +67,7 @@ export default function ExportPendingTasksModal({
     }
 
     // 处理模块级别全选
-    const handleModuleSelectAll = (moduleName, checked) => {
-        const moduleTasks = getModulePendingTasks(moduleName)
+    const handleModuleSelectAll = (moduleTasks, checked) => {
         const newSelectedIds = new Set(selectedTaskIds)
 
         if (checked) {
@@ -77,14 +91,12 @@ export default function ExportPendingTasksModal({
     }
 
     // 检查模块是否全选
-    const isModuleAllSelected = (moduleName) => {
-        const moduleTasks = getModulePendingTasks(moduleName)
+    const isModuleAllSelected = (moduleTasks) => {
         return moduleTasks.length > 0 && moduleTasks.every(task => selectedTaskIds.has(task.id))
     }
 
     // 检查模块是否部分选中
-    const isModuleIndeterminate = (moduleName) => {
-        const moduleTasks = getModulePendingTasks(moduleName)
+    const isModuleIndeterminate = (moduleTasks) => {
         const selectedCount = moduleTasks.filter(task => selectedTaskIds.has(task.id)).length
         return selectedCount > 0 && selectedCount < moduleTasks.length
     }
@@ -102,141 +114,195 @@ export default function ExportPendingTasksModal({
     const isIndeterminate = selectedTaskIds.size > 0 && selectedTaskIds.size < pendingTasks.length
 
     // 获取模块已选中任务数
-    const getModuleSelectedCount = (moduleName) => {
-        const moduleTasks = getModulePendingTasks(moduleName)
+    const getModuleSelectedCount = (moduleTasks) => {
         return moduleTasks.filter(task => selectedTaskIds.has(task.id)).length
     }
+
+    // 格式化配置
+    const formatConfig = {
+        excel: {
+            icon: FileExcelOutlined,
+            color: '#52c41a',
+            label: 'Excel 表格',
+            description: '适合数据分析和打印'
+        },
+        markdown: {
+            icon: FileMarkdownOutlined,
+            color: '#1890ff',
+            label: 'Markdown 文档',
+            description: '适合文档编辑和分享'
+        }
+    }
+
+    const currentFormat = formatConfig[exportFormat]
 
     return (
         <Modal
             title={
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    {exportFormat === 'excel' ?
-                        <FileExcelOutlined style={{ color: '#52c41a' }} /> :
-                        <FileMarkdownOutlined style={{ color: '#1890ff' }} />
-                    }
-                    <span>导出未完成任务</span>
+                <div className={styles.modalHeader}>
+                    <currentFormat.icon className={styles.modalIcon} style={{ color: currentFormat.color }} />
+                    <div className={styles.modalTitleContent}>
+                        <div className={styles.modalTitle}>导出未完成任务</div>
+                        <div className={styles.modalSubtitle}>{currentFormat.description}</div>
+                    </div>
                 </div>
             }
             open={show}
             onCancel={onCancel}
-            footer={[
-                <Button key="cancel" onClick={onCancel}>
-                    取消
-                </Button>,
-                <Button
-                    key="confirm"
-                    type="primary"
-                    onClick={handleConfirm}
-                    disabled={selectedTaskIds.size === 0}
-                    style={{
-                        background: exportFormat === 'excel' ? '#52c41a' : '#1890ff',
-                        borderColor: exportFormat === 'excel' ? '#52c41a' : '#1890ff'
-                    }}
-                >
-                    导出
-                </Button>
-            ]}
-            width={500}
+            footer={
+                <div className={styles.modalFooter}>
+                    <div className={styles.footerInfo}>
+                        <CheckCircleOutlined className={styles.footerIcon} />
+                        <span>已选择 <strong>{selectedTaskIds.size}</strong> / {pendingTasks.length} 个任务</span>
+                    </div>
+                    <div className={styles.footerButtons}>
+                        <Button onClick={onCancel} className={styles.btnCancel}>
+                            取消
+                        </Button>
+                        <Button
+                            type="primary"
+                            onClick={handleConfirm}
+                            disabled={selectedTaskIds.size === 0}
+                            className={styles.btnExport}
+                            style={{
+                                background: selectedTaskIds.size > 0 ? currentFormat.color : undefined,
+                                borderColor: selectedTaskIds.size > 0 ? currentFormat.color : undefined
+                            }}
+                            icon={<currentFormat.icon />}
+                        >
+                            导出 {currentFormat.label}
+                        </Button>
+                    </div>
+                </div>
+            }
+            width={600}
+            className={styles.exportModal}
+            destroyOnHidden
         >
             {modulesWithTasks.length === 0 ? (
-                <Empty description="暂无未完成任务" />
+                <Empty 
+                    description="暂无未完成任务" 
+                    image={Empty.PRESENTED_IMAGE_SIMPLE}
+                    className={styles.emptyState}
+                />
             ) : (
-                <div>
+                <div className={styles.modalContent}>
                     {/* 导出格式选择 */}
-                    <div style={{ marginBottom: 16, paddingBottom: 12, borderBottom: '1px solid #f0f0f0' }}>
-                        <div style={{ marginBottom: 8, fontWeight: 500 }}>导出格式：</div>
-                        <Radio.Group value={exportFormat} onChange={(e) => setExportFormat(e.target.value)}>
-                            <Space>
-                                <Radio value="excel">
-                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                                        <FileExcelOutlined style={{ color: '#52c41a' }} />
-                                        Excel
-                                    </span>
-                                </Radio>
-                                <Radio value="markdown">
-                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                                        <FileMarkdownOutlined style={{ color: '#1890ff' }} />
-                                        Markdown
-                                    </span>
-                                </Radio>
-                            </Space>
+                    <div className={styles.formatSection}>
+                        <div className={styles.sectionLabel}>
+                            <FileTextOutlined />
+                            <span>选择导出格式</span>
+                        </div>
+                        <Radio.Group 
+                            value={exportFormat} 
+                            onChange={(e) => setExportFormat(e.target.value)}
+                            className={styles.formatRadioGroup}
+                        >
+                            <Radio.Button value="excel" className={styles.formatOption}>
+                                <FileExcelOutlined style={{ color: '#52c41a' }} />
+                                <div className={styles.formatInfo}>
+                                    <div className={styles.formatLabel}>Excel 表格</div>
+                                    <div className={styles.formatDesc}>数据分析和打印</div>
+                                </div>
+                            </Radio.Button>
+                            <Radio.Button value="markdown" className={styles.formatOption}>
+                                <FileMarkdownOutlined style={{ color: '#1890ff' }} />
+                                <div className={styles.formatInfo}>
+                                    <div className={styles.formatLabel}>Markdown 文档</div>
+                                    <div className={styles.formatDesc}>文档编辑和分享</div>
+                                </div>
+                            </Radio.Button>
                         </Radio.Group>
                     </div>
-                    {/* 全选所有任务 */}
-                    <div style={{ marginBottom: 16, paddingBottom: 12, borderBottom: '1px solid #f0f0f0' }}>
+
+                    {/* 全选控制 */}
+                    <div className={styles.selectAllSection}>
                         <Checkbox
                             checked={isAllSelected}
                             indeterminate={isIndeterminate}
                             onChange={(e) => handleSelectAll(e.target.checked)}
+                            className={styles.selectAllCheckbox}
                         >
-                            全选所有任务
+                            <span className={styles.selectAllLabel}>全选所有任务</span>
                         </Checkbox>
+                        <Badge 
+                            count={selectedTaskIds.size} 
+                            showZero 
+                            style={{ 
+                                backgroundColor: currentFormat.color,
+                                boxShadow: `0 0 0 1px ${currentFormat.color}20`
+                            }}
+                        />
                     </div>
+
                     {/* 模块和任务选择 */}
                     <div className={styles.taskListContainer}>
                         <Collapse
                             ghost
-                            expandIcon={({ isActive }) => <CaretRightOutlined rotate={isActive ? 90 : 0} />}
-                            defaultActiveKey={[]}
-                        >
-                            {modulesWithTasks.map(module => {
-                                const moduleTasks = getModulePendingTasks(module.name)
-                                const selectedCount = getModuleSelectedCount(module.name)
-                                return (
-                                    <Collapse.Panel
-                                        key={module.id}
-                                        header={
-                                            <div
-                                                style={{ display: 'flex', alignItems: 'center', gap: 8 }}
-                                                onClick={(e) => e.stopPropagation()}
-                                            >
-                                                <Checkbox
-                                                    checked={isModuleAllSelected(module.name)}
-                                                    indeterminate={isModuleIndeterminate(module.name)}
-                                                    onChange={(e) => {
-                                                        e.stopPropagation()
-                                                        handleModuleSelectAll(module.name, e.target.checked)
-                                                    }}
-                                                />
-                                                <span style={{ fontWeight: 500 }}>{module.name}</span>
-                                                <span style={{
-                                                    fontSize: 12,
-                                                    padding: '0 6px',
-                                                    borderRadius: 10,
-                                                    background: '#faad14',
-                                                    color: '#fff',
-                                                    fontWeight: 500
-                                                }}>
-                                                    {selectedCount}/{moduleTasks.length}
-                                                </span>
-                                            </div>
-                                        }
-                                    >
-                                        <div style={{ paddingLeft: 32 }}>
-                                            {moduleTasks.map(task => (
-                                                <div key={task.id} style={{ marginBottom: 6 }}>
+                            expandIcon={({ isActive }) => (
+                                <CaretRightOutlined 
+                                    rotate={isActive ? 90 : 0} 
+                                    className={styles.expandIcon}
+                                />
+                            )}
+                            defaultActiveKey={modulesWithTasks.map(m => m.id)}
+                            className={styles.moduleCollapse}
+                            items={modulesWithTasks.map(module => {
+                                const selectedCount = getModuleSelectedCount(module.tasks)
+                                const isAllSelected = isModuleAllSelected(module.tasks)
+                                const isIndeterminate = isModuleIndeterminate(module.tasks)
+                                
+                                return {
+                                    key: module.id,
+                                    label: (
+                                        <div
+                                            className={styles.moduleHeader}
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
+                                            <Checkbox
+                                                checked={isAllSelected}
+                                                indeterminate={isIndeterminate}
+                                                onChange={(e) => {
+                                                    e.stopPropagation()
+                                                    handleModuleSelectAll(module.tasks, e.target.checked)
+                                                }}
+                                                className={styles.moduleCheckbox}
+                                            />
+                                            <FolderOutlined className={styles.moduleIcon} />
+                                            <span className={styles.moduleName}>{module.name}</span>
+                                            <Badge 
+                                                count={`${selectedCount}/${module.tasks.length}`}
+                                                className={styles.moduleBadge}
+                                                style={{
+                                                    backgroundColor: isAllSelected ? currentFormat.color : '#faad14'
+                                                }}
+                                            />
+                                        </div>
+                                    ),
+                                    children: (
+                                        <div className={styles.taskList}>
+                                            {module.tasks.map(task => (
+                                                <div 
+                                                    key={task.id} 
+                                                    className={`${styles.taskItem} ${selectedTaskIds.has(task.id) ? styles.taskItemSelected : ''}`}
+                                                >
                                                     <Checkbox
                                                         checked={selectedTaskIds.has(task.id)}
                                                         onChange={(e) => handleTaskChange(task.id, e.target.checked)}
+                                                        className={styles.taskCheckbox}
                                                     >
-                                                        <span style={{
-                                                            color: '#595959',
-                                                            wordBreak: 'break-all'
-                                                        }}>
+                                                        <span className={styles.taskName}>
                                                             {task.name}
                                                         </span>
                                                     </Checkbox>
                                                 </div>
                                             ))}
                                         </div>
-                                    </Collapse.Panel>
-                                )
+                                    ),
+                                    className: styles.modulePanel
+                                }
                             })}
-                        </Collapse>
-                    </div>
-                    <div style={{ marginTop: 16, color: '#8c8c8c', fontSize: 12 }}>
-                        已选择 {selectedTaskIds.size} / {pendingTasks.length} 个任务
+                        />
                     </div>
                 </div>
             )}

@@ -1,0 +1,240 @@
+
+
+/* 表单项 */
+.formItem {
+  margin-bottom: 20px;
+}
+
+.formItem :global(.ant-form-item-label > label) {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+  display: inline-block;
+}
+
+/* 移除表单项之间的白色分割线 - 确保权重 */
+.projectModal :global(.ant-form-item) {
+  border-bottom: none !important;
+  margin-bottom: 0 !important;
+}
+
+/* 输入框 */
+.input {
+  font-size: 15px !important;
+  border-radius: 8px !important;
+  background: rgba(255, 255, 255, 0.05) !important; /* 使用透明度背景，融合度更好 */
+  background: var(--bg-input) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  border-color: var(--border-secondary) !important;
+  color: #fff !important; /* 确保文字可见 */
+  color: var(--text-primary) !important;
+  padding: 12px 16px !important;
+  height: 48px !important;
+}
+
+.input:hover {
+  border-color: var(--border-hover) !important;
+  background: var(--bg-input-hover) !important;
+}
+
+.input:focus {
+  border-color: var(--theme-start-color) !important;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1) !important;
+  background: var(--bg-input-hover) !important;
+}
+
+.input::placeholder {
+  color: rgba(255, 255, 255, 0.4) !important; /* 增强可见度 */
+  opacity: 1 !important;
+}
+
+/* 针对暗色主题增强 placeholder 可见性 - 移除依赖，直接统一样式或使用更通用的变量 */
+
+/* 字数统计 */
+:global(.ant-input-textarea-show-count::after) {
+  color: var(--text-quaternary) !important;
+  font-size: 12px !important;
+}
+
+:global(.ant-input-data-count) {
+  color: var(--text-quaternary) !important;
+  font-size: 12px !important;
+}
+
+/* 提示信息 */
+.tips {
+  display: flex;
+  gap: 20px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.03); /* 调整为半透明背景 */
+  background: var(--bg-card);
+  border: 1px solid rgba(255, 255, 255, 0.05); /* 调整为更柔和的边框 */
+  border: 1px solid var(--border-primary);
+  border-radius: 8px;
+  margin-top: 20px;
+}
+
+.tipItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+}
+
+.tipItem span {
+  color: var(--text-quaternary);
+  font-size: 12px;
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .tips {
+    flex-direction: column;
+    gap: 8px;
+  }
+}
+
+/* Modal 样式覆盖 - 限定在 projectModal 作用域内 */
+.projectModal :global(.ant-modal-content) {
+  background-color: var(--ant-modal-bg) !important;
+  border: 1px solid var(--border-primary);
+  box-shadow: var(--shadow-lg);
+  padding: 0 !important; /* 清除默认内边距 */
+  border-radius: 16px !important;
+  overflow: hidden; /* 确保圆角 */
+}
+
+.projectModal :global(.ant-modal-body) {
+  background-color: var(--ant-modal-bg) !important;
+  padding: 0 !important; /* 清除默认内边距 */
+}
+
+/* 整体容器 */
+.container {
+  padding: 24px;
+}
+
+/* 头部区域 */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-primary);
+}
+
+/* 模态框标题 */
+.modalTitle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.modalTitle svg {
+  font-size: 20px;
+  color: var(--theme-start-color);
+}
+
+/* 关闭按钮 */
+.closeBtn {
+  cursor: pointer;
+  color: var(--text-tertiary);
+  transition: all 0.3s;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.closeBtn:hover {
+  color: var(--text-primary);
+  background: var(--bg-card-hover);
+}
+
+/* 底部按钮区域 */
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 20px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-primary);
+}
+
+/* 模态框内容 */
+.modalContent {
+  padding: 0;
+}
+
+.projectModal :global(.ant-modal-close) {
+  color: var(--text-tertiary) !important;
+}
+
+.projectModal :global(.ant-modal-close:hover) {
+  color: var(--text-primary) !important;
+  background: var(--bg-card-hover) !important;
+}
+
+/* 按钮样式覆盖 - 限定在 projectModal 作用域内 */
+.projectModal :global(.ant-btn) {
+  height: 40px !important;
+  padding: 0 20px !important;
+  font-size: 14px !important;
+  border-radius: 6px !important;
+}
+
+.projectModal :global(.ant-btn-default) {
+  background: transparent !important; /* 避免白色背景 */
+  background: var(--bg-card) !important;
+  border-color: #444 !important;
+  border-color: var(--border-secondary) !important;
+  color: #ccc !important;
+  color: var(--text-secondary) !important;
+}
+
+.projectModal :global(.ant-btn-default:hover) {
+  background: var(--bg-card-hover) !important;
+  border-color: var(--border-hover) !important;
+  color: var(--text-primary) !important;
+}
+
+.projectModal :global(.ant-btn-primary) {
+  background: linear-gradient(135deg, var(--theme-start-color), var(--theme-end-color)) !important;
+  border: none !important;
+  color: #ffffff !important;
+  font-weight: 500 !important;
+}
+
+.projectModal :global(.ant-btn-primary:hover) {
+  opacity: 0.9;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3) !important;
+  transform: translateY(-1px);
+}
+
+.projectModal :global(.ant-form-item-label > label) {
+  color: var(--text-secondary) !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+}
+
+.projectModal :global(.ant-form-item-label > label.ant-form-item-required::before) {
+  color: var(--color-error) !important;
+}
+
+/* 移除 Ant Design Form 默认的白色背景和边框 */
+.projectModal :global(.ant-form-item-row) {
+  background: transparent !important;
+  border: none !important;
+}
+
+.projectModal :global(.ant-form-item-control-input) {
+  background: transparent !important;
+}

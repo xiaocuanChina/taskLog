@@ -1,0 +1,137 @@
+/* 通用删除确认模态框样式 */
+
+.modal :global(.ant-modal-content) {
+  padding: 0;
+  overflow: hidden;
+}
+
+.modal :global(.ant-modal-body) {
+  padding: 32px 32px 24px;
+}
+
+.modal :global(.ant-modal-footer) {
+  padding: 16px 32px 24px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* 警告图标 */
+.iconWrapper {
+  margin-bottom: 20px;
+}
+
+.warningIcon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #fff1f0 0%, #ffccc7 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  color: #ff4d4f;
+  animation: shake 2s ease-in-out infinite;
+}
+
+@keyframes shake {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  10%, 30%, 50%, 70%, 90% {
+    transform: rotate(-5deg);
+  }
+  20%, 40%, 60%, 80% {
+    transform: rotate(5deg);
+  }
+}
+
+/* 标题 */
+.title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #262626;
+  margin: 0 0 24px 0;
+  text-align: center;
+}
+
+/* 警告内容 */
+.warningContent {
+  margin: 0;
+}
+
+.warningContent p {
+  margin: 4px 0;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.warningContent p:first-child {
+  margin-top: 0;
+}
+
+.warningContent p:last-child {
+  margin-bottom: 0;
+}
+
+/* 警告提示框 */
+.warningAlert {
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+.warningAlert :global(.ant-alert-message) {
+  font-weight: 600;
+  color: #d46b08;
+}
+
+.warningAlert :global(.ant-alert-description) {
+  color: #8c8c8c;
+}
+
+/* 危险提示框 */
+.dangerAlert {
+  width: 100%;
+}
+
+.dangerAlert :global(.ant-alert-message) {
+  font-weight: 600;
+  color: #cf1322;
+}
+
+/* 响应式设计 */
+@media (max-width: 576px) {
+  .modal :global(.ant-modal-body) {
+    padding: 24px 20px 20px;
+  }
+
+  .modal :global(.ant-modal-footer) {
+    padding: 12px 20px 20px;
+  }
+
+  .warningIcon {
+    width: 56px;
+    height: 56px;
+    font-size: 28px;
+  }
+
+  .title {
+    font-size: 18px;
+    margin-bottom: 20px;
+  }
+}
+
+/* 暗色模式支持 */
+@media (prefers-color-scheme: dark) {
+  .title {
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  .modal :global(.ant-modal-footer) {
+    border-top-color: rgba(255, 255, 255, 0.12);
+  }
+}

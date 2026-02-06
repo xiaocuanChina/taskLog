@@ -13,12 +13,16 @@ import {
     LeftOutlined,
     RightOutlined,
     FieldTimeOutlined,
-    CloseOutlined
+    CloseOutlined,
+    TrophyOutlined,
+    FireOutlined,
+    RiseOutlined,
+    CheckSquareOutlined
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import 'dayjs/locale/zh-cn'
 import zhCN from 'antd/locale/zh_CN'
-import styles from './StatsModal.module.css'
+import styles from './CompletionStatsModal.module.css'
 
 // 设置 dayjs 使用中文
 dayjs.locale('zh-cn')
@@ -176,30 +180,45 @@ export default function CompletionStats({
     return (
         <div className={styles.completionContent}>
             {/* 顶部统计汇总 */}
-            <div className={styles.summaryHeader}>
+            <div className={styles.summarySection}>
                 <div className={styles.summaryCards}>
-                    <div className={styles.summaryCard}>
-                        <div className={styles.summaryLabel}>本月完成</div>
-                        <div className={styles.summaryValue} style={{ color: '#52c41a' }}>
-                            {monthStats.monthCompleted}
+                    <div className={`${styles.summaryCard} ${styles.cardMonthly}`}>
+                        <div className={styles.cardIcon}>
+                            <CheckSquareOutlined />
+                        </div>
+                        <div className={styles.cardContent}>
+                            <div className={styles.cardLabel}>本月完成</div>
+                            <div className={styles.cardValue}>{monthStats.monthCompleted}</div>
                         </div>
                     </div>
-                    <div className={styles.summaryCard}>
-                        <div className={styles.summaryLabel}>活跃天数</div>
-                        <div className={styles.summaryValue} style={{ color: '#1890ff' }}>
-                            {monthStats.activeDays}
+                    
+                    <div className={`${styles.summaryCard} ${styles.cardActive}`}>
+                        <div className={styles.cardIcon}>
+                            <FireOutlined />
+                        </div>
+                        <div className={styles.cardContent}>
+                            <div className={styles.cardLabel}>活跃天数</div>
+                            <div className={styles.cardValue}>{monthStats.activeDays}</div>
                         </div>
                     </div>
-                    <div className={styles.summaryCard}>
-                        <div className={styles.summaryLabel}>日均完成</div>
-                        <div className={styles.summaryValue} style={{ color: '#722ed1' }}>
-                            {monthStats.avgPerDay}
+                    
+                    <div className={`${styles.summaryCard} ${styles.cardAverage}`}>
+                        <div className={styles.cardIcon}>
+                            <RiseOutlined />
+                        </div>
+                        <div className={styles.cardContent}>
+                            <div className={styles.cardLabel}>日均完成</div>
+                            <div className={styles.cardValue}>{monthStats.avgPerDay}</div>
                         </div>
                     </div>
-                    <div className={styles.summaryCard}>
-                        <div className={styles.summaryLabel}>累计完成</div>
-                        <div className={styles.summaryValue} style={{ color: '#fa541c' }}>
-                            {totalStats.totalCount}
+                    
+                    <div className={`${styles.summaryCard} ${styles.cardTotal}`}>
+                        <div className={styles.cardIcon}>
+                            <TrophyOutlined />
+                        </div>
+                        <div className={styles.cardContent}>
+                            <div className={styles.cardLabel}>累计完成</div>
+                            <div className={styles.cardValue}>{totalStats.totalCount}</div>
                         </div>
                     </div>
                 </div>
@@ -207,16 +226,18 @@ export default function CompletionStats({
 
             {/* 月份导航 */}
             <div className={styles.monthNav}>
-                <button className={styles.navBtn} onClick={handlePrevMonth}>
+                <button className={styles.navBtn} onClick={handlePrevMonth} title="上个月">
                     <LeftOutlined />
                 </button>
-                <span className={styles.monthTitle}>
+                <div className={styles.monthTitle}>
+                    <CalendarOutlined className={styles.monthIcon} />
                     {currentMonth.format('YYYY年MM月')}
-                </span>
-                <button className={styles.navBtn} onClick={handleNextMonth}>
+                </div>
+                <button className={styles.navBtn} onClick={handleNextMonth} title="下个月">
                     <RightOutlined />
                 </button>
                 <button className={styles.todayBtn} onClick={handleToday}>
+                    <CheckCircleOutlined className={styles.todayIcon} />
                     今天
                 </button>
             </div>
@@ -245,17 +266,21 @@ export default function CompletionStats({
                         <>
                             <div className={styles.detailHeader}>
                                 <div className={styles.detailTitle}>
-                                    <CalendarOutlined style={{ marginRight: 8 }} />
-                                    {selectedDate.format('MM月DD日')}
+                                    <CalendarOutlined className={styles.titleIcon} />
+                                    <span className={styles.titleDate}>{selectedDate.format('MM月DD日')}</span>
                                     <span className={styles.weekDay}>
                                         {['周日', '周一', '周二', '周三', '周四', '周五', '周六'][selectedDate.day()]}
                                     </span>
                                 </div>
                                 <div className={styles.detailActions}>
-                                    <Tag color={selectedDateTasks.length > 0 ? "green" : "default"}>完成 {selectedDateTasks.length} 项</Tag>
+                                    <div className={styles.taskCountBadge}>
+                                        <CheckCircleOutlined className={styles.badgeIcon} />
+                                        <span>{selectedDateTasks.length}</span>
+                                    </div>
                                     <CloseOutlined 
                                         className={styles.closeBtn}
                                         onClick={handleCloseDetail}
+                                        title="关闭"
                                     />
                                 </div>
                             </div>
@@ -266,22 +291,19 @@ export default function CompletionStats({
                                             <CheckCircleOutlined className={styles.checkIcon} />
                                             <div className={styles.taskInfo}>
                                                 <div className={styles.taskMain}>
-                                                    <span className={styles.moduleName}>[{task.module}]</span>
+                                                    <span className={styles.moduleName}>{task.module}</span>
+                                                    <span className={styles.taskName}>{task.name}</span>
                                                     {task.type && (
                                                         <Tag 
+                                                            className={styles.taskTypeTag}
                                                             style={{ 
-                                                                background: taskTypeColors[task.type] || '#d9d9d9',
-                                                                color: '#fff',
-                                                                border: 'none',
-                                                                fontSize: 11,
-                                                                padding: '0 6px',
-                                                                margin: 0
+                                                                background: taskTypeColors[task.type] || 'var(--text-quaternary)',
+                                                                borderColor: taskTypeColors[task.type] || 'var(--text-quaternary)'
                                                             }}
                                                         >
                                                             {task.type}
                                                         </Tag>
                                                     )}
-                                                    <span className={styles.taskName}>{task.name}</span>
                                                 </div>
                                                 <span className={styles.completedTime}>
                                                     <FieldTimeOutlined style={{ marginRight: 4 }} />
@@ -303,9 +325,13 @@ export default function CompletionStats({
                     )}
                     {!selectedDate && (
                         <div className={styles.noSelection}>
-                            <CalendarOutlined style={{ fontSize: 40, color: '#d9d9d9', marginBottom: 12 }} />
-                            <p>点击日历中有任务的日期</p>
-                            <p>查看当天完成详情</p>
+                            <div className={styles.emptyIcon}>
+                                <CalendarOutlined />
+                            </div>
+                            <div className={styles.emptyText}>
+                                <p>点击日历中有任务的日期</p>
+                                <p>查看当天完成详情</p>
+                            </div>
                         </div>
                     )}
                 </div>
@@ -313,21 +339,24 @@ export default function CompletionStats({
 
             {/* 图例说明 */}
             <div className={styles.legend}>
-                <span className={styles.legendItem}>
-                    <span className={styles.legendBadge} style={{ background: '#52c41a' }}>x</span>
+                <div className={styles.legendItem}>
+                    <div className={styles.legendBadge} style={{ background: 'var(--color-success)' }}>
+                        <CheckCircleOutlined />
+                    </div>
                     <span>有完成任务</span>
-                </span>
-                <span className={styles.legendItem}>
-                    <span className={styles.legendMax}>
-                        <span className={styles.legendBadge} style={{ background: '#faad14' }}>x</span>
-                        <span className={styles.legendTrophy}>🏆</span>
-                    </span>
+                </div>
+                <div className={styles.legendItem}>
+                    <div className={styles.legendMax}>
+                        <div className={styles.legendBadge} style={{ background: 'var(--color-warning)' }}>
+                            <TrophyOutlined />
+                        </div>
+                    </div>
                     <span>本月最高记录</span>
-                </span>
-                <span className={styles.legendItem}>
-                    <span className={styles.legendToday}></span>
+                </div>
+                <div className={styles.legendItem}>
+                    <div className={styles.legendToday}></div>
                     <span>今天</span>
-                </span>
+                </div>
             </div>
         </div>
     )

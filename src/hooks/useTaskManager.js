@@ -10,7 +10,6 @@ export function useTaskManager(currentProject) {
   const [searchKeyword, setSearchKeyword] = useState('')
   const [collapsedModules, setCollapsedModules] = useState({})
   const [editingModuleName, setEditingModuleName] = useState(null)
-  const [searchScope, setSearchScope] = useState('all') // 'module' | 'description' | 'all'
   const [selectedModuleFilter, setSelectedModuleFilter] = useState(null) // 模块筛选
   const [completedSearchKeyword, setCompletedSearchKeyword] = useState('')
   const [completedModuleFilter, setCompletedModuleFilter] = useState(null)
@@ -64,12 +63,6 @@ export function useTaskManager(currentProject) {
     setTodayStats(stats || { count: 0, newCount: 0 })
   }
 
-  // 加载搜索范围配置
-  const loadSearchScope = async () => {
-    const config = await getConfig()
-    setSearchScope(config.general?.searchScope || 'all')
-  }
-
   // 刷新所有数据
   const refreshData = async () => {
     if (!currentProject?.id) return
@@ -81,7 +74,6 @@ export function useTaskManager(currentProject) {
   }
 
   useEffect(() => {
-    loadSearchScope()
     refreshData()
 
     // 切换项目时重置所有筛选和搜索状态
@@ -112,21 +104,9 @@ export function useTaskManager(currentProject) {
     // 2. 关键字筛选
     if (searchKeyword.trim()) {
       const keyword = searchKeyword.toLowerCase()
-
-      // 根据配置的搜索范围进行过滤
-      switch (searchScope) {
-        case 'module':
-          // 仅搜索模块名称
-          return t.module && t.module.toLowerCase().includes(keyword)
-        case 'description':
-          // 仅搜索任务描述
-          return t.name.toLowerCase().includes(keyword)
-        case 'all':
-        default:
-          // 通用搜索（模块 + 描述）
-          return t.name.toLowerCase().includes(keyword) ||
-            (t.module && t.module.toLowerCase().includes(keyword))
-      }
+      // 通用搜索（模块 + 描述）
+      return t.name.toLowerCase().includes(keyword) ||
+        (t.module && t.module.toLowerCase().includes(keyword))
     }
 
     return true
@@ -143,21 +123,9 @@ export function useTaskManager(currentProject) {
       // 2. 关键字筛选
       if (completedSearchKeyword.trim()) {
         const keyword = completedSearchKeyword.toLowerCase()
-
-        // 根据配置的搜索范围进行过滤
-        switch (searchScope) {
-          case 'module':
-            // 仅搜索模块名称
-            return t.module && t.module.toLowerCase().includes(keyword)
-          case 'description':
-            // 仅搜索任务描述
-            return t.name.toLowerCase().includes(keyword)
-          case 'all':
-          default:
-            // 通用搜索（模块 + 描述）
-            return t.name.toLowerCase().includes(keyword) ||
-              (t.module && t.module.toLowerCase().includes(keyword))
-        }
+        // 通用搜索（模块 + 描述）
+        return t.name.toLowerCase().includes(keyword) ||
+          (t.module && t.module.toLowerCase().includes(keyword))
       }
 
       return true
@@ -311,7 +279,6 @@ export function useTaskManager(currentProject) {
     todayStats,
     searchKeyword,
     setSearchKeyword,
-    searchScope,
     selectedModuleFilter,
     setSelectedModuleFilter,
     collapsedModules,
@@ -332,7 +299,6 @@ export function useTaskManager(currentProject) {
     cancelEditModuleName,
     saveModuleName,
     reorderPendingModules,
-    refreshData,
-    loadSearchScope
+    refreshData
   }
 }
