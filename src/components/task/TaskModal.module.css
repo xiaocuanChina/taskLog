@@ -512,6 +512,10 @@
   transform: translateY(-50%) !important;
 }
 
+.taskModal :global(.ant-switch-small.ant-switch-checked .ant-switch-handle) {
+  inset-inline-start: calc(100% - 12px - 2px) !important;
+}
+
 /* ==================== Tag 标签样式 ==================== */
 
 .taskModal :global(.ant-tag) {
