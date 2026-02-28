@@ -45,9 +45,6 @@ import {
   BarChartOutlined,
   CalendarOutlined
 } from '@ant-design/icons'
-import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
-import { SortableContext, rectSortingStrategy, arrayMove, useSortable } from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
 import WindowControls from '../common/WindowControls'
 import ProjectModal from './ProjectModal'
 import ProjectMemo from './ProjectMemo'
@@ -55,62 +52,45 @@ import DeleteProjectModal from './DeleteProjectModal'
 import styles from './ProjectSelectView.module.css'
 
 // 可拖拽的项目卡片组件
-function SortableProjectCard({ project, stats, statusColor, sortBy, onSelectProject, getProjectMenu }) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ 
-    id: project.id,
-    disabled: sortBy !== 'custom' // 只有在自定义排序时才允许拖拽
-  })
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  }
-
+function SortableProjectCard({ 
+  project, 
+  stats, 
+  statusColor, 
+  sortBy, 
+  isDragging,
+  onSelectProject, 
+  getProjectMenu,
+  onDragStart,
+  onDragOver,
+  onDragEnd
+}) {
   return (
-    <div 
-      ref={setNodeRef}
-      style={style}
-      className={styles.projectCard}
-      onClick={() => onSelectProject(project)}
-      {...attributes}
-    >
-      {/* 卡片头部 */}
-      <div className={styles.cardHeader}>
-        <div className={styles.cardIcon} style={{ background: `${statusColor}15` }}>
-          <FolderOutlined style={{ fontSize: 24, color: statusColor }} />
-        </div>
-        <Space size="small">
-          {sortBy === 'custom' && (
-            <Tooltip title="拖拽排序">
+    <Dropdown menu={getProjectMenu(project)} trigger={['contextMenu']}>
+      <div 
+        className={`${styles.projectCard} ${isDragging ? styles.dragging : ''}`}
+        onClick={() => onSelectProject(project)}
+        draggable={sortBy === 'custom'}
+        onDragStart={(e) => sortBy === 'custom' && onDragStart(e, project)}
+        onDragOver={(e) => sortBy === 'custom' && onDragOver(e, project)}
+        onDragEnd={onDragEnd}
+      >
+        {/* 卡片头部 */}
+        <div className={styles.cardHeader}>
+          <div className={styles.cardIcon} style={{ background: `${statusColor}15` }}>
+            <FolderOutlined style={{ fontSize: 24, color: statusColor }} />
+          </div>
+          <Space size="small">
+            <Dropdown menu={getProjectMenu(project)} trigger={['click']}>
               <Button 
                 type="text" 
                 size="small" 
-                icon={<MoreOutlined style={{ transform: 'rotate(90deg)' }} />}
-                className={styles.dragHandle}
-                {...listeners}
+                icon={<MoreOutlined />}
+                className={styles.cardMenu}
                 onClick={(e) => e.stopPropagation()}
               />
-            </Tooltip>
-          )}
-          <Dropdown menu={getProjectMenu(project)} trigger={['click']}>
-            <Button 
-              type="text" 
-              size="small" 
-              icon={<MoreOutlined />}
-              className={styles.cardMenu}
-              onClick={(e) => e.stopPropagation()}
-            />
-          </Dropdown>
-        </Space>
-      </div>
+            </Dropdown>
+          </Space>
+        </div>
 
       {/* 项目名称 */}
       <div className={styles.cardTitle}>
@@ -170,7 +150,8 @@ function SortableProjectCard({ project, stats, statusColor, sortBy, onSelectProj
           <Badge status="success" text="已完成" />
         )}
       </div>
-    </div>
+      </div>
+    </Dropdown>
   )
 }
 
@@ -215,17 +196,9 @@ export default function ProjectSelectView({
   const [showEditProjectModal, setShowEditProjectModal] = useState(false)
   const [editingProject, setEditingProject] = useState(null)
   const [editingProjectName, setEditingProjectName] = useState('')
-
-  // 配置拖拽传感器 - 优化拖拽体验
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 5, // 减小激活距离,提升响应速度
-        delay: 100, // 添加短暂延迟,避免误触
-        tolerance: 5,
-      },
-    })
-  )
+  // 拖动状态
+  const [draggedProject, setDraggedProject] = useState(null)
+  const [dragOverProject, setDragOverProject] = useState(null)
 
   // 加载项目的任务数据
   useEffect(() => {
@@ -253,17 +226,49 @@ export default function ProjectSelectView({
     }
   }, [projects])
 
-  // 处理拖拽结束
-  const handleDragEnd = (event) => {
-    const { active, over } = event
+  // 拖动开始
+  const handleDragStart = (e, project) => {
+    setDraggedProject(project)
+    e.dataTransfer.effectAllowed = 'move'
+    
+    // 关闭可能打开的右键菜单 - 模拟 ESC 键按下
+    const escEvent = new KeyboardEvent('keydown', {
+      key: 'Escape',
+      keyCode: 27,
+      code: 'Escape',
+      which: 27,
+      bubbles: true,
+      cancelable: true
+    })
+    document.dispatchEvent(escEvent)
+  }
 
-    if (over && active.id !== over.id) {
-      const oldIndex = filteredAndSortedProjects.findIndex(p => p.id === active.id)
-      const newIndex = filteredAndSortedProjects.findIndex(p => p.id === over.id)
+  // 拖动经过
+  const handleDragOver = (e, project) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    
+    if (draggedProject && draggedProject.id !== project.id) {
+      setDragOverProject(project)
+    }
+  }
+
+  // 拖动结束
+  const handleDragEnd = () => {
+    if (draggedProject && dragOverProject && draggedProject.id !== dragOverProject.id) {
+      const oldIndex = filteredAndSortedProjects.findIndex(p => p.id === draggedProject.id)
+      const newIndex = filteredAndSortedProjects.findIndex(p => p.id === dragOverProject.id)
       
-      const newProjects = arrayMove(filteredAndSortedProjects, oldIndex, newIndex)
+      // 手动实现 arrayMove 逻辑
+      const newProjects = [...filteredAndSortedProjects]
+      const [removed] = newProjects.splice(oldIndex, 1)
+      newProjects.splice(newIndex, 0, removed)
+      
       onProjectsReorder(newProjects)
     }
+    
+    setDraggedProject(null)
+    setDragOverProject(null)
   }
 
   // 计算项目统计信息 - 使用缓存的任务数据
@@ -481,8 +486,12 @@ export default function ProjectSelectView({
         stats={stats}
         statusColor={statusColor}
         sortBy={sortBy}
+        isDragging={draggedProject?.id === project.id}
         onSelectProject={onSelectProject}
         getProjectMenu={getProjectMenu}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragEnd={handleDragEnd}
       />
     )
   }
@@ -493,64 +502,69 @@ export default function ProjectSelectView({
     const statusColor = stats.isCompleted ? '#52c41a' : stats.hasNoTasks ? '#d9d9d9' : '#1890ff'
 
     return (
-      <div 
-        key={project.id} 
-        className={styles.listItem}
-        onClick={() => onSelectProject(project)}
-      >
-        <div className={styles.listIcon} style={{ background: `${statusColor}15` }}>
-          <FolderOutlined style={{ fontSize: 20, color: statusColor }} />
-        </div>
-        
-        <div className={styles.listContent}>
-          <div className={styles.listHeader}>
-            <h4>{project.name}</h4>
-            {project.memo && (
-              <Tooltip 
-                title={
-                  <div style={{ whiteSpace: 'pre-wrap', maxWidth: 300 }}>
-                    {project.memo}
-                  </div>
-                }
-              >
-                <FileTextOutlined className={styles.memoIcon} />
-              </Tooltip>
-            )}
+      <Dropdown key={project.id} menu={getProjectMenu(project)} trigger={['contextMenu']}>
+        <div 
+          className={`${styles.listItem} ${draggedProject?.id === project.id ? styles.dragging : ''}`}
+          onClick={() => onSelectProject(project)}
+          draggable={sortBy === 'custom'}
+          onDragStart={(e) => sortBy === 'custom' && handleDragStart(e, project)}
+          onDragOver={(e) => sortBy === 'custom' && handleDragOver(e, project)}
+          onDragEnd={handleDragEnd}
+        >
+          <div className={styles.listIcon} style={{ background: `${statusColor}15` }}>
+            <FolderOutlined style={{ fontSize: 20, color: statusColor }} />
           </div>
           
-          <div className={styles.listMeta}>
-            <Space size="large">
-              <span>
-                <CheckCircleOutlined style={{ color: '#52c41a', marginRight: 4 }} />
-                {stats.completedTasks}/{stats.totalTasks} 任务
-              </span>
-              <span>
-                <CalendarOutlined style={{ marginRight: 4 }} />
-                {new Date(project.updatedAt || project.createdAt).toLocaleDateString('zh-CN')}
-              </span>
-            </Space>
+          <div className={styles.listContent}>
+            <div className={styles.listHeader}>
+              <h4>{project.name}</h4>
+              {project.memo && (
+                <Tooltip 
+                  title={
+                    <div style={{ whiteSpace: 'pre-wrap', maxWidth: 300 }}>
+                      {project.memo}
+                    </div>
+                  }
+                >
+                  <FileTextOutlined className={styles.memoIcon} />
+                </Tooltip>
+              )}
+            </div>
+            
+            <div className={styles.listMeta}>
+              <Space size="large">
+                <span>
+                  <CheckCircleOutlined style={{ color: '#52c41a', marginRight: 4 }} />
+                  {stats.completedTasks}/{stats.totalTasks} 任务
+                </span>
+                <span>
+                  <CalendarOutlined style={{ marginRight: 4 }} />
+                  {new Date(project.updatedAt || project.createdAt).toLocaleDateString('zh-CN')}
+                </span>
+              </Space>
+            </div>
           </div>
-        </div>
 
-        <div className={styles.listProgress}>
-          <Progress 
-            type="circle" 
-            percent={stats.completedProgress + stats.shelvedProgress}
-            success={{ percent: stats.completedProgress }}
-            strokeColor="#ff7a45"
-            width={50}
-          />
-        </div>
+          <div className={styles.listProgress}>
+            <Progress 
+              type="circle" 
+              percent={stats.completedProgress + stats.shelvedProgress}
+              success={{ percent: stats.completedProgress }}
+              strokeColor="#ff7a45"
+              width={50}
+            />
+          </div>
 
-        <Dropdown menu={getProjectMenu(project)} trigger={['click']}>
-          <Button 
-            type="text" 
-            icon={<MoreOutlined />}
-            className={styles.listMenu}
-            onClick={(e) => e.stopPropagation()}
-          />
-        </Dropdown>
-      </div>
+          <Dropdown menu={getProjectMenu(project)} trigger={['click']}>
+            <Button 
+              type="text" 
+              icon={<MoreOutlined />}
+              className={styles.listMenu}
+              onClick={(e) => e.stopPropagation()}
+            />
+          </Dropdown>
+        </div>
+      </Dropdown>
     )
   }
 
@@ -720,21 +734,9 @@ export default function ProjectSelectView({
               </div>
             ) : viewMode === 'grid' ? (
               // 网格视图
-              <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={handleDragEnd}
-              >
-                <SortableContext 
-                  items={filteredAndSortedProjects.map(p => p.id)} 
-                  strategy={rectSortingStrategy}
-                  disabled={sortBy !== 'custom'}
-                >
-                  <div className={styles.gridView}>
-                    {filteredAndSortedProjects.map(renderProjectCard)}
-                  </div>
-                </SortableContext>
-              </DndContext>
+              <div className={styles.gridView}>
+                {filteredAndSortedProjects.map(renderProjectCard)}
+              </div>
             ) : (
               <div className={styles.listView}>
                 {filteredAndSortedProjects.map(renderProjectListItem)}

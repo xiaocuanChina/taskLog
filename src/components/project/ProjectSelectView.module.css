@@ -310,22 +310,41 @@
 }
 
 /* 拖拽状态样式 - 提升拖拽体验 */
-.projectCard[style*="opacity: 0.5"] {
-  opacity: 0.5 !important;
+.projectCard.dragging {
+  opacity: 0.6;
   cursor: grabbing !important;
   transform: scale(1.05) rotate(2deg);
-  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 12px 32px rgba(102, 126, 234, 0.4);
+  border-color: var(--theme-start-color, #667eea);
   z-index: 1000;
-  transition: none;
 }
 
 /* 拖拽时禁用hover效果 */
-.projectCard[style*="opacity: 0.5"]:hover {
+.projectCard.dragging:hover {
   transform: scale(1.05) rotate(2deg);
-  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 12px 32px rgba(102, 126, 234, 0.4);
 }
 
-.projectCard[style*="opacity: 0.5"]::before {
+.projectCard.dragging::before {
+  opacity: 1;
+}
+
+/* 列表项拖拽状态 */
+.listItem.dragging {
+  opacity: 0.6;
+  cursor: grabbing !important;
+  transform: translateX(8px) scale(1.02);
+  box-shadow: 0 12px 32px rgba(102, 126, 234, 0.4);
+  border-color: var(--theme-start-color, #667eea);
+  z-index: 1000;
+}
+
+.listItem.dragging:hover {
+  transform: translateX(8px) scale(1.02);
+  box-shadow: 0 12px 32px rgba(102, 126, 234, 0.4);
+}
+
+.listItem.dragging::before {
   opacity: 1;
 }
 
