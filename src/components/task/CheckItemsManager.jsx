@@ -10,7 +10,7 @@
  * - 支持父子联动配置
  */
 import { useState, useMemo } from 'react'
-import { Switch, Radio, Tree, Button, Input, Space, Tag, Tooltip, Empty } from 'antd'
+import { Switch, Radio, Tree, Button, Input, Space, Tag, Tooltip, Empty, Modal } from 'antd'
 import {
   PlusOutlined,
   EditOutlined,
@@ -55,6 +55,8 @@ export default function CheckItemsManager({ checkItems, onChange }) {
   const [editingRemarkItemId, setEditingRemarkItemId] = useState(null)
   const [remarkInputValue, setRemarkInputValue] = useState('')
   const [inputError, setInputError] = useState('')
+  const [pendingPasteContent, setPendingPasteContent] = useState(null)
+  const [isPasting, setIsPasting] = useState(false)
 
   const enabled = checkItems?.enabled || false
   const mode = checkItems?.mode || 'multiple'
@@ -104,16 +106,103 @@ export default function CheckItemsManager({ checkItems, onChange }) {
     updateCheckItems({ linkage: checked })
   }
 
+  // 处理粘贴事件
+  const handlePaste = (e) => {
+    // 仅在非编辑模式下处理
+    if (editingItemId) return
+
+    const pastedText = e.clipboardData.getData('text')
+    if (!pastedText) return
+
+    // 标记正在粘贴
+    setIsPasting(true)
+    
+    // 检测是否包含换行符
+    if (/\n/.test(pastedText)) {
+      // 分割为多行
+      const lines = pastedText
+        .split('\n')
+        .map(line => line.trim())
+        .filter(line => line.length > 0)
+
+      // 如果拆分后有多行，保存待处理内容（但不阻止默认粘贴行为）
+      if (lines.length > 1) {
+        setPendingPasteContent(lines)
+      }
+    }
+    
+    // 延迟重置粘贴标记
+    setTimeout(() => setIsPasting(false), 100)
+  }
+
   // 添加或更新勾选项
   const handleAddOrUpdate = () => {
     const name = newItemName.trim()
     if (!name) return
 
+    // 检查是否有待处理的粘贴内容（优先级最高）
+    if (!editingItemId && pendingPasteContent && pendingPasteContent.length > 1) {
+      const lines = pendingPasteContent
+      
+      // 构建预览内容
+      const previewContent = (
+        <div>
+          <p>检测到粘贴内容包含 {lines.length} 行文本：</p>
+          <div style={{ 
+            maxHeight: '300px', 
+            overflowY: 'auto', 
+            background: '#f5f5f5', 
+            padding: '12px', 
+            borderRadius: '4px',
+            marginTop: '12px'
+          }}>
+            {lines.map((line, index) => (
+              <div key={index} style={{ 
+                padding: '4px 0', 
+                borderBottom: index < lines.length - 1 ? '1px solid #e0e0e0' : 'none'
+              }}>
+                <span style={{ color: '#999', marginRight: '8px' }}>{index + 1}.</span>
+                <span>{line}</span>
+              </div>
+            ))}
+          </div>
+          <p style={{ marginTop: '12px', color: '#666' }}>
+            是否拆分为 {lines.length} 个勾选项？
+          </p>
+        </div>
+      )
+      
+      Modal.confirm({
+        title: '检测到多行内容',
+        content: previewContent,
+        okText: '拆分为多个',
+        cancelText: '合并为一个',
+        width: 600,
+        onOk: () => {
+          // 批量添加多个勾选项
+          handleBatchAdd(lines)
+          setPendingPasteContent(null)
+        },
+        onCancel: () => {
+          // 合并为一个，使用输入框中显示的内容
+          handleSingleAdd(name)
+          setPendingPasteContent(null)
+        }
+      })
+      return
+    }
+
+    // 清除待处理内容
+    setPendingPasteContent(null)
+
+    // 正常的单项添加或更新逻辑
+    const trimmedName = name.replace(/\n/g, ' ').trim()
+    
     // 检查重名（仅在同级检查）
     const targetParentId = newItemParentId || null
     const isDuplicate = items.some(
       item =>
-        item.name === name &&
+        item.name === trimmedName &&
         item.id !== editingItemId &&
         (item.parentId || null) === targetParentId
     )
@@ -133,7 +222,7 @@ export default function CheckItemsManager({ checkItems, onChange }) {
         if (item.id === editingItemId) {
           return {
             ...item,
-            name,
+            name: trimmedName,
             parentId: newItemParentId || null
           }
         }
@@ -144,7 +233,7 @@ export default function CheckItemsManager({ checkItems, onChange }) {
       // 添加新项
       newItems.push({
         id: Date.now().toString(),
-        name,
+        name: trimmedName,
         checked: false,
         parentId: newItemParentId || null
       })
@@ -155,6 +244,91 @@ export default function CheckItemsManager({ checkItems, onChange }) {
       newItemName: '',
       newItemParentId: null
     })
+  }
+
+  // 批量添加多个勾选项
+  const handleBatchAdd = (lines) => {
+    const targetParentId = newItemParentId || null
+    let newItems = [...items]
+    const addedItems = []
+
+    lines.forEach((line, index) => {
+      // 检查是否重名
+      const isDuplicate = newItems.some(
+        item =>
+          item.name === line &&
+          (item.parentId || null) === targetParentId
+      )
+
+      if (!isDuplicate) {
+        const newItem = {
+          id: (Date.now() + index).toString(),
+          name: line,
+          checked: false,
+          parentId: targetParentId
+        }
+        newItems.push(newItem)
+        addedItems.push(line)
+      }
+    })
+
+    updateCheckItems({
+      items: newItems,
+      newItemName: '',
+      newItemParentId: null
+    })
+
+    // 清空待处理内容
+    setPendingPasteContent(null)
+
+    // 提示添加结果
+    if (addedItems.length === lines.length) {
+      setInputError('')
+    } else {
+      setInputError(`已添加 ${addedItems.length} 项，${lines.length - addedItems.length} 项因重名被跳过`)
+    }
+  }
+
+  // 单项添加（合并后的内容）
+  const handleSingleAdd = (nameToAdd) => {
+    const targetParentId = newItemParentId || null
+    const trimmedName = nameToAdd.trim()
+    
+    if (!trimmedName) {
+      setInputError('勾选项名称不能为空')
+      return
+    }
+    
+    // 检查重名
+    const isDuplicate = items.some(
+      item =>
+        item.name === trimmedName &&
+        (item.parentId || null) === targetParentId
+    )
+
+    if (isDuplicate) {
+      setInputError('同级下已存在相同名称的勾选项')
+      setPendingPasteContent(null)
+      return
+    }
+
+    setInputError('')
+
+    const newItems = [...items, {
+      id: Date.now().toString(),
+      name: trimmedName,
+      checked: false,
+      parentId: targetParentId
+    }]
+
+    updateCheckItems({
+      items: newItems,
+      newItemName: '',
+      newItemParentId: null
+    })
+
+    // 清空待处理内容
+    setPendingPasteContent(null)
   }
 
   // 删除勾选项（包括所有子项）
@@ -190,6 +364,7 @@ export default function CheckItemsManager({ checkItems, onChange }) {
     setEditingItemId(item.id)
     setEditingRemarkItemId(null)
     setInputError('')
+    setPendingPasteContent(null)
     updateCheckItems({
       newItemName: item.name,
       newItemParentId: item.parentId || null
@@ -200,6 +375,7 @@ export default function CheckItemsManager({ checkItems, onChange }) {
   const handleCancelEdit = () => {
     setEditingItemId(null)
     setInputError('')
+    setPendingPasteContent(null)
     updateCheckItems({
       newItemName: '',
       newItemParentId: null
@@ -240,6 +416,7 @@ export default function CheckItemsManager({ checkItems, onChange }) {
     setEditingItemId(null)
     setEditingRemarkItemId(null)
     setInputError('')
+    setPendingPasteContent(null)
     updateCheckItems({
       newItemName: '',
       newItemParentId: parentId
@@ -492,8 +669,13 @@ export default function CheckItemsManager({ checkItems, onChange }) {
                 status={inputError ? 'error' : undefined}
                 onChange={(e) => {
                   setInputError('')
+                  // 只有在非粘贴时才清空待处理内容
+                  if (!isPasting) {
+                    setPendingPasteContent(null)
+                  }
                   updateCheckItems({ newItemName: e.target.value })
                 }}
+                onPaste={handlePaste}
                 onPressEnter={(e) => {
                   e.preventDefault()
                   handleAddOrUpdate()
