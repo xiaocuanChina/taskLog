@@ -49,7 +49,7 @@ export default function AboutSettings() {
           </div>
           <div className={styles.infoCardContent}>
             <div className={styles.infoCardLabel}>开发者</div>
-            <div className={styles.infoCardValue}>小爨</div>
+            <div className={styles.infoCardValue}>小爨（cuàn）</div>
           </div>
         </div>
       </div>
