@@ -524,7 +524,7 @@ export default function CheckItemsManager({ checkItems, onChange }) {
             <div className={styles.nodeInfo}>
               <span className={styles.nodeName}>{nodeData.title}</span>
               {nodeData.remark && (
-                <Tooltip title={nodeData.remark} placement="top">
+                <Tooltip title={<span style={{ whiteSpace: 'pre-wrap' }}>{nodeData.remark}</span>} placement="top">
                   <FileTextOutlined className={styles.remarkIcon} />
                 </Tooltip>
               )}

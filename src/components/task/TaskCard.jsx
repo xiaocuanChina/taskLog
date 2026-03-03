@@ -355,7 +355,7 @@ export default function TaskCard({
               {item.name}
             </Radio>
             {item.remark && (
-              <div style={{ marginLeft: 24, marginTop: 2, fontSize: 11, color: '#94a3b8' }}>
+              <div style={{ marginLeft: 24, marginTop: 2, fontSize: 11, color: '#94a3b8', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
                 {item.remark}
               </div>
             )}
@@ -376,7 +376,7 @@ export default function TaskCard({
               </span>
             </Checkbox>
             {item.remark && (
-              <div style={{ marginLeft: 24, marginTop: 2, fontSize: 11, color: '#94a3b8' }}>
+              <div style={{ marginLeft: 24, marginTop: 2, fontSize: 11, color: '#94a3b8', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
                 {item.remark}
               </div>
             )}
