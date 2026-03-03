@@ -300,6 +300,27 @@
   cursor: grabbing;
 }
 
+/* ==================== 内联编辑 ==================== */
+
+.nodeContentEditing {
+  gap: 8px;
+}
+
+.inlineEditInput {
+  flex: 1;
+  min-width: 0;
+}
+
+.inlineEditActions {
+  flex-shrink: 0;
+}
+
+.inlineEditError {
+  font-size: 12px;
+  color: var(--color-error);
+  padding-left: 12px;
+}
+
 /* ==================== 备注编辑器 ==================== */
 
 .remarkEditor {

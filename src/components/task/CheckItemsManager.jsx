@@ -52,6 +52,7 @@ const buildTreeData = (items) => {
 
 export default function CheckItemsManager({ checkItems, onChange }) {
   const [editingItemId, setEditingItemId] = useState(null)
+  const [editingName, setEditingName] = useState('')
   const [editingRemarkItemId, setEditingRemarkItemId] = useState(null)
   const [remarkInputValue, setRemarkInputValue] = useState('')
   const [inputError, setInputError] = useState('')
@@ -216,28 +217,12 @@ export default function CheckItemsManager({ checkItems, onChange }) {
 
     let newItems = [...items]
 
-    if (editingItemId) {
-      // 更新现有项
-      newItems = newItems.map(item => {
-        if (item.id === editingItemId) {
-          return {
-            ...item,
-            name: trimmedName,
-            parentId: newItemParentId || null
-          }
-        }
-        return item
-      })
-      setEditingItemId(null)
-    } else {
-      // 添加新项
-      newItems.push({
-        id: Date.now().toString(),
-        name: trimmedName,
-        checked: false,
-        parentId: newItemParentId || null
-      })
-    }
+    newItems.push({
+      id: Date.now().toString(),
+      name: trimmedName,
+      checked: false,
+      parentId: newItemParentId || null
+    })
 
     updateCheckItems({
       items: newItems,
@@ -351,35 +336,59 @@ export default function CheckItemsManager({ checkItems, onChange }) {
 
     if (editingItemId && idsToDelete.includes(editingItemId)) {
       setEditingItemId(null)
-      updateCheckItems({
-        items: newItems,
-        newItemName: '',
-        newItemParentId: null
-      })
+      setEditingName('')
     }
   }
 
-  // 开始编辑
+  // 开始编辑（内联编辑）
   const handleEdit = (item) => {
     setEditingItemId(item.id)
+    setEditingName(item.name)
     setEditingRemarkItemId(null)
     setInputError('')
     setPendingPasteContent(null)
-    updateCheckItems({
-      newItemName: item.name,
-      newItemParentId: item.parentId || null
-    })
   }
 
   // 取消编辑
   const handleCancelEdit = () => {
     setEditingItemId(null)
+    setEditingName('')
     setInputError('')
-    setPendingPasteContent(null)
-    updateCheckItems({
-      newItemName: '',
-      newItemParentId: null
+  }
+
+  // 保存内联编辑
+  const handleSaveEdit = () => {
+    const trimmedName = editingName.trim()
+    if (!trimmedName) {
+      handleCancelEdit()
+      return
+    }
+
+    const editingItem = items.find(i => i.id === editingItemId)
+    const targetParentId = editingItem?.parentId || null
+    const isDuplicate = items.some(
+      item =>
+        item.name === trimmedName &&
+        item.id !== editingItemId &&
+        (item.parentId || null) === targetParentId
+    )
+
+    if (isDuplicate) {
+      setInputError('同级下已存在相同名称的勾选项')
+      return
+    }
+
+    const newItems = items.map(item => {
+      if (item.id === editingItemId) {
+        return { ...item, name: trimmedName }
+      }
+      return item
     })
+
+    updateCheckItems({ items: newItems })
+    setEditingItemId(null)
+    setEditingName('')
+    setInputError('')
   }
 
   // 开始编辑备注
@@ -470,85 +479,127 @@ export default function CheckItemsManager({ checkItems, onChange }) {
   const renderTreeNode = (nodeData) => (
     <div className={styles.nodeWrapper}>
       <div className={styles.treeNode}>
-        <div
-          className={styles.nodeContent}
-          onDoubleClick={(e) => {
-            e.stopPropagation()
-            handleEdit(nodeData)
-          }}
-        >
-          <div className={styles.nodeInfo}>
-            <span className={styles.nodeName}>{nodeData.title}</span>
-            {nodeData.remark && (
-              <Tooltip title={nodeData.remark} placement="top">
-                <FileTextOutlined className={styles.remarkIcon} />
+        {editingItemId === nodeData.id ? (
+          <div
+            className={`${styles.nodeContent} ${styles.nodeContentEditing}`}
+            onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <Input
+              value={editingName}
+              onChange={(e) => {
+                setInputError('')
+                setEditingName(e.target.value)
+              }}
+              onPressEnter={(e) => {
+                e.stopPropagation()
+                handleSaveEdit()
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') handleCancelEdit()
+              }}
+              onMouseDown={(e) => e.stopPropagation()}
+              autoFocus
+              size="small"
+              status={inputError ? 'error' : undefined}
+              className={styles.inlineEditInput}
+            />
+            <Space size={4} className={styles.inlineEditActions}>
+              <Button type="primary" size="small" onClick={handleSaveEdit}>
+                保存
+              </Button>
+              <Button size="small" onClick={handleCancelEdit}>
+                取消
+              </Button>
+            </Space>
+          </div>
+        ) : (
+          <div
+            className={styles.nodeContent}
+            onDoubleClick={(e) => {
+              e.stopPropagation()
+              handleEdit(nodeData)
+            }}
+          >
+            <div className={styles.nodeInfo}>
+              <span className={styles.nodeName}>{nodeData.title}</span>
+              {nodeData.remark && (
+                <Tooltip title={nodeData.remark} placement="top">
+                  <FileTextOutlined className={styles.remarkIcon} />
+                </Tooltip>
+              )}
+            </div>
+            <div className={styles.nodeActions}>
+              <Tooltip title={nodeData.remark ? '编辑备注' : '添加备注'}>
+                <Button
+                  type="text"
+                  size="small"
+                  icon={<FileTextOutlined />}
+                  className={nodeData.remark ? styles.hasRemark : ''}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleEditRemark(nodeData)
+                  }}
+                />
               </Tooltip>
-            )}
+              <Tooltip title="添加子项">
+                <Button
+                  type="text"
+                  size="small"
+                  icon={<PlusOutlined />}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleAddChild(nodeData.id)
+                  }}
+                />
+              </Tooltip>
+              <Tooltip title="编辑">
+                <Button
+                  type="text"
+                  size="small"
+                  icon={<EditOutlined />}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleEdit(nodeData)
+                  }}
+                />
+              </Tooltip>
+              <Tooltip title="删除">
+                <Button
+                  type="text"
+                  size="small"
+                  danger
+                  icon={<DeleteOutlined />}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleDelete(nodeData.id)
+                  }}
+                />
+              </Tooltip>
+              <Tooltip title="拖动排序">
+                <HolderOutlined className={styles.dragHandle} />
+              </Tooltip>
+            </div>
           </div>
-          <div className={styles.nodeActions}>
-            <Tooltip title={nodeData.remark ? '编辑备注' : '添加备注'}>
-              <Button
-                type="text"
-                size="small"
-                icon={<FileTextOutlined />}
-                className={nodeData.remark ? styles.hasRemark : ''}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  handleEditRemark(nodeData)
-                }}
-              />
-            </Tooltip>
-            <Tooltip title="添加子项">
-              <Button
-                type="text"
-                size="small"
-                icon={<PlusOutlined />}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  handleAddChild(nodeData.id)
-                }}
-              />
-            </Tooltip>
-            <Tooltip title="编辑">
-              <Button
-                type="text"
-                size="small"
-                icon={<EditOutlined />}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  handleEdit(nodeData)
-                }}
-              />
-            </Tooltip>
-            <Tooltip title="删除">
-              <Button
-                type="text"
-                size="small"
-                danger
-                icon={<DeleteOutlined />}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  handleDelete(nodeData.id)
-                }}
-              />
-            </Tooltip>
-            <Tooltip title="拖动排序">
-              <HolderOutlined className={styles.dragHandle} />
-            </Tooltip>
-          </div>
-        </div>
+        )}
       </div>
+
+      {/* 内联编辑错误提示 */}
+      {editingItemId === nodeData.id && inputError && (
+        <div className={styles.inlineEditError}>{inputError}</div>
+      )}
 
       {/* 备注显示区域 - 已移除 */}
 
 
       {/* 备注编辑区域 */}
       {editingRemarkItemId === nodeData.id && (
-        <div className={styles.remarkEditor} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.remarkEditor} onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
           <TextArea
             placeholder="输入备注内容..."
             value={remarkInputValue}
             onChange={(e) => setRemarkInputValue(e.target.value)}
+            onMouseDown={(e) => e.stopPropagation()}
             autoSize={{ minRows: 2, maxRows: 6 }}
             autoFocus
           />
@@ -614,7 +665,7 @@ export default function CheckItemsManager({ checkItems, onChange }) {
               <Tree
                 treeData={treeData}
                 defaultExpandAll
-                draggable
+                draggable={{ nodeDraggable: (node) => node.key !== editingItemId && node.key !== editingRemarkItemId }}
                 onDrop={handleDrop}
                 titleRender={renderTreeNode}
                 blockNode
@@ -645,23 +696,11 @@ export default function CheckItemsManager({ checkItems, onChange }) {
               </div>
             )}
 
-            {/* 编辑提示 */}
-            {editingItemId && (
-              <div className={styles.editHint}>
-                <span>正在编辑:</span>
-                <Tag closable onClose={handleCancelEdit} color="orange">
-                  {items.find(i => i.id === editingItemId)?.name || '未知项'}
-                </Tag>
-              </div>
-            )}
-
             {/* 输入框 */}
             <Space.Compact className={styles.inputGroup}>
               <Input
                 placeholder={
-                  editingItemId
-                    ? '修改勾选项名称'
-                    : newItemParentId
+                  newItemParentId
                     ? '输入子项名称'
                     : '添加勾选项'
                 }
@@ -684,14 +723,14 @@ export default function CheckItemsManager({ checkItems, onChange }) {
               <Button
                 type="primary"
                 onClick={handleAddOrUpdate}
-                icon={editingItemId ? <EditOutlined /> : <PlusOutlined />}
+                icon={<PlusOutlined />}
               >
-                {editingItemId ? '保存' : '添加'}
+                添加
               </Button>
             </Space.Compact>
 
             {/* 错误提示 */}
-            {inputError && <div className={styles.errorText}>{inputError}</div>}
+            {inputError && !editingItemId && <div className={styles.errorText}>{inputError}</div>}
           </div>
         </div>
       )}
