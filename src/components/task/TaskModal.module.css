@@ -327,6 +327,43 @@
   box-shadow: 0 4px 12px rgba(255, 77, 79, 0.4);
 }
 
+/* 新图片标记 */
+.newBadge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  background: linear-gradient(135deg, #52c41a, #73d13d);
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 8px;
+  border-radius: 4px;
+  z-index: 10;
+  box-shadow: 0 2px 4px rgba(82, 196, 26, 0.3);
+  line-height: 1.5;
+  pointer-events: none;
+}
+
+/* 新图片入场动画 */
+.newImageItem {
+  animation: imageAppear 0.3s ease-out;
+}
+
+.newImageItem:hover .newBadge {
+  opacity: 0.7;
+}
+
+@keyframes imageAppear {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 /* 新上传图片的文件名显示 */
 .uploadImageItem {
   position: relative;

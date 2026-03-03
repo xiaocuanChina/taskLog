@@ -103,6 +103,43 @@ export default function TaskModal({
       }, 100)
     }
   }, [show])
+
+  const imageGridRef = useRef(null)
+  const prevImageCount = useRef(0)
+
+  // 监听全局粘贴事件，打开模态框后直接粘贴图片即可生效，无需点击
+  useEffect(() => {
+    if (!show) return
+    const handleGlobalPaste = (e) => {
+      const items = e.clipboardData?.items
+      if (!items) return
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf('image') !== -1) {
+          onPaste(e)
+          return
+        }
+      }
+    }
+    document.addEventListener('paste', handleGlobalPaste)
+    return () => document.removeEventListener('paste', handleGlobalPaste)
+  }, [show, onPaste])
+
+  // 模态框打开时记录当前图片数量
+  useEffect(() => {
+    if (show) {
+      prevImageCount.current = task?.images?.length || 0
+    }
+  }, [show])
+
+  // 新增图片时自动滚动到图片区域
+  useEffect(() => {
+    const currentCount = task?.images?.length || 0
+    if (currentCount > prevImageCount.current && imageGridRef.current) {
+      imageGridRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    }
+    prevImageCount.current = currentCount
+  }, [task?.images?.length])
+
   const languages = [
     'javascript', 'typescript', 'python', 'java', 'c', 'cpp', 'csharp',
     'go', 'rust', 'php', 'ruby', 'sql', 'html', 'css', 'json',
@@ -138,7 +175,7 @@ export default function TaskModal({
       destroyOnHidden
       closable={false}
     >
-      <div className={styles.container} onPaste={onPaste}>
+      <div className={styles.container}>
         {/* 自定义头部 */}
         <div className={styles.header}>
           <div className={styles.modalTitle}>
@@ -234,44 +271,6 @@ export default function TaskModal({
 
           {/* 附件图片 */}
           <Form.Item label="附件图片">
-            {/* 已有图片预览 (仅编辑模式) */}
-            {isEdit && task?.existingImages && task.existingImages.length > 0 && (
-              <div className={styles.imageSection}>
-                <div className={styles.sectionLabel}>
-                  <span>已有图片</span>
-                  <Tag color="blue">{task.existingImages.length}</Tag>
-                </div>
-                <div className={styles.imageGrid}>
-                  {task.existingImages.map((imgPath, idx) => (
-                    <div key={idx} className={styles.imageItem}>
-                      <TaskImage
-                        src={imgPath}
-                        alt={`已有附件${idx + 1}`}
-                        onClick={() => {
-                          if (onPreviewImage) {
-                            onPreviewImage(imgPath, task.existingImages, idx, (deleteIndex) => {
-                              const { task: currentTask, onTaskChange: currentOnTaskChange } = latestProps.current
-                              const newExistingImages = [...currentTask.existingImages]
-                              newExistingImages.splice(deleteIndex, 1)
-                              currentOnTaskChange({ ...currentTask, existingImages: newExistingImages })
-                              return newExistingImages
-                            })
-                          }
-                        }}
-                        className={styles.imagePreview}
-                      />
-                      <button
-                        className={styles.btnRemoveImage}
-                        onClick={() => onRemoveExistingImage(idx)}
-                      >
-                        <DeleteOutlined />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
             {/* 上传区域 */}
             <div
               className={`${styles.uploadArea} ${dragActive ? styles.dragActive : ''}`}
@@ -298,16 +297,23 @@ export default function TaskModal({
               </label>
             </div>
 
-            {/* 新上传图片预览 */}
-            {task?.images && task.images.length > 0 && (
-              <div className={styles.imageSection}>
+            {/* 统一图片预览区域：新图片优先显示在前面 */}
+            {((isEdit && task?.existingImages?.length > 0) || (task?.images?.length > 0)) && (
+              <div className={styles.imageSection} ref={imageGridRef}>
                 <div className={styles.sectionLabel}>
-                  <span>{isEdit ? '新添加的图片' : '待上传的图片'}</span>
-                  <Tag color="green">{task.images.length}</Tag>
+                  <span>图片列表</span>
+                  {task?.images?.length > 0 && (
+                    <Tag color="green">新增 {task.images.length}</Tag>
+                  )}
+                  {isEdit && task?.existingImages?.length > 0 && (
+                    <Tag color="blue">已有 {task.existingImages.length}</Tag>
+                  )}
                 </div>
                 <div className={styles.imageGrid}>
-                  {task.images.map((file, idx) => (
-                    <div key={idx} className={styles.uploadImageItem}>
+                  {/* 新添加的图片优先显示 */}
+                  {task?.images?.map((file, idx) => (
+                    <div key={`new-${idx}`} className={`${styles.imageItem} ${styles.newImageItem}`}>
+                      <div className={styles.newBadge}>新</div>
                       <img
                         src={URL.createObjectURL(file)}
                         alt={file.name}
@@ -323,7 +329,7 @@ export default function TaskModal({
                             })
                           }
                         }}
-                        className={styles.uploadImagePreview}
+                        className={styles.imagePreview}
                       />
                       <button
                         className={styles.btnRemoveImage}
@@ -331,9 +337,33 @@ export default function TaskModal({
                       >
                         <DeleteOutlined />
                       </button>
-                      <div className={styles.uploadImageName}>
-                        {file.name}
-                      </div>
+                    </div>
+                  ))}
+                  {/* 已有图片 */}
+                  {isEdit && task?.existingImages?.map((imgPath, idx) => (
+                    <div key={`existing-${idx}`} className={styles.imageItem}>
+                      <TaskImage
+                        src={imgPath}
+                        alt={`已有附件${idx + 1}`}
+                        onClick={() => {
+                          if (onPreviewImage) {
+                            onPreviewImage(imgPath, task.existingImages, idx, (deleteIndex) => {
+                              const { task: currentTask, onTaskChange: currentOnTaskChange } = latestProps.current
+                              const newExistingImages = [...currentTask.existingImages]
+                              newExistingImages.splice(deleteIndex, 1)
+                              currentOnTaskChange({ ...currentTask, existingImages: newExistingImages })
+                              return newExistingImages
+                            })
+                          }
+                        }}
+                        className={styles.imagePreview}
+                      />
+                      <button
+                        className={styles.btnRemoveImage}
+                        onClick={() => onRemoveExistingImage(idx)}
+                      >
+                        <DeleteOutlined />
+                      </button>
                     </div>
                   ))}
                 </div>
