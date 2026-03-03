@@ -181,6 +181,15 @@ export default function TaskManageView({
 }) {
     const pendingTasksByModule = groupTasksByModule(pendingTasks)
     const completedTasksByModule = groupTasksByModule(completedTasks)
+        .map(group => ({
+            ...group,
+            tasks: [...group.tasks].sort((a, b) => new Date(b.completedAt || 0) - new Date(a.completedAt || 0))
+        }))
+        .sort((a, b) => {
+            const aLatest = Math.max(...a.tasks.map(t => new Date(t.completedAt || 0).getTime()))
+            const bLatest = Math.max(...b.tasks.map(t => new Date(t.completedAt || 0).getTime()))
+            return bLatest - aLatest
+        })
     const [showCompletedPanel, setShowCompletedPanel] = React.useState(false)
 
     // 配置拖拽传感器
