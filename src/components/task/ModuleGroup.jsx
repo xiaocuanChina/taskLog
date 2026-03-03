@@ -167,7 +167,12 @@ export default function ModuleGroup({
         </div>
       ),
       children: (
-        <>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(420px, 1fr))',
+          columnGap: 12,
+          alignItems: 'start'
+        }}>
           {tasks.map(task => (
             <TaskCard
               key={task.id}
@@ -184,7 +189,7 @@ export default function ModuleGroup({
               onCheckItemChange={onCheckItemChange}
             />
           ))}
-        </>
+        </div>
       )
     }
   ]
