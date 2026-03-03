@@ -411,3 +411,28 @@ main::-webkit-scrollbar-thumb:hover {
 .taskCardBody::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
+/* 已完成任务收起状态切换条 */
+.completedToggleStrip {
+  width: 52px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: linear-gradient(180deg, #d1fae5 0%, #a7f3d0 100%);
+  border-radius: 16px;
+  border: 2px solid #6ee7b7;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 20px rgba(16, 185, 129, 0.15);
+  padding: 20px 0;
+}
+
+.completedToggleStrip:hover {
+  background: linear-gradient(180deg, #bbf7d0 0%, #86efac 100%);
+  box-shadow: 0 6px 24px rgba(16, 185, 129, 0.25);
+  border-color: #34d399;
+  transform: translateX(-2px);
+}

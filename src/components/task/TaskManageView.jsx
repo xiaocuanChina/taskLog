@@ -25,6 +25,7 @@ import {
     FileTextOutlined,
     TrophyOutlined,
     LeftOutlined,
+    RightOutlined,
     SearchOutlined,
     CloseCircleOutlined,
     EditOutlined,
@@ -180,6 +181,7 @@ export default function TaskManageView({
 }) {
     const pendingTasksByModule = groupTasksByModule(pendingTasks)
     const completedTasksByModule = groupTasksByModule(completedTasks)
+    const [showCompletedPanel, setShowCompletedPanel] = React.useState(false)
 
     // 配置拖拽传感器
     const sensors = useSensors(
@@ -820,13 +822,14 @@ export default function TaskManageView({
                 {/* 任务列表 - 重构版 */}
                 <div style={{ 
                     flex: 1, 
-                    display: 'grid', 
-                    gridTemplateColumns: 'repeat(2, 1fr)', 
-                    gap: 24,
+                    display: 'flex', 
+                    gap: 16,
                     overflow: 'hidden'
                 }}>
                     {/* 待办任务区域 */}
                     <div style={{ 
+                        flex: 1,
+                        minWidth: 0,
                         display: 'flex', 
                         flexDirection: 'column',
                         background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
@@ -1028,8 +1031,55 @@ export default function TaskManageView({
                         </div>
                     </div>
 
+                    {/* 已完成任务 - 收起状态切换条 */}
+                    {!showCompletedPanel && (
+                        <div
+                            className={styles.completedToggleStrip}
+                            onClick={() => setShowCompletedPanel(true)}
+                        >
+                            <div style={{
+                                width: 36,
+                                height: 36,
+                                borderRadius: 10,
+                                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)'
+                            }}>
+                                <CheckCircleOutlined style={{ fontSize: 18, color: '#ffffff' }} />
+                            </div>
+                            <div style={{
+                                writingMode: 'vertical-rl',
+                                textOrientation: 'mixed',
+                                fontSize: 14,
+                                fontWeight: 700,
+                                color: '#064e3b',
+                                letterSpacing: 2
+                            }}>
+                                已完成
+                            </div>
+                            <div style={{
+                                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                                color: '#ffffff',
+                                borderRadius: 12,
+                                padding: '2px 0',
+                                fontSize: 13,
+                                fontWeight: 700,
+                                width: 32,
+                                textAlign: 'center',
+                                boxShadow: '0 2px 6px rgba(16, 185, 129, 0.3)'
+                            }}>
+                                {completedTasks.length}
+                            </div>
+                        </div>
+                    )}
+
                     {/* 已完成任务区域 */}
+                    {showCompletedPanel && (
                     <div style={{ 
+                        width: '40%',
+                        flexShrink: 0,
                         display: 'flex', 
                         flexDirection: 'column',
                         background: 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)',
@@ -1081,9 +1131,43 @@ export default function TaskManageView({
                                         </p>
                                     </div>
                                 </div>
-                                {completedTasksByModule.length > 0 && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    {completedTasksByModule.length > 0 && (
+                                        <div
+                                            onClick={handleToggleAllCompleted}
+                                            style={{
+                                                cursor: 'pointer',
+                                                background: 'rgba(255, 255, 255, 0.8)',
+                                                border: '1px solid rgba(16, 185, 129, 0.4)',
+                                                borderRadius: 10,
+                                                padding: '8px 14px',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 6,
+                                                transition: 'all 0.2s',
+                                                boxShadow: '0 2px 6px rgba(16, 185, 129, 0.1)'
+                                            }}
+                                            onMouseEnter={(e) => {
+                                                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.95)'
+                                                e.currentTarget.style.borderColor = 'rgba(16, 185, 129, 0.6)'
+                                                e.currentTarget.style.transform = 'translateY(-1px)'
+                                                e.currentTarget.style.boxShadow = '0 4px 10px rgba(16, 185, 129, 0.15)'
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.8)'
+                                                e.currentTarget.style.borderColor = 'rgba(16, 185, 129, 0.4)'
+                                                e.currentTarget.style.transform = 'translateY(0)'
+                                                e.currentTarget.style.boxShadow = '0 2px 6px rgba(16, 185, 129, 0.1)'
+                                            }}
+                                        >
+                                            {allCompletedExpanded ? <UpOutlined style={{ fontSize: 12, color: '#065f46' }} /> : <DownOutlined style={{ fontSize: 12, color: '#065f46' }} />}
+                                            <span style={{ fontSize: 13, fontWeight: 600, color: '#065f46' }}>
+                                                {allCompletedExpanded ? '全部收起' : '全部展开'}
+                                            </span>
+                                        </div>
+                                    )}
                                     <div
-                                        onClick={handleToggleAllCompleted}
+                                        onClick={() => setShowCompletedPanel(false)}
                                         style={{
                                             cursor: 'pointer',
                                             background: 'rgba(255, 255, 255, 0.8)',
@@ -1109,12 +1193,12 @@ export default function TaskManageView({
                                             e.currentTarget.style.boxShadow = '0 2px 6px rgba(16, 185, 129, 0.1)'
                                         }}
                                     >
-                                        {allCompletedExpanded ? <UpOutlined style={{ fontSize: 12, color: '#065f46' }} /> : <DownOutlined style={{ fontSize: 12, color: '#065f46' }} />}
+                                        <RightOutlined style={{ fontSize: 12, color: '#065f46' }} />
                                         <span style={{ fontSize: 13, fontWeight: 600, color: '#065f46' }}>
-                                            {allCompletedExpanded ? '全部收起' : '全部展开'}
+                                            收起
                                         </span>
                                     </div>
-                                )}
+                                </div>
                             </div>
 
                             {/* 搜索和筛选行 */}
@@ -1212,6 +1296,7 @@ export default function TaskManageView({
                             )}
                         </div>
                     </div>
+                    )}
                 </div>
             </main>
 
