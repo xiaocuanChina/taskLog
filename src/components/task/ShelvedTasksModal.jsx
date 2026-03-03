@@ -72,6 +72,7 @@ export default function ShelvedTasksModal({
             onCancel={handleClose}
             footer={null}
             width={700}
+            centered
             title={
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <PauseCircleOutlined style={{ color: '#faad14' }} />
@@ -84,7 +85,11 @@ export default function ShelvedTasksModal({
             }
             styles={{
                 body: {
-                    padding: '16px'
+                    padding: '16px',
+                    maxHeight: '70vh',
+                    overflow: 'hidden',
+                    display: 'flex',
+                    flexDirection: 'column'
                 }
             }}
         >
@@ -97,7 +102,7 @@ export default function ShelvedTasksModal({
                 value={searchKeyword}
                 onChange={(e) => setSearchKeyword(e.target.value)}
                 allowClear
-                style={{ marginBottom: 16 }}
+                style={{ marginBottom: 16, flexShrink: 0 }}
             />
 
             {filteredTasks.length === 0 ? (
@@ -112,26 +117,28 @@ export default function ShelvedTasksModal({
                         display: 'flex',
                         flexDirection: 'column',
                         gap: 12,
-                        maxHeight: '55vh',
+                        flex: 1,
+                        minHeight: 0,
                         overflowY: 'auto',
                         paddingRight: 8
                     }}
                 >
                     {filteredTasks.map(task => (
-                        <TaskCard
-                            key={task.id}
-                            task={task}
-                            isCompleted={false}
-                            isShelved={true}
-                            taskTypeColors={taskTypeColors}
-                            onComplete={onTaskComplete}
-                            onRollback={onTaskRollback}
-                            onEdit={onTaskEdit}
-                            onDelete={onTaskDelete}
-                            onImageClick={onImageClick}
-                            onUnshelve={onTaskUnshelve}
-                            onCheckItemChange={onCheckItemChange}
-                        />
+                        <div key={task.id} style={{ flexShrink: 0 }}>
+                            <TaskCard
+                                task={task}
+                                isCompleted={false}
+                                isShelved={true}
+                                taskTypeColors={taskTypeColors}
+                                onComplete={onTaskComplete}
+                                onRollback={onTaskRollback}
+                                onEdit={onTaskEdit}
+                                onDelete={onTaskDelete}
+                                onImageClick={onImageClick}
+                                onUnshelve={onTaskUnshelve}
+                                onCheckItemChange={onCheckItemChange}
+                            />
+                        </div>
                     ))}
                 </div>
             )}
