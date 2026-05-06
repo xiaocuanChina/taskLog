@@ -173,15 +173,16 @@ export default function ImagePreview({ imagePreview, onClose, onPrev, onNext, on
       open={imagePreview.show}
       onCancel={onClose}
       footer={null}
-      width="100vw"
+      width="80vw"
+      style={{ maxWidth: 980 }}
       centered
       zIndex={1100}
       closeIcon={null}
       className={styles.modal}
+      mask={false}
       styles={{
         body: {
           padding: 0,
-          height: '100vh',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
