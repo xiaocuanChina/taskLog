@@ -169,6 +169,19 @@ app.whenReady().then(async () => {
   ipcMain.handle('shell:openExternal', (e, url) => {
     return shell.openExternal(url)
   })
+  ipcMain.handle('shell:openPath', async (e, filePath) => {
+    // Electron: 成功返回空字符串，失败返回错误信息
+    return await shell.openPath(filePath)
+  })
+  ipcMain.handle('shell:showItemInFolder', (e, filePath) => {
+    try {
+      shell.showItemInFolder(filePath)
+      return true
+    } catch (err) {
+      console.error('showItemInFolder failed:', err)
+      return false
+    }
+  })
 
   // 项目管理
   ipcMain.handle('projects:list', () => {

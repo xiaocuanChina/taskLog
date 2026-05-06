@@ -60,7 +60,9 @@ contextBridge.exposeInMainWorld('electron', {
   },
   // 系统功能
   shell: {
-    openExternal: (url) => ipcRenderer.invoke('shell:openExternal', url)
+    openExternal: (url) => ipcRenderer.invoke('shell:openExternal', url),
+    openPath: (filePath) => ipcRenderer.invoke('shell:openPath', filePath),
+    showItemInFolder: (filePath) => ipcRenderer.invoke('shell:showItemInFolder', filePath)
   },
   // 应用信息
   app: {

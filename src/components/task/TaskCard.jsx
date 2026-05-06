@@ -18,7 +18,8 @@ import {
   LoadingOutlined,
   FolderOutlined,
   CopyOutlined,
-  PauseCircleOutlined
+  PauseCircleOutlined,
+  FolderOpenOutlined
 } from '@ant-design/icons'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
@@ -186,6 +187,35 @@ export default function TaskCard({
     }
   }
 
+  const resolveImageAbsPath = async (imageSrc) => {
+    if (!imageSrc) return null
+    if (imageSrc.startsWith('blob:') || imageSrc.startsWith('http')) return null
+    let pathToCheck = imageSrc
+    if (pathToCheck.startsWith('file://')) {
+      pathToCheck = pathToCheck.replace('file://', '')
+    }
+    return await window.electron?.image?.getPath(pathToCheck)
+  }
+
+  const handleOpenImageInLocalFolder = async (img) => {
+    try {
+      const absPath = await resolveImageAbsPath(img)
+      if (!absPath) {
+        showToast('该图片暂不支持打开所在目录（仅支持本地附件图片）', 'warning')
+        return
+      }
+      if (!window.electron?.shell?.showItemInFolder) {
+        // TODO: 如果后续需要兼容旧版本，可在此处增加兜底方案
+        showToast('当前版本不支持打开所在目录', 'error')
+        return
+      }
+      const ok = await window.electron.shell.showItemInFolder(absPath)
+      if (ok === false) showToast('打开所在目录失败', 'error')
+    } catch (error) {
+      showToast('打开所在目录失败', 'error')
+    }
+  }
+
   const handleCopyImage = async (img, idx) => {
     try {
       let imagesToCopy = []
@@ -200,17 +230,9 @@ export default function TaskCard({
         const filePaths = []
         let allPathsFound = true
         for (const imageSrc of imagesToCopy) {
-          if (!imageSrc.startsWith('blob:') && !imageSrc.startsWith('http')) {
-            let pathToCheck = imageSrc
-            if (pathToCheck.startsWith('file://')) {
-              pathToCheck = pathToCheck.replace('file://', '')
-            }
-            const absPath = await window.electron.image.getPath(pathToCheck)
-            if (absPath) {
-              filePaths.push(absPath)
-            } else {
-              allPathsFound = false
-            }
+          const absPath = await resolveImageAbsPath(imageSrc)
+          if (absPath) {
+            filePaths.push(absPath)
           } else {
             allPathsFound = false
           }
@@ -841,7 +863,10 @@ export default function TaskCard({
               <Dropdown
                 key={idx}
                 menu={{
-                  items: [{ key: 'copy', label: '复制', icon: <CopyOutlined />, onClick: () => handleCopyImage(img, idx) }]
+                  items: [
+                    { key: 'copy', label: '复制', icon: <CopyOutlined />, onClick: () => handleCopyImage(img, idx) },
+                    { key: 'openLocalFolder', label: '打开所在目录', icon: <FolderOpenOutlined />, onClick: () => handleOpenImageInLocalFolder(img) }
+                  ]
                 }}
                 trigger={['contextMenu']}
               >
