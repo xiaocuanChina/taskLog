@@ -190,6 +190,25 @@ export default function TaskManageView({
             const bLatest = Math.max(...b.tasks.map(t => new Date(t.completedAt || 0).getTime()))
             return bLatest - aLatest
         })
+
+    // 筛选模块下拉框：只展示当前状态下真实存在的模块
+    const pendingModuleNames = pendingTasksByModule.map(g => g.moduleName).filter(Boolean)
+    const completedModuleNames = completedTasksByModule.map(g => g.moduleName).filter(Boolean)
+    const pendingModuleOptions = pendingModuleNames.map(name => ({ label: name, value: name }))
+    const completedModuleOptions = completedModuleNames.map(name => ({ label: name, value: name }))
+
+    // 如果当前筛选的模块在该状态下已不存在，则自动清空筛选
+    React.useEffect(() => {
+        if (selectedModuleFilter && !pendingModuleNames.includes(selectedModuleFilter)) {
+            onModuleFilterChange?.(undefined)
+        }
+    }, [selectedModuleFilter, pendingModuleNames, onModuleFilterChange])
+
+    React.useEffect(() => {
+        if (completedModuleFilter && !completedModuleNames.includes(completedModuleFilter)) {
+            onCompletedModuleFilterChange?.(undefined)
+        }
+    }, [completedModuleFilter, completedModuleNames, onCompletedModuleFilterChange])
     const [showCompletedPanel, setShowCompletedPanel] = React.useState(false)
 
     // 配置拖拽传感器
@@ -938,7 +957,7 @@ export default function TaskManageView({
                                     }
                                     value={selectedModuleFilter}
                                     onChange={onModuleFilterChange}
-                                    options={modules.map(m => ({ label: m.name, value: m.name }))}
+                                    options={pendingModuleOptions}
                                     size="middle"
                                 />
                                 <Input
@@ -1222,7 +1241,7 @@ export default function TaskManageView({
                                     }
                                     value={completedModuleFilter}
                                     onChange={onCompletedModuleFilterChange}
-                                    options={modules.map(m => ({ label: m.name, value: m.name }))}
+                                    options={completedModuleOptions}
                                     size="middle"
                                 />
                                 <Input
