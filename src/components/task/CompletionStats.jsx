@@ -122,9 +122,15 @@ export default function CompletionStats({
         return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
     }
 
-    // 自定义完整日期单元格渲染
+    // 自定义完整日期单元格渲染（仅渲染当前面板月份内的日期，其余格占位以保持对齐）
     const fullCellRender = (date, info) => {
         if (info.type !== 'date') return info.originNode
+
+        const isCurrentMonth =
+            date.month() === currentMonth.month() && date.year() === currentMonth.year()
+        if (!isCurrentMonth) {
+            return <div className={styles.dateCellBlank} aria-hidden="true" />
+        }
 
         const dateKey = date.format('YYYY-MM-DD')
         const dayTasks = tasksByDateMap.get(dateKey)
@@ -132,11 +138,10 @@ export default function CompletionStats({
         const isSelected = selectedDate && selectedDate.format('YYYY-MM-DD') === dateKey
         const isMaxDay = monthStats.maxDayDate === dateKey
         const isToday = date.format('YYYY-MM-DD') === dayjs().format('YYYY-MM-DD')
-        const isCurrentMonth = date.month() === currentMonth.month()
 
         return (
             <div 
-                className={`${styles.dateCell} ${hasTasks ? styles.hasTasks : ''} ${isSelected ? styles.selected : ''} ${isMaxDay ? styles.maxDay : ''} ${isToday ? styles.today : ''} ${!isCurrentMonth ? styles.otherMonth : ''}`}
+                className={`${styles.dateCell} ${hasTasks ? styles.hasTasks : ''} ${isSelected ? styles.selected : ''} ${isMaxDay ? styles.maxDay : ''} ${isToday ? styles.today : ''}`}
                 onClick={() => setSelectedDate(date)}
             >
                 {isMaxDay && <span className={styles.crownIcon}>🏆</span>}

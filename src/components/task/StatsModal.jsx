@@ -84,7 +84,13 @@ export default function StatsModal({
             footer={null}
             width={920}
             centered
-            styles={{ body: { padding: '0 24px 20px' } }}
+            styles={{
+                body: {
+                    padding: '0 24px 20px',
+                    maxHeight: 'calc(100vh - 48px)',
+                    overflowY: 'auto',
+                },
+            }}
             className={styles.statsModal}
         >
             <Tabs

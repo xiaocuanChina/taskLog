@@ -1,11 +1,13 @@
 /* ==================== 完成统计组件样式 ==================== */
 
-/* 主容器 */
+/* 主容器：固定块高度 + 内部弹性分配，保证月历 6 行在可视区内均分、日历区域不滚动 */
 .completionContent {
     display: flex;
     flex-direction: column;
     gap: 20px;
-    height: 600px;
+    min-height: 560px;
+    height: min(820px, calc(100vh - 260px));
+    overflow: hidden;
 }
 
 /* ==================== 汇总卡片区域 ==================== */
@@ -189,32 +191,100 @@
     flex: 1;
     min-height: 0;
     overflow: hidden;
+    align-items: stretch;
 }
 
 /* ==================== 日历容器 ==================== */
+/* 仅在本区域内压缩星期行与留白，把垂直空间让给日期行；不改变 completionContent 等整体尺寸 */
 .calendarWrapper {
+    --calendar-thead-h: 30px;
     flex: 1;
+    min-width: 0;
+    min-height: 0;
     border: 1px solid var(--border-primary);
     border-radius: 16px;
-    padding: 16px;
+    padding: 8px 16px 10px;
     background: var(--bg-card);
     box-shadow: var(--shadow-sm);
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 将可用高度传入 Ant Design 月历表格，表体固定 6 行均分 */
+.calendarWrapper :global(.ant-picker-calendar) {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.calendarWrapper :global(.ant-picker-panel) {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    border: none !important;
+}
+
+.calendarWrapper :global(.ant-picker-body) {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.calendarWrapper :global(.ant-picker-body > div) {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 部分版本表格直接挂在 body 下，无包裹 div */
+.calendarWrapper :global(.ant-picker-body > table.ant-picker-content) {
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.calendarWrapper :global(table.ant-picker-content) {
+    width: 100%;
+    height: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
 }
 
 .calendarWrapper :global(.ant-picker-calendar-header) {
     display: none !important;
 }
 
+.calendarWrapper :global(.ant-picker-content thead tr) {
+    height: var(--calendar-thead-h);
+}
+
 .calendarWrapper :global(.ant-picker-content thead th) {
-    padding-bottom: 12px !important;
+    padding-top: 0 !important;
+    padding-bottom: 4px !important;
+    line-height: 2;
     font-weight: 600;
     color: var(--text-tertiary);
-    font-size: 13px;
+    font-size: 12px;
+}
+
+.calendarWrapper :global(.ant-picker-content tbody) {
+    height: calc(100% - var(--calendar-thead-h));
+}
+
+/* 月历固定 6 行，每行等高（内容不再撑高单行） */
+.calendarWrapper :global(.ant-picker-content tbody tr) {
+    height: calc(100% / 6);
+    min-height: 0;
 }
 
 .calendarWrapper :global(.ant-picker-cell) {
-    padding: 2px !important;
+    padding: 1px 3px !important;
 }
 
 .calendarWrapper :global(.ant-picker-cell-inner) {
@@ -223,17 +293,38 @@
 
 .calendarWrapper :global(.ant-picker-content td) {
     padding: 0 !important;
+    vertical-align: top;
+    height: 100%;
+}
+
+.calendarWrapper :global(.ant-picker-content tbody td) {
+    height: 100%;
+}
+
+/* 非本月日期：不显示数字，仅占位与 .dateCell 同高以保持表格对齐 */
+.dateCellBlank {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    box-sizing: border-box;
+    padding: 6px 4px 20px;
+    pointer-events: none;
+    border-radius: 10px;
 }
 
 /* ==================== 自定义日期单元格 ==================== */
+/* 任务数、奖杯均不占文档流高度，避免「有任务」的格子撑高整行导致各行高度不一致 */
 .dateCell {
     width: 100%;
-    height: 56px;
+    height: 100%;
+    min-height: 0;
+    box-sizing: border-box;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 8px 4px;
+    /* 底部留白给徽章，所有格子一致，行高由表格均分即可对齐 */
+    padding: 6px 4px 20px;
     border-radius: 10px;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -246,10 +337,6 @@
     background: var(--bg-card-hover);
     border-color: var(--border-secondary);
     transform: scale(1.05);
-}
-
-.dateCell.otherMonth {
-    opacity: 0.3;
 }
 
 .dateCell.hasTasks {
@@ -302,11 +389,16 @@
     font-weight: 600;
     color: var(--text-primary);
     line-height: 1;
-    margin-bottom: 4px;
+    margin-bottom: 0;
 }
 
-/* 任务数量 */
+/* 任务数量（绝对定位，不撑开行高） */
 .taskCount {
+    position: absolute;
+    bottom: 5px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -318,6 +410,7 @@
     font-weight: 600;
     line-height: 1.4;
     min-width: 24px;
+    margin: 0;
 }
 
 .dateCell.maxDay .taskCount {
@@ -341,7 +434,8 @@
 /* ==================== 详情面板 ==================== */
 .detailPanel {
     width: 320px;
-    height: 100%;
+    align-self: stretch;
+    min-height: 0;
     border: 1px solid var(--border-primary);
     border-radius: 16px;
     background: var(--bg-tertiary);
@@ -640,9 +734,16 @@
     .mainContent {
         flex-direction: column;
     }
+
+    .calendarWrapper {
+        flex: 1 1 auto;
+        min-height: 260px;
+    }
     
     .detailPanel {
         width: 100%;
         height: 300px;
+        flex-shrink: 0;
+        align-self: stretch;
     }
 }
