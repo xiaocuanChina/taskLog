@@ -3,6 +3,7 @@ const path = require('path')
 const fs = require('fs')
 const AdmZip = require('adm-zip')
 const { execFile } = require('child_process')
+const { autoUpdater } = require('electron-updater')
 const Database = require('./database')
 
 // 将 db 定义为全局变量，以便在应用关闭时访问
@@ -164,6 +165,76 @@ app.whenReady().then(async () => {
 
   // 应用信息
   ipcMain.handle('app:getVersion', () => app.getVersion())
+
+  // 自动更新相关
+  let updateDownloaded = false
+
+  // 检查更新
+  ipcMain.handle('updater:checkForUpdates', async () => {
+    try {
+      const result = await autoUpdater.checkForUpdates()
+      if (result) {
+        return {
+          hasUpdate: true,
+          version: result.updateInfo.version,
+          releaseDate: result.updateInfo.releaseDate
+        }
+      }
+      return { hasUpdate: false }
+    } catch (err) {
+      console.error('检查更新失败:', err)
+      return { hasUpdate: false, error: err.message }
+    }
+  })
+
+  // 下载更新
+  ipcMain.handle('updater:downloadUpdate', async () => {
+    try {
+      await autoUpdater.downloadUpdate()
+      return { success: true }
+    } catch (err) {
+      console.error('下载更新失败:', err)
+      return { success: false, error: err.message }
+    }
+  })
+
+  // 安装更新并退出
+  ipcMain.handle('updater:installUpdate', () => {
+    if (updateDownloaded) {
+      autoUpdater.quitAndInstall()
+    }
+    return updateDownloaded
+  })
+
+  // 获取下载进度
+  ipcMain.handle('updater:getDownloadProgress', () => {
+    return { downloaded: updateDownloaded }
+  })
+
+  // 监听更新事件
+  autoUpdater.on('update-available', (info) => {
+    console.log('发现新版本:', info.version)
+  })
+
+  autoUpdater.on('download-progress', (progress) => {
+    const win = BrowserWindow.getFocusedWindow()
+    if (win) {
+      win.webContents.send('updater:downloadProgress', progress)
+    }
+  })
+
+  autoUpdater.on('update-downloaded', (info) => {
+    updateDownloaded = true
+    console.log('更新下载完成:', info.version)
+    const win = BrowserWindow.getFocusedWindow()
+    if (win) {
+      win.webContents.send('updater:updateDownloaded', info)
+    }
+  })
+
+  autoUpdater.on('error', (err) => {
+    console.error('更新错误:', err)
+  })
 
   // 系统功能
   ipcMain.handle('shell:openExternal', (e, url) => {

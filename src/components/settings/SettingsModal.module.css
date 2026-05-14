@@ -1138,3 +1138,90 @@
   padding-top: 12px;
   margin-top: 12px;
 }
+
+/* 版本号与按钮同行 */
+.versionRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.updateBtn {
+  flex-shrink: 0;
+}
+
+/* 更新区域 */
+.updateSection {
+  padding: 24px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-primary);
+  border-radius: 12px;
+  margin-bottom: 20px;
+  transition: all 0.2s ease;
+}
+
+.updateSection:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-secondary);
+}
+
+.updateHeader {
+  margin-bottom: 16px;
+}
+
+.updateHeader h4 {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.updateHeader h4::before {
+  content: '';
+  width: 4px;
+  height: 18px;
+  background: linear-gradient(135deg, var(--theme-start-color, #667eea) 0%, var(--theme-end-color, #764ba2) 100%);
+  border-radius: 2px;
+}
+
+.updateDesc {
+  font-size: 13px;
+  color: var(--text-tertiary);
+}
+
+.updateContent {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.updateInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--bg-tertiary);
+  border-radius: 8px;
+  border: 1px solid var(--border-primary);
+}
+
+.downloadProgress {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.downloadProgress span {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.updateActions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}

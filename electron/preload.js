@@ -67,5 +67,18 @@ contextBridge.exposeInMainWorld('electron', {
   // 应用信息
   app: {
     getVersion: () => ipcRenderer.invoke('app:getVersion')
+  },
+  // 自动更新
+  updater: {
+    checkForUpdates: () => ipcRenderer.invoke('updater:checkForUpdates'),
+    downloadUpdate: () => ipcRenderer.invoke('updater:downloadUpdate'),
+    installUpdate: () => ipcRenderer.invoke('updater:installUpdate'),
+    getDownloadProgress: () => ipcRenderer.invoke('updater:getDownloadProgress'),
+    onDownloadProgress: (callback) => {
+      ipcRenderer.on('updater:downloadProgress', (event, progress) => callback(progress))
+    },
+    onUpdateDownloaded: (callback) => {
+      ipcRenderer.on('updater:updateDownloaded', (event, info) => callback(info))
+    }
   }
 })

@@ -2,17 +2,68 @@
  * 关于组件
  */
 import { useState, useEffect } from 'react'
-import { Button, Space, Tag } from 'antd'
-import { GithubOutlined, RocketOutlined, UserOutlined, InfoCircleOutlined } from '@ant-design/icons'
+import { Button, Space, Tag, Progress } from 'antd'
+import { GithubOutlined, RocketOutlined, UserOutlined, InfoCircleOutlined, CloudDownloadOutlined, SyncOutlined, CheckCircleOutlined } from '@ant-design/icons'
+import { useToast } from '../../context/ToastContext'
 import styles from './SettingsModal.module.css'
 
 export default function AboutSettings() {
+  const showToast = useToast()
   const [version, setVersion] = useState('')
+  const [updateStatus, setUpdateStatus] = useState('idle') // idle, checking, available, downloading, downloaded, not-available, error
+  const [updateInfo, setUpdateInfo] = useState(null)
+  const [downloadProgress, setDownloadProgress] = useState(0)
 
   useEffect(() => {
     // 获取应用版本号
     window.electron.app.getVersion().then(v => setVersion(v))
+
+    // 监听下载进度
+    window.electron.updater.onDownloadProgress((progress) => {
+      setDownloadProgress(Math.round(progress.percent))
+    })
+
+    // 监听下载完成
+    window.electron.updater.onUpdateDownloaded((info) => {
+      setUpdateStatus('downloaded')
+      setUpdateInfo(info)
+    })
   }, [])
+
+  // 检查更新
+  const handleCheckUpdate = async () => {
+    setUpdateStatus('checking')
+    try {
+      const result = await window.electron.updater.checkForUpdates()
+      if (result.hasUpdate) {
+        setUpdateStatus('available')
+        setUpdateInfo(result)
+      } else {
+        setUpdateStatus('not-available')
+        showToast('当前已是最新版本', 'info')
+      }
+    } catch (err) {
+      setUpdateStatus('error')
+      showToast('检查更新失败: ' + (err.message || '未知错误'), 'error')
+    }
+  }
+
+  // 下载更新
+  const handleDownloadUpdate = async () => {
+    setUpdateStatus('downloading')
+    setDownloadProgress(0)
+    try {
+      await window.electron.updater.downloadUpdate()
+    } catch (err) {
+      setUpdateStatus('error')
+      showToast('下载更新失败: ' + (err.message || '未知错误'), 'error')
+    }
+  }
+
+  // 安装更新
+  const handleInstallUpdate = () => {
+    window.electron.updater.installUpdate()
+  }
 
   return (
     <div className={styles.contentSection}>
@@ -29,16 +80,65 @@ export default function AboutSettings() {
 
       {/* 信息卡片区域 */}
       <div className={styles.aboutInfoGrid}>
-        {/* 版本信息卡片 */}
+        {/* 版本信息卡片（含更新检查） */}
         <div className={styles.aboutInfoCard}>
           <div className={styles.infoCardIcon}>
             <InfoCircleOutlined />
           </div>
           <div className={styles.infoCardContent}>
             <div className={styles.infoCardLabel}>当前版本</div>
-            <div className={styles.infoCardValue}>
-              {version || '加载中...'}
+            <div className={styles.versionRow}>
+              <div className={styles.infoCardValue}>
+                {version || '加载中...'}
+                {updateStatus === 'available' && (
+                  <Tag color="blue" style={{ marginLeft: 8 }}>新版本 {updateInfo?.version}</Tag>
+                )}
+                {updateStatus === 'downloaded' && (
+                  <Tag color="green" style={{ marginLeft: 8 }}>已下载</Tag>
+                )}
+              </div>
+              {/* 操作按钮：与版本号同一行 */}
+              {(updateStatus === 'idle' || updateStatus === 'not-available' || updateStatus === 'error') && (
+                <Button
+                  size="small"
+                  type="primary"
+                  icon={<SyncOutlined />}
+                  onClick={handleCheckUpdate}
+                  loading={updateStatus === 'checking'}
+                  className={styles.updateBtn}
+                >
+                  {updateStatus === 'checking' ? '检查中...' : '检查更新'}
+                </Button>
+              )}
+              {updateStatus === 'available' && (
+                <Button
+                  size="small"
+                  type="primary"
+                  icon={<CloudDownloadOutlined />}
+                  onClick={handleDownloadUpdate}
+                  className={styles.updateBtn}
+                >
+                  下载更新
+                </Button>
+              )}
+              {updateStatus === 'downloaded' && (
+                <Button
+                  size="small"
+                  type="primary"
+                  icon={<CheckCircleOutlined />}
+                  onClick={handleInstallUpdate}
+                  className={styles.updateBtn}
+                >
+                  安装并重启
+                </Button>
+              )}
             </div>
+            {/* 下载进度 */}
+            {updateStatus === 'downloading' && (
+              <div style={{ marginTop: 8 }}>
+                <Progress percent={downloadProgress} size="small" status="active" />
+              </div>
+            )}
           </div>
         </div>
 
