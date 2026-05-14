@@ -1,6 +1,6 @@
 /* ==================== 完成统计组件样式 ==================== */
 
-/* 主容器：固定块高度 + 内部弹性分配，保证月历 6 行在可视区内均分、日历区域不滚动 */
+/* 主容器：固定块高度 + 内部弹性分配 */
 .completionContent {
     display: flex;
     flex-direction: column;
@@ -203,7 +203,7 @@
     min-height: 0;
     border: 1px solid var(--border-primary);
     border-radius: 16px;
-    padding: 8px 16px 10px;
+    padding: 8px 20px 10px;
     background: var(--bg-card);
     box-shadow: var(--shadow-sm);
     overflow: hidden;
@@ -251,7 +251,7 @@
 
 .calendarWrapper :global(table.ant-picker-content) {
     width: 100%;
-    height: 100%;
+    height: auto;
     table-layout: fixed;
     border-collapse: collapse;
 }
@@ -274,17 +274,17 @@
 }
 
 .calendarWrapper :global(.ant-picker-content tbody) {
-    height: calc(100% - var(--calendar-thead-h));
+    height: auto;
 }
 
 /* 月历固定 6 行，每行等高（内容不再撑高单行） */
 .calendarWrapper :global(.ant-picker-content tbody tr) {
-    height: calc(100% / 6);
+    height: 56px;
     min-height: 0;
 }
 
 .calendarWrapper :global(.ant-picker-cell) {
-    padding: 1px 3px !important;
+    padding: 3px 5px !important;
 }
 
 .calendarWrapper :global(.ant-picker-cell-inner) {
@@ -307,7 +307,7 @@
     height: 100%;
     min-height: 0;
     box-sizing: border-box;
-    padding: 6px 4px 20px;
+    padding: 14px 4px 24px;
     pointer-events: none;
     border-radius: 10px;
 }
@@ -324,7 +324,7 @@
     align-items: center;
     justify-content: center;
     /* 底部留白给徽章，所有格子一致，行高由表格均分即可对齐 */
-    padding: 6px 4px 20px;
+    padding: 14px 4px 24px;
     border-radius: 10px;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -336,7 +336,7 @@
 .dateCell:hover {
     background: var(--bg-card-hover);
     border-color: var(--border-secondary);
-    transform: scale(1.05);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .dateCell.hasTasks {
@@ -347,6 +347,7 @@
 .dateCell.hasTasks:hover {
     background: linear-gradient(135deg, rgba(82, 196, 26, 0.15) 0%, rgba(115, 209, 61, 0.1) 100%);
     border-color: rgba(82, 196, 26, 0.5);
+    box-shadow: 0 2px 8px rgba(82, 196, 26, 0.25);
 }
 
 .dateCell.selected {
@@ -395,7 +396,7 @@
 /* 任务数量（绝对定位，不撑开行高） */
 .taskCount {
     position: absolute;
-    bottom: 5px;
+    bottom: 2px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 1;
@@ -423,9 +424,9 @@
 
 .crownIcon {
     position: absolute;
-    top: 2px;
+    top: 0px;
     right: 2px;
-    font-size: 16px;
+    font-size: 14px;
     line-height: 1;
     z-index: 1;
     filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
