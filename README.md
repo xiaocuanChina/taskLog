@@ -93,6 +93,9 @@ npm run electron:build
 
 # 使用代理打包（PowerShell，需管理员权限）
 $env:HTTP_PROXY="http://127.0.0.1:10808"; $env:HTTPS_PROXY="http://127.0.0.1:10808"; npm run electron:build
+
+# 查询指定版本的提交记录
+git log v0.4.1..v0.4.2 --pretty=format:"%s" --reverse
 ```
 
 打包后的应用位于 `release` 目录。
