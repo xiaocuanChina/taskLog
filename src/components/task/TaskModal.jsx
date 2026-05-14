@@ -15,8 +15,8 @@
  * - 编辑待办任务的信息
  */
 import { useEffect, useRef, useState } from 'react'
-import { Modal, Input, Form, Button, Switch, AutoComplete, Tag } from 'antd'
-import { UploadOutlined, DeleteOutlined, CodeOutlined, FileTextOutlined } from '@ant-design/icons'
+import { Modal, Input, Form, Button, Switch, AutoComplete, Tag, message } from 'antd'
+import { UploadOutlined, DeleteOutlined, CodeOutlined, FileTextOutlined, SaveOutlined, ImportOutlined } from '@ant-design/icons'
 import TaskImage from '../common/TaskImage'
 import CheckItemsManager from './CheckItemsManager'
 import styles from './TaskModal.module.css'
@@ -44,6 +44,10 @@ import 'prismjs/components/prism-bash'
 import 'prismjs/components/prism-powershell'
 
 const { TextArea } = Input
+
+// 临时代码存储的 localStorage key
+const TEMP_CODE_KEY = 'tastLog_tempCodeBlock'
+
 export default function TaskModal({
   show,
   isEdit,
@@ -145,6 +149,45 @@ export default function TaskModal({
     'go', 'rust', 'php', 'ruby', 'sql', 'html', 'css', 'json',
     'markdown', 'bash', 'powershell'
   ]
+
+  // 临时保存代码到 localStorage
+  const handleTempSaveCode = () => {
+    const codeData = {
+      code: task?.codeBlock?.code || '',
+      language: task?.codeBlock?.language || 'javascript',
+      timestamp: Date.now()
+    }
+    localStorage.setItem(TEMP_CODE_KEY, JSON.stringify(codeData))
+    message.success('代码已临时保存')
+  }
+
+  // 从 localStorage 恢复临时保存的代码
+  const handleRestoreCode = () => {
+    const savedData = localStorage.getItem(TEMP_CODE_KEY)
+    if (!savedData) {
+      message.warning('没有找到临时保存的代码')
+      return
+    }
+    try {
+      const { code, language } = JSON.parse(savedData)
+      onTaskChange({
+        ...task,
+        codeBlock: {
+          ...(task?.codeBlock || {}),
+          code: code || '',
+          language: language || 'javascript'
+        }
+      })
+      message.success('已恢复临时保存的代码')
+    } catch {
+      message.error('恢复代码失败')
+    }
+  }
+
+  // 检查是否有临时保存的代码
+  const hasTempCode = () => {
+    return localStorage.getItem(TEMP_CODE_KEY) !== null
+  }
 
   const keyword = (task?.module || '').toLowerCase()
   const activeModuleOptions = modules
@@ -405,20 +448,42 @@ export default function TaskModal({
               {task?.codeBlock?.enabled && (
                 <div className={styles.codeBlockContent}>
                   <div className={styles.codeBlockHeader}>
-                    <span style={{ fontSize: 13, color: 'var(--text-tertiary)' }}>编程语言:</span>
-                    <AutoComplete
-                      placeholder="如: javascript, python..."
-                      value={task?.codeBlock?.language ?? 'javascript'}
-                      onChange={(value) => onTaskChange({
-                        ...task,
-                        codeBlock: {
-                          ...(task?.codeBlock || {}),
-                          language: value
-                        }
-                      })}
-                      options={languages.map(lang => ({ value: lang }))}
-                      style={{ width: 200 }}
-                    />
+                    <div className={styles.codeBlockHeaderLeft}>
+                      <span style={{ fontSize: 13, color: 'var(--text-tertiary)' }}>编程语言:</span>
+                      <AutoComplete
+                        placeholder="如: javascript, python..."
+                        value={task?.codeBlock?.language ?? 'javascript'}
+                        onChange={(value) => onTaskChange({
+                          ...task,
+                          codeBlock: {
+                            ...(task?.codeBlock || {}),
+                            language: value
+                          }
+                        })}
+                        options={languages.map(lang => ({ value: lang }))}
+                        style={{ width: 200 }}
+                      />
+                    </div>
+                    <div className={styles.codeBlockHeaderRight}>
+                      <Button
+                        size="small"
+                        icon={<SaveOutlined />}
+                        onClick={handleTempSaveCode}
+                        title="临时保存代码"
+                      >
+                        临时保存
+                      </Button>
+                      {hasTempCode() && (
+                        <Button
+                          size="small"
+                          icon={<ImportOutlined />}
+                          onClick={handleRestoreCode}
+                          title="恢复临时保存的代码"
+                        >
+                          恢复代码
+                        </Button>
+                      )}
+                    </div>
                   </div>
                   <div className={styles.codeEditor}>
                     <Editor

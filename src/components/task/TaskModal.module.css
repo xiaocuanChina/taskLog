@@ -470,6 +470,24 @@
   margin-bottom: 12px;
 }
 
+.codeBlockHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.codeBlockHeaderRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.codeBlockHeaderRight :global(.ant-btn) {
+  height: 28px !important;
+  padding: 0 10px !important;
+  font-size: 12px !important;
+}
+
 .codeBlockHeader :global(.ant-select) {
   width: 180px;
 }
