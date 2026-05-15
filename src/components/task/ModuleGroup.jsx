@@ -168,26 +168,28 @@ export default function ModuleGroup({
       ),
       children: (
         <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(420px, 1fr))',
+          columnCount: 2,
           columnGap: 12,
-          alignItems: 'start'
         }}>
           {tasks.map(task => (
-            <TaskCard
-              key={task.id}
-              task={task}
-              isCompleted={isCompleted}
-              taskTypeColors={taskTypeColors}
-              onComplete={onTaskComplete}
-              onRollback={onTaskRollback}
-              onEdit={onTaskEdit}
-              onDelete={onTaskDelete}
-              onImageClick={onImageClick}
-              onEditModule={onEditTaskModule}
-              onShelve={onTaskShelve}
-              onCheckItemChange={onCheckItemChange}
-            />
+            <div key={task.id} style={{
+              breakInside: 'avoid',
+              marginBottom: 6
+            }}>
+              <TaskCard
+                task={task}
+                isCompleted={isCompleted}
+                taskTypeColors={taskTypeColors}
+                onComplete={onTaskComplete}
+                onRollback={onTaskRollback}
+                onEdit={onTaskEdit}
+                onDelete={onTaskDelete}
+                onImageClick={onImageClick}
+                onEditModule={onEditTaskModule}
+                onShelve={onTaskShelve}
+                onCheckItemChange={onCheckItemChange}
+              />
+            </div>
           ))}
         </div>
       )
