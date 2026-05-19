@@ -19,7 +19,9 @@ import {
   FolderOutlined,
   CopyOutlined,
   PauseCircleOutlined,
-  FolderOpenOutlined
+  FolderOpenOutlined,
+  PushpinOutlined,
+  PushpinFilled
 } from '@ant-design/icons'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
@@ -39,6 +41,9 @@ export default function TaskCard({
   onEditModule,
   onShelve,
   onUnshelve,
+  isPinned = false,
+  onPin,
+  onUnpin,
   onCheckItemChange
 }) {
   const [isCompleting, setIsCompleting] = useState(false)
@@ -415,11 +420,13 @@ export default function TaskCard({
         marginBottom: 10,
         background: 'linear-gradient(135deg, #ffffff 0%, #fafafa 100%)',
         borderRadius: 12,
-        border: isCompleted 
-          ? '2px solid #10b981' 
-          : isShelved 
+        border: isCompleted
+          ? '2px solid #10b981'
+          : isShelved
             ? '2px solid #f59e0b'
-            : '2px solid transparent',
+            : isPinned
+              ? '2px solid #8b5cf6'
+              : '2px solid transparent',
         overflow: 'hidden',
         transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
         position: 'relative',
@@ -428,14 +435,14 @@ export default function TaskCard({
       onMouseEnter={(e) => {
         e.currentTarget.style.transform = 'translateY(-2px)'
         e.currentTarget.style.boxShadow = '0 8px 20px rgba(0, 0, 0, 0.08)'
-        if (!isCompleted && !isShelved) {
+        if (!isCompleted && !isShelved && !isPinned) {
           e.currentTarget.style.borderColor = '#e0e7ff'
         }
       }}
       onMouseLeave={(e) => {
         e.currentTarget.style.transform = 'translateY(0)'
         e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)'
-        if (!isCompleted && !isShelved) {
+        if (!isCompleted && !isShelved && !isPinned) {
           e.currentTarget.style.borderColor = 'transparent'
         }
       }}
@@ -451,7 +458,9 @@ export default function TaskCard({
           ? 'linear-gradient(180deg, #10b981 0%, #059669 100%)'
           : isShelved
             ? 'linear-gradient(180deg, #f59e0b 0%, #d97706 100%)'
-            : 'linear-gradient(180deg, #3b82f6 0%, #2563eb 100%)',
+            : isPinned
+              ? 'linear-gradient(180deg, #8b5cf6 0%, #7c3aed 100%)'
+              : 'linear-gradient(180deg, #3b82f6 0%, #2563eb 100%)',
         borderTopLeftRadius: 10,
         borderBottomLeftRadius: 10
       }} />
@@ -741,6 +750,37 @@ export default function TaskCard({
                     onMouseLeave={(e) => {
                       e.currentTarget.style.background = 'transparent'
                       e.currentTarget.style.color = '#f59e0b'
+                      e.currentTarget.style.transform = 'scale(1)'
+                    }}
+                  />
+                </Tooltip>
+                <Tooltip title={isPinned ? "取消置顶" : "置顶"} key={`pin-${isPinned}`}>
+                  <Button
+                    type="text"
+                    size="small"
+                    icon={isPinned ? <PushpinFilled /> : <PushpinOutlined />}
+                    onClick={() => isPinned ? onUnpin(task.id) : onPin(task.id)}
+                    style={{
+                      width: 32,
+                      height: 32,
+                      padding: 0,
+                      color: isPinned ? '#8b5cf6' : '#94a3b8',
+                      borderRadius: 8,
+                      transition: 'all 0.2s',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = isPinned
+                        ? 'linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%)'
+                        : 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)'
+                      e.currentTarget.style.color = isPinned ? '#7c3aed' : '#6366f1'
+                      e.currentTarget.style.transform = 'scale(1.05)'
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'transparent'
+                      e.currentTarget.style.color = isPinned ? '#8b5cf6' : '#94a3b8'
                       e.currentTarget.style.transform = 'scale(1)'
                     }}
                   />

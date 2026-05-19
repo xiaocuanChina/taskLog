@@ -16,7 +16,7 @@
  */
 import { useEffect, useRef, useState } from 'react'
 import { Modal, Input, Form, Button, Switch, AutoComplete, Tag, message } from 'antd'
-import { UploadOutlined, DeleteOutlined, CodeOutlined, FileTextOutlined, SaveOutlined, ImportOutlined } from '@ant-design/icons'
+import { UploadOutlined, DeleteOutlined, CodeOutlined, FileTextOutlined, SaveOutlined, ImportOutlined, PaperClipOutlined, FolderOpenOutlined } from '@ant-design/icons'
 import TaskImage from '../common/TaskImage'
 import CheckItemsManager from './CheckItemsManager'
 import styles from './TaskModal.module.css'
@@ -45,6 +45,19 @@ import 'prismjs/components/prism-powershell'
 
 const { TextArea } = Input
 
+// 格式化文件大小
+function formatFileSize(bytes) {
+  if (!bytes || bytes === 0) return ''
+  const units = ['B', 'KB', 'MB', 'GB']
+  let i = 0
+  let size = bytes
+  while (size >= 1024 && i < units.length - 1) {
+    size /= 1024
+    i++
+  }
+  return `${size.toFixed(i === 0 ? 0 : 1)} ${units[i]}`
+}
+
 // 临时代码存储的 localStorage key
 const TEMP_CODE_KEY = 'tastLog_tempCodeBlock'
 
@@ -64,6 +77,10 @@ export default function TaskModal({
   onImageChange,
   onRemoveImage,
   onRemoveExistingImage,
+  onAttachmentChange,
+  onRemoveAttachment,
+  onRemoveExistingAttachment,
+  onOpenAttachment,
   onDrag,
   onDrop,
   onPaste,
@@ -110,6 +127,7 @@ export default function TaskModal({
 
   const imageGridRef = useRef(null)
   const prevImageCount = useRef(0)
+  const attFileInputRef = useRef(null)
 
   // 监听全局粘贴事件，打开模态框后直接粘贴图片即可生效，无需点击
   useEffect(() => {
@@ -404,6 +422,97 @@ export default function TaskModal({
                       <button
                         className={styles.btnRemoveImage}
                         onClick={() => onRemoveExistingImage(idx)}
+                      >
+                        <DeleteOutlined />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </Form.Item>
+
+          {/* 附件文件 */}
+          <Form.Item label="附件文件">
+            <div
+              className={styles.attachmentUploadArea}
+              onClick={() => attFileInputRef.current?.click()}
+              onDragEnter={(e) => { e.preventDefault(); e.stopPropagation() }}
+              onDragOver={(e) => { e.preventDefault(); e.stopPropagation() }}
+              onDrop={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                const files = Array.from(e.dataTransfer.files)
+                if (files.length > 0 && onAttachmentChange) {
+                  onAttachmentChange({ target: { files: e.dataTransfer.files } })
+                }
+              }}
+            >
+              <p className={styles.uploadText}>
+                拖拽文件到此处或点击选择附件
+              </p>
+              <input
+                type="file"
+                ref={attFileInputRef}
+                multiple
+                onChange={onAttachmentChange}
+                style={{ display: 'none' }}
+              />
+              <Button
+                icon={<PaperClipOutlined />}
+                className={styles.uploadButton}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  attFileInputRef.current?.click()
+                }}
+              >
+                选择附件
+              </Button>
+            </div>
+
+            {((isEdit && task?.existingAttachments?.length > 0) || (task?.attachments?.length > 0)) && (
+              <div className={styles.attachmentSection}>
+                <div className={styles.sectionLabel}>
+                  <span>附件列表</span>
+                  {task?.attachments?.length > 0 && (
+                    <Tag color="green">新增 {task.attachments.length}</Tag>
+                  )}
+                  {isEdit && task?.existingAttachments?.length > 0 && (
+                    <Tag color="blue">已有 {task.existingAttachments.length}</Tag>
+                  )}
+                </div>
+                <div className={styles.attachmentList}>
+                  {task?.attachments?.map((file, idx) => (
+                    <div key={`new-att-${idx}`} className={`${styles.attachmentItem} ${styles.newAttachmentItem}`}>
+                      <div className={styles.attachmentInfo}>
+                        <PaperClipOutlined className={styles.attachmentIcon} />
+                        <span className={styles.attachmentName} title={file.name}>{file.name}</span>
+                        <span className={styles.attachmentSize}>{formatFileSize(file.size)}</span>
+                        <Tag color="green" className={styles.attachmentBadge}>新</Tag>
+                      </div>
+                      <button
+                        className={styles.btnRemoveAttachment}
+                        onClick={() => onRemoveAttachment(idx)}
+                      >
+                        <DeleteOutlined />
+                      </button>
+                    </div>
+                  ))}
+                  {isEdit && task?.existingAttachments?.map((att, idx) => (
+                    <div key={`existing-att-${idx}`} className={styles.attachmentItem}>
+                      <div
+                        className={styles.attachmentInfo}
+                        onClick={() => onOpenAttachment?.(att.storedName)}
+                        title="点击使用系统默认程序打开"
+                      >
+                        <PaperClipOutlined className={styles.attachmentIcon} />
+                        <span className={styles.attachmentName} title={att.name}>{att.name}</span>
+                        <span className={styles.attachmentSize}>{formatFileSize(att.size)}</span>
+                        <FolderOpenOutlined className={styles.attachmentOpenIcon} />
+                      </div>
+                      <button
+                        className={styles.btnRemoveAttachment}
+                        onClick={() => onRemoveExistingAttachment(idx)}
                       >
                         <DeleteOutlined />
                       </button>

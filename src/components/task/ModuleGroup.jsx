@@ -42,6 +42,8 @@ export default function ModuleGroup({
   onQuickAddTask,
   onEditTaskModule,
   onTaskShelve,
+  onTaskPin,
+  onTaskUnpin,
   onCheckItemChange,
   sortableId,
   isDraggable = false
@@ -179,6 +181,7 @@ export default function ModuleGroup({
               <TaskCard
                 task={task}
                 isCompleted={isCompleted}
+                isPinned={!!task.pinned}
                 taskTypeColors={taskTypeColors}
                 onComplete={onTaskComplete}
                 onRollback={onTaskRollback}
@@ -187,6 +190,8 @@ export default function ModuleGroup({
                 onImageClick={onImageClick}
                 onEditModule={onEditTaskModule}
                 onShelve={onTaskShelve}
+                onPin={onTaskPin}
+                onUnpin={onTaskUnpin}
                 onCheckItemChange={onCheckItemChange}
               />
             </div>

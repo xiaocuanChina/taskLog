@@ -112,6 +112,7 @@ app.whenReady().then(async () => {
   const userDataPath = app.getPath('userData')
   const dataDir = path.join(userDataPath, 'tasksData')
   const imagesDir = path.join(dataDir, 'images')
+  const attachmentsDir = path.join(dataDir, 'attachments')
   const dbFile = path.join(dataDir, 'tasklog.db')
   
   // 旧的 JSON 文件路径（用于数据迁移）
@@ -122,6 +123,7 @@ app.whenReady().then(async () => {
   // 确保目录存在
   fs.mkdirSync(dataDir, { recursive: true })
   fs.mkdirSync(imagesDir, { recursive: true })
+  fs.mkdirSync(attachmentsDir, { recursive: true })
 
   // 初始化数据库
   db = new Database(dbFile)
@@ -302,7 +304,7 @@ app.whenReady().then(async () => {
       return { success: false, error: `该项目下还有 ${pendingTasks.length} 个未完成的任务，无法删除` }
     }
 
-    // 删除项目下的所有任务的图片
+    // 删除项目下的所有任务的图片和附件
     tasks.forEach(task => {
       if (task.images && Array.isArray(task.images)) {
         task.images.forEach(imgPath => {
@@ -313,6 +315,18 @@ app.whenReady().then(async () => {
             }
           } catch (err) {
             console.error('删除图片失败:', err)
+          }
+        })
+      }
+      if (task.attachments && Array.isArray(task.attachments)) {
+        task.attachments.forEach(att => {
+          try {
+            const fullPath = path.join(attachmentsDir, att.storedName)
+            if (fs.existsSync(fullPath)) {
+              fs.unlinkSync(fullPath)
+            }
+          } catch (err) {
+            console.error('删除附件失败:', err)
           }
         })
       }
@@ -471,6 +485,26 @@ app.whenReady().then(async () => {
       saved.push(fname)
     }
 
+    // 保存附件文件
+    const attachments = Array.isArray(payload?.attachments) ? payload.attachments : []
+    const savedAttachments = []
+    for (let i = 0; i < attachments.length; i++) {
+      const att = attachments[i]
+      const ext = path.extname(att?.name || '')
+      const fname = `${id}-att-${i}${ext || ''}`
+      const fpath = path.join(attachmentsDir, fname)
+      let buf
+      if (Buffer.isBuffer(att?.buffer)) buf = att.buffer
+      else if (att?.buffer instanceof Uint8Array) buf = Buffer.from(att.buffer)
+      else if (att?.buffer && att.buffer.byteLength) buf = Buffer.from(new Uint8Array(att.buffer))
+      if (buf) fs.writeFileSync(fpath, buf)
+      savedAttachments.push({
+        name: att?.name || fname,
+        storedName: fname,
+        size: att?.size || 0
+      })
+    }
+
     const task = {
       id,
       projectId: payload?.projectId || '',
@@ -480,6 +514,7 @@ app.whenReady().then(async () => {
       initiator: payload?.initiator || '',
       remark: payload?.remark || '',
       images: saved,
+      attachments: savedAttachments,
       codeBlock: payload?.codeBlock || { enabled: false, language: 'javascript', code: '' },
       checkItems: payload?.checkItems || { enabled: false, mode: 'multiple', items: [] },
       completed: false,
@@ -530,6 +565,45 @@ app.whenReady().then(async () => {
       }
     })
 
+    // 保留已有附件
+    const existingAttachments = Array.isArray(payload?.existingAttachments) ? payload.existingAttachments : []
+
+    // 处理新上传的附件
+    const newAttachments = Array.isArray(payload?.attachments) ? payload.attachments : []
+    const savedAttachments = []
+    for (let i = 0; i < newAttachments.length; i++) {
+      const att = newAttachments[i]
+      const ext = path.extname(att?.name || '')
+      const fname = `${payload.id}-att-${Date.now()}-${i}${ext || ''}`
+      const fpath = path.join(attachmentsDir, fname)
+      let buf
+      if (Buffer.isBuffer(att?.buffer)) buf = att.buffer
+      else if (att?.buffer instanceof Uint8Array) buf = Buffer.from(att.buffer)
+      else if (att?.buffer && att.buffer.byteLength) buf = Buffer.from(new Uint8Array(att.buffer))
+      if (buf) fs.writeFileSync(fpath, buf)
+      savedAttachments.push({
+        name: att?.name || fname,
+        storedName: fname,
+        size: att?.size || 0
+      })
+    }
+
+    // 删除被移除的旧附件文件
+    const oldAttachments = task.attachments || []
+    oldAttachments.forEach(oldAtt => {
+      const isKept = existingAttachments.some(ea => ea.storedName === oldAtt.storedName)
+      if (!isKept) {
+        try {
+          const fullPath = path.join(attachmentsDir, oldAtt.storedName)
+          if (fs.existsSync(fullPath)) {
+            fs.unlinkSync(fullPath)
+          }
+        } catch (err) {
+          console.error('删除附件失败:', err)
+        }
+      }
+    })
+
     // 更新任务信息
     const updates = {
       updatedAt: new Date().toISOString()
@@ -540,6 +614,7 @@ app.whenReady().then(async () => {
     if (payload.initiator !== undefined) updates.initiator = payload.initiator
     if (payload.remark !== undefined) updates.remark = payload.remark
     updates.images = [...existingImages, ...saved]
+    updates.attachments = [...existingAttachments, ...savedAttachments]
     if (payload.codeBlock !== undefined) updates.codeBlock = payload.codeBlock
     if (payload.checkItems !== undefined) updates.checkItems = payload.checkItems
 
@@ -644,6 +719,24 @@ app.whenReady().then(async () => {
     return db.updateTask(id, updates)
   })
 
+  // 置顶任务
+  ipcMain.handle('tasks:pin', (e, id) => {
+    const updates = {
+      pinned: true,
+      pinnedAt: new Date().toISOString()
+    }
+    return db.updateTask(id, updates)
+  })
+
+  // 取消置顶任务
+  ipcMain.handle('tasks:unpin', (e, id) => {
+    const updates = {
+      pinned: false,
+      pinnedAt: null
+    }
+    return db.updateTask(id, updates)
+  })
+
   ipcMain.handle('tasks:updateModule', (e, payload) => {
     const updates = {
       module: payload.module,
@@ -672,6 +765,20 @@ app.whenReady().then(async () => {
           }
         } catch (err) {
           console.error('删除图片失败:', err)
+        }
+      })
+    }
+
+    // 删除关联的附件文件
+    if (task.attachments && Array.isArray(task.attachments)) {
+      task.attachments.forEach(att => {
+        try {
+          const fullPath = path.join(attachmentsDir, att.storedName)
+          if (fs.existsSync(fullPath)) {
+            fs.unlinkSync(fullPath)
+          }
+        } catch (err) {
+          console.error('删除附件失败:', err)
         }
       })
     }
@@ -993,6 +1100,11 @@ app.whenReady().then(async () => {
     return path.join(imagesDir, imagePath)
   })
 
+  // 获取附件的本地路径（用于系统默认程序打开）
+  ipcMain.handle('attachment:getPath', (e, storedName) => {
+    return path.join(attachmentsDir, storedName)
+  })
+
   // 剪贴板文件写入（支持多文件）
   ipcMain.handle('clipboard:writeFiles', (e, filePaths) => {
     if (!Array.isArray(filePaths) || filePaths.length === 0) return false
@@ -1140,6 +1252,11 @@ app.whenReady().then(async () => {
         zip.addLocalFolder(imagesDir, 'images')
       }
 
+      // 添加附件文件夹
+      if (fs.existsSync(attachmentsDir)) {
+        zip.addLocalFolder(attachmentsDir, 'attachments')
+      }
+
       // 添加说明文件
       const readmeContent = `# TaskLog 数据备份
 
@@ -1153,6 +1270,7 @@ app.whenReady().then(async () => {
 - **tasklog.db** - 数据库文件（推荐用于快速恢复）
 - **data.json** - JSON 格式数据（用于兼容性和查看）
 - **images/** - 图片附件文件夹
+- **attachments/** - 文件附件文件夹
 
 ## 恢复方式
 
@@ -1171,7 +1289,8 @@ app.whenReady().then(async () => {
 3. 备份当前的 tasklog.db 文件
 4. 将此备份中的 tasklog.db 复制到数据目录
 5. 将 images 文件夹也复制过去
-6. 重新启动应用
+6. 将 attachments 文件夹也复制过去
+7. 重新启动应用
 
 ## 注意事项
 - 手动恢复前请先备份当前数据

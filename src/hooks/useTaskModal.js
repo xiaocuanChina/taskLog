@@ -16,6 +16,7 @@ export function useTaskModal(taskTypes = []) {
     initiator: '',
     remark: '',
     images: [],
+    attachments: [],
     codeBlock: {
       enabled: false,
       language: 'javascript',
@@ -59,6 +60,7 @@ export function useTaskModal(taskTypes = []) {
       initiator: '', 
       remark: '', 
       images: [],
+      attachments: [],
       codeBlock: {
         enabled: false,
         language: 'javascript',

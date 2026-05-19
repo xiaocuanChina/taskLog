@@ -28,6 +28,10 @@ class Database {
       this.db = new SQL.Database()
       this.createTables()
     }
+
+    // 数据库迁移（无论新建还是已有数据库都需要执行）
+    this._migrateAttachments()
+    this._migratePinned()
   }
 
   /**
@@ -79,9 +83,11 @@ class Database {
         checkItemsBeforeComplete TEXT,
         completed INTEGER DEFAULT 0,
         shelved INTEGER DEFAULT 0,
+        pinned INTEGER DEFAULT 0,
         createdAt TEXT NOT NULL,
         completedAt TEXT,
         shelvedAt TEXT,
+        pinnedAt TEXT,
         updatedAt TEXT,
         FOREIGN KEY (projectId) REFERENCES projects(id) ON DELETE CASCADE
       )
@@ -103,6 +109,41 @@ class Database {
     `)
 
     this.save()
+  }
+
+  /**
+   * 数据库迁移：添加 attachments 字段
+   */
+  _migrateAttachments() {
+    try {
+      const result = this.db.exec("PRAGMA table_info(tasks)")
+      const columns = result[0]?.values?.map(col => col[1]) || []
+      if (!columns.includes('attachments')) {
+        this.db.run('ALTER TABLE tasks ADD COLUMN attachments TEXT')
+        this.save()
+      }
+    } catch (err) {
+      console.error('迁移 attachments 字段失败:', err)
+    }
+  }
+
+  /**
+   * 数据库迁移：添加 pinned 和 pinnedAt 字段
+   */
+  _migratePinned() {
+    try {
+      const result = this.db.exec("PRAGMA table_info(tasks)")
+      const columns = result[0]?.values?.map(col => col[1]) || []
+      if (!columns.includes('pinned')) {
+        this.db.run('ALTER TABLE tasks ADD COLUMN pinned INTEGER DEFAULT 0')
+      }
+      if (!columns.includes('pinnedAt')) {
+        this.db.run('ALTER TABLE tasks ADD COLUMN pinnedAt TEXT')
+      }
+      this.save()
+    } catch (err) {
+      console.error('迁移 pinned 字段失败:', err)
+    }
   }
 
   /**
@@ -376,9 +417,9 @@ class Database {
     const stmt = this.db.prepare(`
       INSERT INTO tasks (
         id, projectId, module, name, type, initiator, remark,
-        images, codeBlock, checkItems, completed, shelved,
-        createdAt, completedAt, shelvedAt
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        images, attachments, codeBlock, checkItems, completed, shelved, pinned,
+        createdAt, completedAt, shelvedAt, pinnedAt
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `)
     stmt.run([
       task.id,
@@ -389,13 +430,16 @@ class Database {
       task.initiator || '',
       task.remark || '',
       JSON.stringify(task.images || []),
+      JSON.stringify(task.attachments || []),
       JSON.stringify(task.codeBlock || { enabled: false, language: 'javascript', code: '' }),
       JSON.stringify(task.checkItems || { enabled: false, mode: 'multiple', items: [] }),
       task.completed ? 1 : 0,
       task.shelved ? 1 : 0,
+      task.pinned ? 1 : 0,
       task.createdAt,
       task.completedAt || null,
-      task.shelvedAt || null
+      task.shelvedAt || null,
+      task.pinnedAt || null
     ])
     stmt.free()
     this.save()
@@ -433,6 +477,10 @@ class Database {
       fields.push('images = ?')
       values.push(JSON.stringify(updates.images))
     }
+    if (updates.attachments !== undefined) {
+      fields.push('attachments = ?')
+      values.push(JSON.stringify(updates.attachments))
+    }
     if (updates.codeBlock !== undefined) {
       fields.push('codeBlock = ?')
       values.push(JSON.stringify(updates.codeBlock))
@@ -453,6 +501,10 @@ class Database {
       fields.push('shelved = ?')
       values.push(updates.shelved ? 1 : 0)
     }
+    if (updates.pinned !== undefined) {
+      fields.push('pinned = ?')
+      values.push(updates.pinned ? 1 : 0)
+    }
     if (updates.completedAt !== undefined) {
       fields.push('completedAt = ?')
       values.push(updates.completedAt)
@@ -460,6 +512,10 @@ class Database {
     if (updates.shelvedAt !== undefined) {
       fields.push('shelvedAt = ?')
       values.push(updates.shelvedAt)
+    }
+    if (updates.pinnedAt !== undefined) {
+      fields.push('pinnedAt = ?')
+      values.push(updates.pinnedAt)
     }
     if (updates.updatedAt !== undefined) {
       fields.push('updatedAt = ?')

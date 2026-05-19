@@ -29,6 +29,8 @@ contextBridge.exposeInMainWorld('electron', {
     rollback: (id) => ipcRenderer.invoke('tasks:rollback', id),
     shelve: (id) => ipcRenderer.invoke('tasks:shelve', id),
     unshelve: (id) => ipcRenderer.invoke('tasks:unshelve', id),
+    pin: (id) => ipcRenderer.invoke('tasks:pin', id),
+    unpin: (id) => ipcRenderer.invoke('tasks:unpin', id),
     delete: (id) => ipcRenderer.invoke('tasks:delete', id),
     todayStats: (projectId) => ipcRenderer.invoke('tasks:todayStats', projectId),
     exportTodayReport: (projectId) => ipcRenderer.invoke('tasks:exportTodayReport', projectId),
@@ -37,6 +39,10 @@ contextBridge.exposeInMainWorld('electron', {
   // 图片相关
   image: {
     getPath: (imagePath) => ipcRenderer.invoke('image:getPath', imagePath)
+  },
+  // 附件相关
+  attachment: {
+    getPath: (storedName) => ipcRenderer.invoke('attachment:getPath', storedName)
   },
   // 剪贴板
   clipboard: {

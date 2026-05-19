@@ -274,6 +274,7 @@ export default function App() {
       initiator: taskModalHook.newTask.initiator,
       remark: taskModalHook.newTask.remark,
       images: [],
+      attachments: [],
       codeBlock: taskModalHook.newTask.codeBlock,
       checkItems: taskModalHook.newTask.checkItems
     }
@@ -292,6 +293,23 @@ export default function App() {
         })
       })
       payload.images = await Promise.all(imgPromises)
+    }
+
+    if (taskModalHook.newTask.attachments.length > 0) {
+      const attPromises = taskModalHook.newTask.attachments.map(file => {
+        return new Promise((resolve) => {
+          const reader = new FileReader()
+          reader.onload = (e) => {
+            resolve({
+              name: file.name,
+              size: file.size,
+              buffer: e.target.result
+            })
+          }
+          reader.readAsArrayBuffer(file)
+        })
+      })
+      payload.attachments = await Promise.all(attPromises)
     }
 
     await window.electron?.tasks?.add(payload)
@@ -329,6 +347,20 @@ export default function App() {
     showToast('任务已取消搁置！')
   }
 
+  // 置顶任务
+  const handlePinTask = async (id) => {
+    await window.electron?.tasks?.pin(id)
+    await taskManagerHook.refreshData()
+    showToast('任务已置顶！')
+  }
+
+  // 取消置顶任务
+  const handleUnpinTask = async (id) => {
+    await window.electron?.tasks?.unpin(id)
+    await taskManagerHook.refreshData()
+    showToast('已取消置顶！')
+  }
+
   // 打开编辑任务模态框
   const handleEditTask = (task) => {
     taskModalHook.setEditingTask({
@@ -340,6 +372,8 @@ export default function App() {
       remark: task.remark || '',
       images: [],
       existingImages: task.images || [],
+      attachments: [],
+      existingAttachments: task.attachments || [],
       codeBlock: task.codeBlock ? {
         enabled: task.codeBlock.enabled || false,
         language: task.codeBlock.language || 'javascript',
@@ -553,6 +587,8 @@ export default function App() {
       remark: taskModalHook.editingTask.remark,
       images: [],
       existingImages: taskModalHook.editingTask.existingImages,
+      attachments: [],
+      existingAttachments: taskModalHook.editingTask.existingAttachments,
       codeBlock: taskModalHook.editingTask.codeBlock,
       checkItems: taskModalHook.editingTask.checkItems
     }
@@ -571,6 +607,23 @@ export default function App() {
         })
       })
       payload.images = await Promise.all(imgPromises)
+    }
+
+    if (taskModalHook.editingTask.attachments.length > 0) {
+      const attPromises = taskModalHook.editingTask.attachments.map(file => {
+        return new Promise((resolve) => {
+          const reader = new FileReader()
+          reader.onload = (e) => {
+            resolve({
+              name: file.name,
+              size: file.size,
+              buffer: e.target.result
+            })
+          }
+          reader.readAsArrayBuffer(file)
+        })
+      })
+      payload.attachments = await Promise.all(attPromises)
     }
 
     await window.electron?.tasks?.update(payload)
@@ -631,6 +684,22 @@ export default function App() {
   // ========== 图片预览相关 ==========
 
   // 打开图片预览
+  // 使用系统默认程序打开附件
+  const handleOpenAttachment = async (storedName) => {
+    try {
+      const filePath = await window.electron?.attachment?.getPath(storedName)
+      if (filePath) {
+        const result = await window.electron?.shell?.openPath(filePath)
+        // shell.openPath 成功返回空字符串，失败返回错误信息
+        if (result) {
+          showToast('无法打开该附件: ' + result, 'error')
+        }
+      }
+    } catch (err) {
+      showToast('打开附件失败', 'error')
+    }
+  }
+
   const handleOpenImagePreview = (imageSrc, allImages, currentIndex, onDelete) => {
     setImagePreview({
       show: true,
@@ -853,6 +922,30 @@ export default function App() {
         newExistingImages.splice(index, 1)
         taskModalHook.setEditingTask({ ...taskModalHook.editingTask, existingImages: newExistingImages })
       }}
+      onAttachmentChange={(e) => {
+        const files = Array.from(e.target.files)
+        taskModalHook.setNewTask({ ...taskModalHook.newTask, attachments: [...taskModalHook.newTask.attachments, ...files] })
+      }}
+      onRemoveAttachment={(index) => {
+        const newAttachments = [...taskModalHook.newTask.attachments]
+        newAttachments.splice(index, 1)
+        taskModalHook.setNewTask({ ...taskModalHook.newTask, attachments: newAttachments })
+      }}
+      onEditAttachmentChange={(e) => {
+        const files = Array.from(e.target.files)
+        taskModalHook.setEditingTask({ ...taskModalHook.editingTask, attachments: [...taskModalHook.editingTask.attachments, ...files] })
+      }}
+      onRemoveEditAttachment={(index) => {
+        const newAttachments = [...taskModalHook.editingTask.attachments]
+        newAttachments.splice(index, 1)
+        taskModalHook.setEditingTask({ ...taskModalHook.editingTask, attachments: newAttachments })
+      }}
+      onRemoveExistingAttachment={(index) => {
+        const newExistingAttachments = [...taskModalHook.editingTask.existingAttachments]
+        newExistingAttachments.splice(index, 1)
+        taskModalHook.setEditingTask({ ...taskModalHook.editingTask, existingAttachments: newExistingAttachments })
+      }}
+      onOpenAttachment={handleOpenAttachment}
       onEditDrag={taskModalHook.handleDrag}
       onEditDrop={(e) => taskModalHook.handleDrop(e, true)}
       onEditPaste={(e) => taskModalHook.handlePaste(e, true)}
@@ -885,6 +978,8 @@ export default function App() {
       onToggleShelvedTasks={() => taskManagerHook.setShowShelvedTasks(!taskManagerHook.showShelvedTasks)}
       onTaskShelve={handleShelveTask}
       onTaskUnshelve={handleUnshelveTask}
+      onTaskPin={handlePinTask}
+      onTaskUnpin={handleUnpinTask}
       onReorderPendingModules={(oldIndex, newIndex) => taskManagerHook.reorderPendingModules(oldIndex, newIndex, showToast)}
       onCheckItemChange={handleCheckItemChange}
     />

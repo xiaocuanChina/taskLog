@@ -607,3 +607,122 @@
 .taskModal :global(.ant-tooltip-arrow-content) {
   background: var(--bg-tertiary) !important;
 }
+
+/* ==================== 附件上传样式 ==================== */
+
+.attachmentUploadArea {
+  border: 2px dashed var(--border-secondary);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+  transition: all 0.3s ease;
+  background: var(--bg-card);
+  cursor: pointer;
+}
+
+.attachmentUploadArea:hover {
+  border-color: var(--theme-start-color);
+  background: rgba(102, 126, 234, 0.05);
+}
+
+.attachmentSection {
+  margin-top: 10px;
+}
+
+.attachmentList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.attachmentItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-primary);
+  background: var(--bg-card);
+  transition: all 0.2s ease;
+}
+
+.attachmentItem:hover {
+  border-color: var(--border-hover);
+  box-shadow: var(--shadow-sm);
+}
+
+.newAttachmentItem {
+  border-color: rgba(82, 196, 26, 0.3);
+  background: rgba(82, 196, 26, 0.05);
+}
+
+.attachmentInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  cursor: default;
+}
+
+.attachmentItem .attachmentInfo[title] {
+  cursor: pointer;
+}
+
+.attachmentIcon {
+  color: var(--theme-start-color);
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.attachmentOpenIcon {
+  color: var(--text-tertiary);
+  font-size: 13px;
+  flex-shrink: 0;
+  transition: color 0.2s;
+}
+
+.attachmentItem:hover .attachmentOpenIcon {
+  color: var(--theme-start-color);
+}
+
+.attachmentName {
+  font-size: 13px;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.attachmentSize {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+
+.attachmentBadge {
+  flex-shrink: 0;
+}
+
+.btnRemoveAttachment {
+  background: none;
+  border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-left: 8px;
+}
+
+.btnRemoveAttachment:hover {
+  color: #ff4d4f;
+  background: rgba(255, 77, 79, 0.1);
+}

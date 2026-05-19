@@ -88,7 +88,13 @@ export function useTaskManager(currentProject) {
   // 未完成和已完成任务（排除搁置任务）
   const allPendingTasks = tasks
     .filter(t => !t.completed && !t.shelved)
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .sort((a, b) => {
+      // 置顶任务排在最前，多个置顶按 pinnedAt 降序
+      if (a.pinned && !b.pinned) return -1
+      if (!a.pinned && b.pinned) return 1
+      if (a.pinned && b.pinned) return new Date(b.pinnedAt) - new Date(a.pinnedAt)
+      return new Date(b.createdAt) - new Date(a.createdAt)
+    })
 
   // 搁置的任务
   const shelvedTasks = tasks

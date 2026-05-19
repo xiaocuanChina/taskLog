@@ -143,6 +143,12 @@ export default function TaskManageView({
     onEditImageChange,
     onRemoveEditImage,
     onRemoveExistingImage,
+    onAttachmentChange,
+    onRemoveAttachment,
+    onEditAttachmentChange,
+    onRemoveEditAttachment,
+    onRemoveExistingAttachment,
+    onOpenAttachment,
     onEditDrag,
     onEditDrop,
     onEditPaste,
@@ -176,6 +182,8 @@ export default function TaskManageView({
     onToggleShelvedTasks,
     onTaskShelve,
     onTaskUnshelve,
+    onTaskPin,
+    onTaskUnpin,
     onReorderPendingModules,
     onCheckItemChange
 }) {
@@ -1047,6 +1055,8 @@ export default function TaskManageView({
                                                     onQuickAddTask={onQuickAddTask}
                                                     onEditTaskModule={onOpenEditTaskModule}
                                                     onTaskShelve={onTaskShelve}
+                                                    onTaskPin={onTaskPin}
+                                                    onTaskUnpin={onTaskUnpin}
                                                     onCheckItemChange={onCheckItemChange}
                                                     sortableId={group.moduleName}
                                                     isDraggable={allPendingCollapsed}
@@ -1348,6 +1358,9 @@ export default function TaskManageView({
                 onRemoveImage={onRemoveImage}
                 onRemoveExistingImage={() => {
                 }}
+                onAttachmentChange={onAttachmentChange}
+                onRemoveAttachment={onRemoveAttachment}
+                onOpenAttachment={onOpenAttachment}
                 onDrag={onDrag}
                 onDrop={onDrop}
                 onPaste={onPaste}
@@ -1376,6 +1389,10 @@ export default function TaskManageView({
                 onImageChange={onEditImageChange}
                 onRemoveImage={onRemoveEditImage}
                 onRemoveExistingImage={onRemoveExistingImage}
+                onAttachmentChange={onEditAttachmentChange}
+                onRemoveAttachment={onRemoveEditAttachment}
+                onRemoveExistingAttachment={onRemoveExistingAttachment}
+                onOpenAttachment={onOpenAttachment}
                 onDrag={onEditDrag}
                 onDrop={onEditDrop}
                 onPaste={onEditPaste}
