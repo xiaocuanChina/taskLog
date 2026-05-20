@@ -169,29 +169,29 @@ export default function ModuleGroup({
         </div>
       ),
       children: (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(2, 1fr)',
-          gap: 12,
-        }}>
-          {tasks.map(task => (
-            <div key={task.id}>
-              <TaskCard
-                task={task}
-                isCompleted={isCompleted}
-                isPinned={!!task.pinned}
-                taskTypeColors={taskTypeColors}
-                onComplete={onTaskComplete}
-                onRollback={onTaskRollback}
-                onEdit={onTaskEdit}
-                onDelete={onTaskDelete}
-                onImageClick={onImageClick}
-                onEditModule={onEditTaskModule}
-                onShelve={onTaskShelve}
-                onPin={onTaskPin}
-                onUnpin={onTaskUnpin}
-                onCheckItemChange={onCheckItemChange}
-              />
+        <div style={{ display: 'flex', gap: 12 }}>
+          {[0, 1].map(col => (
+            <div key={col} style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {tasks.filter((_, i) => i % 2 === col).map(task => (
+                <div key={task.id}>
+                  <TaskCard
+                    task={task}
+                    isCompleted={isCompleted}
+                    isPinned={!!task.pinned}
+                    taskTypeColors={taskTypeColors}
+                    onComplete={onTaskComplete}
+                    onRollback={onTaskRollback}
+                    onEdit={onTaskEdit}
+                    onDelete={onTaskDelete}
+                    onImageClick={onImageClick}
+                    onEditModule={onEditTaskModule}
+                    onShelve={onTaskShelve}
+                    onPin={onTaskPin}
+                    onUnpin={onTaskUnpin}
+                    onCheckItemChange={onCheckItemChange}
+                  />
+                </div>
+              ))}
             </div>
           ))}
         </div>

@@ -27,6 +27,7 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import TaskImage from '../common/TaskImage'
 import { useToast } from '../../context/ToastContext'
+import styles from './TaskCard.module.css'
 
 export default function TaskCard({
   task,
@@ -56,25 +57,11 @@ export default function TaskCard({
   const [dragStartIndex, setDragStartIndex] = useState(null)
   const clickTimeoutRef = useRef(null)
   const [hoveredImageIndex, setHoveredImageIndex] = useState(null)
-  const [codeBlockWidth, setCodeBlockWidth] = useState(null)
-  const codeBlockRef = useRef(null)
   const showToast = useToast()
 
   useEffect(() => {
     isDraggingRef.current = isDraggingSelection
   }, [isDraggingSelection])
-
-  // 监听代码块容器宽度变化，动态设置代码块宽度为容器宽度的40%
-  useEffect(() => {
-    if (!codeBlockRef.current) return
-    const observer = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        setCodeBlockWidth(Math.round(entry.contentRect.width))
-      }
-    })
-    observer.observe(codeBlockRef.current)
-    return () => observer.disconnect()
-  }, [task.codeBlock?.enabled, task.codeBlock?.code])
 
   // 图片选择相关逻辑
   const toggleImageSelection = (e, index) => {
@@ -444,7 +431,8 @@ export default function TaskCard({
         overflow: 'hidden',
         transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
         position: 'relative',
-        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
+        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
+        minWidth: 0
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.transform = 'translateY(-2px)'
@@ -480,7 +468,7 @@ export default function TaskCard({
       }} />
 
       {/* 卡片主体 */}
-      <div ref={codeBlockRef} style={{ padding: '16px 18px 16px 22px' }}>
+      <div style={{ padding: '16px 18px 16px 22px', minWidth: 0 }}>
         {/* 头部行 */}
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
           {/* 完成状态复选框 */}
@@ -998,7 +986,7 @@ export default function TaskCard({
 
         {/* 代码块 */}
         {task.codeBlock?.enabled && task.codeBlock?.code && (
-          <div style={{ marginTop: 12, borderRadius: 8, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)', width: codeBlockWidth || '100%' }}>
+          <div style={{ marginTop: 12, borderRadius: 8, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)', maxWidth: '100%', minWidth: 0 }}>
             <div style={{
               background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
               color: '#cbd5e1',
@@ -1038,7 +1026,7 @@ export default function TaskCard({
                 }}
               />
             </div>
-            <div>
+            <div className={styles.taskCodeBlockContent} style={{ overflowX: 'auto' }}>
               <SyntaxHighlighter
                 language={task.codeBlock.language || 'text'}
                 style={vscDarkPlus}
