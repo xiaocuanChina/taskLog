@@ -170,14 +170,12 @@ export default function ModuleGroup({
       ),
       children: (
         <div style={{
-          columnCount: 2,
-          columnGap: 12,
+          display: 'grid',
+          gridTemplateColumns: 'repeat(2, 1fr)',
+          gap: 12,
         }}>
           {tasks.map(task => (
-            <div key={task.id} style={{
-              breakInside: 'avoid',
-              marginBottom: 6
-            }}>
+            <div key={task.id}>
               <TaskCard
                 task={task}
                 isCompleted={isCompleted}
