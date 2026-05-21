@@ -29,6 +29,7 @@ export default function ModuleGroup({
   isEditing,
   editingName,
   taskTypeColors = {},
+  searchKeyword = '',
   onToggleCollapse,
   onStartEdit,
   onEditNameChange,
@@ -186,6 +187,7 @@ export default function ModuleGroup({
                     isCompleted={isCompleted}
                     isPinned={!!task.pinned}
                     taskTypeColors={taskTypeColors}
+                    searchKeyword={searchKeyword}
                     onComplete={onTaskComplete}
                     onRollback={onTaskRollback}
                     onEdit={onTaskEdit}
@@ -210,6 +212,7 @@ export default function ModuleGroup({
                     isCompleted={isCompleted}
                     isPinned={!!task.pinned}
                     taskTypeColors={taskTypeColors}
+                    searchKeyword={searchKeyword}
                     onComplete={onTaskComplete}
                     onRollback={onTaskRollback}
                     onEdit={onTaskEdit}

@@ -101,6 +101,26 @@ export function useTaskManager(currentProject) {
     .filter(t => !t.completed && t.shelved)
     .sort((a, b) => new Date(b.shelvedAt || b.createdAt) - new Date(a.shelvedAt || a.createdAt))
 
+  // 任务关键字匹配：标题、备注、选项框名称、代码块
+  const matchTaskKeyword = (t, keyword) => {
+    // 标题
+    if (t.name.toLowerCase().includes(keyword)) return true
+    // 模块
+    if (t.module && t.module.toLowerCase().includes(keyword)) return true
+    // 备注
+    if (t.remark && t.remark.toLowerCase().includes(keyword)) return true
+    // 选项框（checkItems 的 item 名称和备注）
+    if (t.checkItems?.items?.length > 0) {
+      for (const item of t.checkItems.items) {
+        if (item.name && item.name.toLowerCase().includes(keyword)) return true
+        if (item.remark && item.remark.toLowerCase().includes(keyword)) return true
+      }
+    }
+    // 代码块
+    if (t.codeBlock?.code && t.codeBlock.code.toLowerCase().includes(keyword)) return true
+    return false
+  }
+
   const pendingTasks = allPendingTasks.filter(t => {
     // 1. 模块筛选
     if (selectedModuleFilter && t.module !== selectedModuleFilter) {
@@ -110,9 +130,7 @@ export function useTaskManager(currentProject) {
     // 2. 关键字筛选
     if (searchKeyword.trim()) {
       const keyword = searchKeyword.toLowerCase()
-      // 通用搜索（模块 + 描述）
-      return t.name.toLowerCase().includes(keyword) ||
-        (t.module && t.module.toLowerCase().includes(keyword))
+      return matchTaskKeyword(t, keyword)
     }
 
     return true
@@ -129,9 +147,7 @@ export function useTaskManager(currentProject) {
       // 2. 关键字筛选
       if (completedSearchKeyword.trim()) {
         const keyword = completedSearchKeyword.toLowerCase()
-        // 通用搜索（模块 + 描述）
-        return t.name.toLowerCase().includes(keyword) ||
-          (t.module && t.module.toLowerCase().includes(keyword))
+        return matchTaskKeyword(t, keyword)
       }
 
       return true

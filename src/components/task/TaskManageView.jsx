@@ -1042,6 +1042,7 @@ export default function TaskManageView({
                                                     isEditing={isEditing}
                                                     editingName={editingModuleName?.newName || ''}
                                                     taskTypeColors={taskTypeColors}
+                                                    searchKeyword={searchKeyword}
                                                     onToggleCollapse={() => onToggleModuleCollapse(group.moduleName, 'pending')}
                                                     onStartEdit={() => onStartEditModuleName(group.moduleName, 'pending')}
                                                     onEditNameChange={onEditModuleNameChange}
@@ -1318,6 +1319,7 @@ export default function TaskManageView({
                                             isEditing={false}
                                             editingName=""
                                             taskTypeColors={taskTypeColors}
+                                            searchKeyword={completedSearchKeyword}
                                             onToggleCollapse={() => onToggleModuleCollapse(group.moduleName, 'completed')}
                                             onStartEdit={() => {}}
                                             onEditNameChange={() => {}}

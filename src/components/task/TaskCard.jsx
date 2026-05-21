@@ -34,6 +34,7 @@ export default function TaskCard({
   isCompleted,
   isShelved = false,
   taskTypeColors = {},
+  searchKeyword = '',
   onComplete,
   onRollback,
   onEdit,
@@ -58,6 +59,25 @@ export default function TaskCard({
   const clickTimeoutRef = useRef(null)
   const [hoveredImageIndex, setHoveredImageIndex] = useState(null)
   const showToast = useToast()
+
+  // 关键字高亮：将文本中的匹配关键字用黄色标记包裹
+  const highlightText = (text) => {
+    if (!searchKeyword.trim() || !text) return text
+    const keyword = searchKeyword.trim()
+    const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    const regex = new RegExp(`(${escaped})`, 'gi')
+    const parts = text.split(regex)
+    const matchRegex = new RegExp(`^${escaped}$`, 'i')
+    return parts.map((part, i) =>
+      matchRegex.test(part)
+        ? <mark key={i} style={{ background: '#fde68a', color: '#1e293b', padding: '0 1px', borderRadius: 2 }}>{part}</mark>
+        : part
+    )
+  }
+
+  // 判断代码块是否包含搜索关键字
+  const isCodeBlockMatch = searchKeyword.trim() && task.codeBlock?.code &&
+    task.codeBlock.code.toLowerCase().includes(searchKeyword.trim().toLowerCase())
 
   useEffect(() => {
     isDraggingRef.current = isDraggingSelection
@@ -380,11 +400,11 @@ export default function TaskCard({
                 }
               }}
             >
-              {item.name}
+              {highlightText(item.name)}
             </Radio>
             {item.remark && (
               <div style={{ marginLeft: 24, marginTop: 2, fontSize: 11, color: '#94a3b8', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-                {item.remark}
+                {highlightText(item.remark)}
               </div>
             )}
           </div>
@@ -400,12 +420,12 @@ export default function TaskCard({
                 textDecoration: item.checked ? 'line-through' : 'none',
                 color: item.checked ? '#94a3b8' : 'inherit'
               }}>
-                {item.name}
+                {highlightText(item.name)}
               </span>
             </Checkbox>
             {item.remark && (
               <div style={{ marginLeft: 24, marginTop: 2, fontSize: 11, color: '#94a3b8', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-                {item.remark}
+                {highlightText(item.remark)}
               </div>
             )}
           </div>
@@ -529,7 +549,7 @@ export default function TaskCard({
               marginBottom: 8,
               letterSpacing: '-0.01em'
             }}>
-              {task.name}
+              {highlightText(task.name)}
             </div>
 
             {/* 元信息 */}
@@ -836,7 +856,7 @@ export default function TaskCard({
             border: '1px solid #e2e8f0',
             boxShadow: 'inset 0 1px 2px rgba(0, 0, 0, 0.03)'
           }}>
-            {task.remark}
+            {highlightText(task.remark)}
           </div>
         )}
 
@@ -986,7 +1006,7 @@ export default function TaskCard({
 
         {/* 代码块 */}
         {task.codeBlock?.enabled && task.codeBlock?.code && (
-          <div className={styles.taskCodeBlockContent} style={{ marginTop: 12, borderRadius: 8, boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)', width: '100%' }}>
+          <div className={styles.taskCodeBlockContent} style={{ marginTop: 12, borderRadius: 8, boxShadow: isCodeBlockMatch ? '0 0 0 2px #fde68a' : '0 2px 8px rgba(0, 0, 0, 0.1)', width: '100%' }}>
             <div style={{
               background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
               color: '#cbd5e1',
