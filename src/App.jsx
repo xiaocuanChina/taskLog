@@ -637,7 +637,18 @@ export default function App() {
   const handleExportReport = async () => {
     const result = await window.electron?.tasks?.exportTodayReport(currentProject.id)
     if (result?.success) {
-      showToast(`📊 日报已保存到: ${result.path}`)
+      showToast(
+        <span>
+          {/* 日报已保存到: {result.path} */}
+          日报导出成功！
+          <a
+            style={{ marginLeft: 8 }}
+            onClick={() => window.electron?.shell?.showItemInFolder(result.path)}
+          >
+            打开目录
+          </a>
+        </span>
+      )
     }
   }
 
@@ -652,7 +663,18 @@ export default function App() {
     })
     if (result?.success) {
       const formatLabel = format === 'excel' ? 'Excel' : 'Markdown'
-      showToast(`📊 未完成任务(${formatLabel})已保存到: ${result.path}`)
+      showToast(
+        <span>
+          {/* 📊 未完成任务({formatLabel})已保存到: {result.path} */}
+          📊 未完成任务导出成功！
+          <a
+            style={{ marginLeft: 8 }}
+            onClick={() => window.electron?.shell?.showItemInFolder(result.path)}
+          >
+            打开目录
+          </a>
+        </span>
+      )
     } else {
       showToast(result?.error || '导出失败', 'error')
     }

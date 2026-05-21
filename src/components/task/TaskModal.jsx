@@ -470,19 +470,19 @@ export default function TaskModal({
               </Button>
             </div>
 
-            {((isEdit && task?.existingAttachments?.length > 0) || (task?.attachments?.length > 0)) && (
+            {((isEdit && Array.isArray(task?.existingAttachments) && task.existingAttachments.length > 0) || (Array.isArray(task?.attachments) && task.attachments.length > 0)) && (
               <div className={styles.attachmentSection}>
                 <div className={styles.sectionLabel}>
                   <span>附件列表</span>
-                  {task?.attachments?.length > 0 && (
+                  {Array.isArray(task?.attachments) && task.attachments.length > 0 && (
                     <Tag color="green">新增 {task.attachments.length}</Tag>
                   )}
-                  {isEdit && task?.existingAttachments?.length > 0 && (
+                  {isEdit && Array.isArray(task?.existingAttachments) && task.existingAttachments.length > 0 && (
                     <Tag color="blue">已有 {task.existingAttachments.length}</Tag>
                   )}
                 </div>
                 <div className={styles.attachmentList}>
-                  {task?.attachments?.map((file, idx) => (
+                  {Array.isArray(task?.attachments) && task.attachments.map((file, idx) => (
                     <div key={`new-att-${idx}`} className={`${styles.attachmentItem} ${styles.newAttachmentItem}`}>
                       <div className={styles.attachmentInfo}>
                         <PaperClipOutlined className={styles.attachmentIcon} />
@@ -498,7 +498,7 @@ export default function TaskModal({
                       </button>
                     </div>
                   ))}
-                  {isEdit && task?.existingAttachments?.map((att, idx) => (
+                  {isEdit && Array.isArray(task?.existingAttachments) && task.existingAttachments.map((att, idx) => (
                     <div key={`existing-att-${idx}`} className={styles.attachmentItem}>
                       <div
                         className={styles.attachmentInfo}

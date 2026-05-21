@@ -551,7 +551,7 @@ app.whenReady().then(async () => {
     }
 
     // 删除被移除的旧图片文件
-    const oldImages = task.images || []
+    const oldImages = Array.isArray(task.images) ? task.images : []
     oldImages.forEach(oldPath => {
       if (!existingImages.includes(oldPath)) {
         try {
@@ -589,7 +589,7 @@ app.whenReady().then(async () => {
     }
 
     // 删除被移除的旧附件文件
-    const oldAttachments = task.attachments || []
+    const oldAttachments = Array.isArray(task.attachments) ? task.attachments : []
     oldAttachments.forEach(oldAtt => {
       const isKept = existingAttachments.some(ea => ea.storedName === oldAtt.storedName)
       if (!isKept) {
@@ -854,6 +854,15 @@ app.whenReady().then(async () => {
             mdContent += `\`\`\`\n`
           }
 
+          // 如果有图片
+          if (task.images && Array.isArray(task.images) && task.images.length > 0) {
+            mdContent += `\n**图片**:\n\n`
+            task.images.forEach(img => {
+              const fullPath = path.isAbsolute(img) ? img : path.join(imagesDir, img)
+              mdContent += `- ${img}\n`
+            })
+          }
+
           mdContent += `\n`
         })
 
@@ -927,6 +936,8 @@ app.whenReady().then(async () => {
         { key: 'type', width: 10 },        // 类型
         { key: 'initiator', width: 12 },   // 发起人
         { key: 'remark', width: 30 },      // 备注
+        { key: 'codeBlock', width: 40 },   // 代码块
+        { key: 'images', width: 30 },      // 图片
         { key: 'createdAt', width: 20 }    // 创建时间
       ]
 
@@ -938,7 +949,7 @@ app.whenReady().then(async () => {
       worksheet.addRow([]) // 空行
 
       // 添加表头
-      const headerRow = worksheet.addRow(['模块', '任务描述', '类型', '发起人', '备注', '创建时间'])
+      const headerRow = worksheet.addRow(['模块', '任务描述', '类型', '发起人', '备注', '代码块', '图片', '创建时间'])
       // 设置表头样式
       headerRow.eachCell(cell => {
         cell.font = { bold: true }
@@ -961,12 +972,21 @@ app.whenReady().then(async () => {
         const startRowNum = currentRowNum
 
         tasks.forEach((task, idx) => {
+          // 格式化代码块内容
+          let codeBlockText = ''
+          if (task.codeBlock && task.codeBlock.enabled && task.codeBlock.code) {
+            const lang = task.codeBlock.language || 'text'
+            codeBlockText = `[${lang}]\n${task.codeBlock.code}`
+          }
+
           const row = worksheet.addRow([
             idx === 0 ? moduleName : '', // 只在第一行显示模块名
             task.name,
             task.type || '',
             task.initiator || '',
             task.remark || '',
+            codeBlockText,
+            '', // 图片列先留空，后面插入图片
             new Date(task.createdAt).toLocaleString('zh-CN')
           ])
 
@@ -974,12 +994,68 @@ app.whenReady().then(async () => {
           row.getCell(2).alignment = { wrapText: true, vertical: 'middle' }
           // 设置备注列（第5列）自动换行
           row.getCell(5).alignment = { wrapText: true, vertical: 'middle' }
+          // 设置代码块列（第6列）自动换行
+          row.getCell(6).alignment = { wrapText: true, vertical: 'middle' }
+          // 设置图片列（第7列）自动换行
+          row.getCell(7).alignment = { wrapText: true, vertical: 'middle' }
           // 设置模块列（第1列）水平垂直居中
           row.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' }
           // 设置其他列垂直居中
           row.getCell(3).alignment = { horizontal: 'center', vertical: 'middle' }
           row.getCell(4).alignment = { horizontal: 'center', vertical: 'middle' }
-          row.getCell(6).alignment = { horizontal: 'center', vertical: 'middle' }
+          row.getCell(8).alignment = { horizontal: 'center', vertical: 'middle' }
+
+          // 插入图片到Excel
+          if (task.images && Array.isArray(task.images) && task.images.length > 0) {
+            const imageWidth = 90    // 每张图片宽度
+            const imageHeight = 68   // 每张图片高度
+            const imageGap = 20      // 图片间距
+            const imagesPerRow = 2   // 固定每行2张图片
+
+            // 计算总行数和行高
+            const totalImageRows = Math.ceil(task.images.length / imagesPerRow)
+            const cellHeight = totalImageRows * (imageHeight + imageGap) + 15
+            row.height = Math.max(row.height || 15, cellHeight)
+
+            // Excel默认行高15对应约20像素
+            const rowHeightInPixels = cellHeight * (20 / 15)
+
+            task.images.forEach((img, imgIdx) => {
+              const fullPath = path.isAbsolute(img) ? img : path.join(imagesDir, img)
+              if (fs.existsSync(fullPath)) {
+                try {
+                  const imageId = workbook.addImage({
+                    filename: fullPath,
+                    extension: path.extname(img).replace('.', '')
+                  })
+
+                  // 计算图片在网格中的位置
+                  const posInRow = imgIdx % imagesPerRow  // 当前行内的位置(0或1)
+                  const imageRow = Math.floor(imgIdx / imagesPerRow)  // 第几行(0,1,2...)
+
+                  // 计算列偏移（像素转Excel列单位）
+                  const colUnitPerPixel = 1 / (30 * 7.5) // 30列宽单位约225像素
+                  const leftMargin = 10 // 左边距
+                  const colOffset = (leftMargin + posInRow * (imageWidth + imageGap)) * colUnitPerPixel
+
+                  // 计算行偏移（占行高的比例）
+                  const rowOffset = (imageRow * (imageHeight + imageGap)) / rowHeightInPixels
+
+                  // 计算图片位置 - 第7列(G列)
+                  const col = 6 // 0-indexed, 第7列
+                  const rowNumber = currentRowNum - 1 // 0-indexed in addImage
+
+                  worksheet.addImage(imageId, {
+                    tl: { col: col + colOffset, row: rowNumber + rowOffset },
+                    ext: { width: imageWidth, height: imageHeight },
+                    editAs: 'oneCell'
+                  })
+                } catch (err) {
+                  console.error('插入图片失败:', img, err)
+                }
+              }
+            })
+          }
 
           currentRowNum++
         })
@@ -1011,8 +1087,15 @@ app.whenReady().then(async () => {
       })
 
       if (filePath) {
-        await workbook.xlsx.writeFile(filePath)
-        return { success: true, path: filePath }
+        try {
+          await workbook.xlsx.writeFile(filePath)
+          return { success: true, path: filePath }
+        } catch (err) {
+          if (err.code === 'EBUSY') {
+            return { success: false, error: '文件被占用，请先关闭已打开的Excel文件后再试' }
+          }
+          throw err
+        }
       }
 
       return { success: false }
@@ -1064,6 +1147,15 @@ app.whenReady().then(async () => {
               mdContent += `\`\`\`${task.codeBlock.language || 'text'}\n`
               mdContent += `${task.codeBlock.code}\n`
               mdContent += `\`\`\`\n`
+            }
+
+            // 如果有图片
+            if (task.images && Array.isArray(task.images) && task.images.length > 0) {
+              mdContent += `\n**图片**:\n\n`
+              task.images.forEach(img => {
+                const fullPath = path.isAbsolute(img) ? img : path.join(imagesDir, img)
+                mdContent += `- ${img}\n`
+              })
             }
 
             mdContent += `\n`

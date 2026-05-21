@@ -206,7 +206,17 @@ export default function SettingsModal({ visible, onClose }) {
       setExportLoading(true)
       const result = await window.electron?.data?.export()
       if (result?.success) {
-        showToast('数据导出成功', 'success')
+        showToast(
+          <span>
+            数据导出成功: {result.path}
+            <a
+              style={{ marginLeft: 8 }}
+              onClick={() => window.electron?.shell?.showItemInFolder(result.path)}
+            >
+              打开目录
+            </a>
+          </span>
+        )
       } else {
         showToast(result?.error || '导出失败', 'error')
       }
