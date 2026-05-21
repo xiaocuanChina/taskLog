@@ -352,7 +352,8 @@
   max-height: 250px;
   overflow-x: auto;
   overflow-y: auto;
-  width: 100%;
+  width: 0;
+  min-width: 0;
   max-width: 100%;
   position: relative;
   display: block;

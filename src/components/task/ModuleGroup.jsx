@@ -168,11 +168,18 @@ export default function ModuleGroup({
           )}
         </div>
       ),
-      children: (
-        <div style={{ display: 'flex', gap: 12 }}>
-          {[0, 1].map(col => (
-            <div key={col} style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {tasks.filter((_, i) => i % 2 === col).map(task => (
+      children: (() => {
+        // 将置顶任务排在前面，普通任务排在后面
+        const sortedTasks = [
+          ...tasks.filter(t => t.pinned),
+          ...tasks.filter(t => !t.pinned)
+        ]
+
+        return (
+          <div style={{ display: 'flex', gap: 12 }}>
+            {/* 左列：偶数索引的任务 */}
+            <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {sortedTasks.filter((_, i) => i % 2 === 0).map(task => (
                 <div key={task.id}>
                   <TaskCard
                     task={task}
@@ -193,9 +200,33 @@ export default function ModuleGroup({
                 </div>
               ))}
             </div>
-          ))}
-        </div>
-      )
+
+            {/* 右列：奇数索引的任务 */}
+            <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {sortedTasks.filter((_, i) => i % 2 === 1).map(task => (
+                <div key={task.id}>
+                  <TaskCard
+                    task={task}
+                    isCompleted={isCompleted}
+                    isPinned={!!task.pinned}
+                    taskTypeColors={taskTypeColors}
+                    onComplete={onTaskComplete}
+                    onRollback={onTaskRollback}
+                    onEdit={onTaskEdit}
+                    onDelete={onTaskDelete}
+                    onImageClick={onImageClick}
+                    onEditModule={onEditTaskModule}
+                    onShelve={onTaskShelve}
+                    onPin={onTaskPin}
+                    onUnpin={onTaskUnpin}
+                    onCheckItemChange={onCheckItemChange}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )
+      })()
     }
   ]
 

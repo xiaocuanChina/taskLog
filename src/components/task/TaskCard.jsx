@@ -986,7 +986,7 @@ export default function TaskCard({
 
         {/* 代码块 */}
         {task.codeBlock?.enabled && task.codeBlock?.code && (
-          <div style={{ marginTop: 12, borderRadius: 8, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)', maxWidth: '100%', minWidth: 0 }}>
+          <div className={styles.taskCodeBlockContent} style={{ marginTop: 12, borderRadius: 8, boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)', width: '100%' }}>
             <div style={{
               background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
               color: '#cbd5e1',
@@ -1005,9 +1005,9 @@ export default function TaskCard({
                 size="small"
                 icon={isCodeCopied ? <CheckOutlined /> : <CopyOutlined />}
                 onClick={handleCopyCode}
-                style={{ 
-                  color: isCodeCopied ? '#10b981' : '#cbd5e1', 
-                  height: 22, 
+                style={{
+                  color: isCodeCopied ? '#10b981' : '#cbd5e1',
+                  height: 22,
                   padding: '0 6px',
                   borderRadius: 4,
                   transition: 'all 0.2s'
@@ -1026,7 +1026,7 @@ export default function TaskCard({
                 }}
               />
             </div>
-            <div className={styles.taskCodeBlockContent} style={{ overflowX: 'auto' }}>
+            <div>
               <SyntaxHighlighter
                 language={task.codeBlock.language || 'text'}
                 style={vscDarkPlus}
