@@ -17,6 +17,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Modal, Input, Form, Button, Switch, AutoComplete, Tag, message } from 'antd'
 import { UploadOutlined, DeleteOutlined, CodeOutlined, FileTextOutlined, SaveOutlined, ImportOutlined, PaperClipOutlined, FolderOpenOutlined } from '@ant-design/icons'
+import { pinyin } from 'pinyin-pro'
 import TaskImage from '../common/TaskImage'
 import CheckItemsManager from './CheckItemsManager'
 import styles from './TaskModal.module.css'
@@ -207,12 +208,25 @@ export default function TaskModal({
     return localStorage.getItem(TEMP_CODE_KEY) !== null
   }
 
+  // 拼音模糊搜索：支持中文、拼音全拼、拼音首字母简拼匹配
+  const matchPinyin = (name, keyword) => {
+    if (!keyword) return true
+    const lowerName = name.toLowerCase()
+    const lowerKeyword = keyword.toLowerCase()
+    // 直接文本匹配
+    if (lowerName.includes(lowerKeyword)) return true
+    // 提取拼音（仅中文部分）
+    const fullPinyin = pinyin(name, { toneType: 'none', type: 'array' }).join('')
+    const firstLetters = pinyin(name, { pattern: 'first', toneType: 'none', type: 'array' }).join('')
+    return fullPinyin.includes(lowerKeyword) || firstLetters.includes(lowerKeyword)
+  }
+
   const keyword = (task?.module || '').toLowerCase()
   const activeModuleOptions = modules
-    .filter(mod => mod.name.toLowerCase().includes(keyword))
+    .filter(mod => matchPinyin(mod.name, keyword))
     .map(mod => ({ value: mod.name, label: mod.name }))
   const recycledModuleOptions = (recycleModules || [])
-    .filter(mod => mod.name.toLowerCase().includes(keyword))
+    .filter(mod => matchPinyin(mod.name, keyword))
     .map(mod => ({
       value: mod.name,
       label: (
